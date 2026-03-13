@@ -82,3 +82,8 @@ server:
 
 > 建议优先在具备完整桌面依赖的 Linux 环境中使用截图功能。
 
+## 联系方式
+
+一定要备注好来意
+
+<img src="assets/image-20231006124944803.png" alt="image-20231006124944803" style="width: 200px;" />
