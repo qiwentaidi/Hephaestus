@@ -1,4 +1,7 @@
-可以通过官网注册Key进行使用
+可以通过官网注册 Key 后使用：
+
+- 官网注册入口：[http://47.97.59.120](http://47.97.59.120)
+- Agent 独立仓库：[https://github.com/qiwentaidi/Hephaestus-Agent](https://github.com/qiwentaidi/Hephaestus-Agent)
 
 ## 运行截图
 
@@ -51,6 +54,10 @@
 ![image-20260318160848675](assets/image-20260318160848675.png)
 
 ## 快速开始
+
+在需要单独部署扫描节点时，可参考 Agent 仓库：
+
+- [https://github.com/qiwentaidi/Hephaestus-Agent](https://github.com/qiwentaidi/Hephaestus-Agent)
 
 ### 1️⃣ 使用 Docker 部署 PostgreSQL
 
