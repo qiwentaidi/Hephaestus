@@ -7,29 +7,37 @@
   <a href="README.md">中文</a> •
   <a href="README_EN.md">English</a>
 </div>
+<br />
 
 Hephaestus is a security testing platform that combines asset collection, attack surface assessment, vulnerability validation, and AI penetration testing conversations. It provides a Web service, a desktop client, and a standalone scanning Agent, with support for local scanning, combined tasks, and execution across distributed nodes.
 
-- License registration: [Official website](http://47.97.59.120)
+- Web service downloads: [Releases](https://github.com/qiwentaidi/Hephaestus/releases)
 - Desktop client: [Hephaestus-Desktop](https://github.com/qiwentaidi/Hephaestus-Desktop)
 - Scanning nodes and command-line tools: [Hephaestus-Agent](https://github.com/qiwentaidi/Hephaestus-Agent)
+- License registration: [Official website](http://47.97.59.120)
+
+## Highlights
+
+- **Combined scans**: Combine website, port, directory, subdomain, and JS/API scanning as needed, and review progress and results within a single task.
+- **AI penetration testing conversations**: Use tools to investigate authorized targets and record findings, reproduction steps, and evidence for review.
+- **Distributed execution**: Run tasks locally or on remote Agents, with centralized management of nodes, tasks, and scan results.
 
 ## Main Features
 
 | Module | Features |
 | --- | --- |
-| Attack Surface Assessment | Website fingerprinting and vulnerability scanning, port and service identification, weak password testing, directory scanning, subdomain collection, and JS/API asset discovery and vulnerability detection; combine scanning modules into tasks as needed |
-| Task Management | Local or Agent execution, concurrency control, pause and resume, cancellation, scan history, scheduling, parameter templates, and result search |
-| AI Workbench | Project and session management, standalone penetration testing conversations, tool calls, image input, fact and vulnerability records, exploration paths, evidence retrieval, and side conversations |
-| AI Batch Tasks | A dedicated interface for creating batch tasks and managing queues and execution |
-| Vulnerability Management | Review scan and AI findings, reproduction steps, and evidence, and track manual remediation status |
-| Asset Management | View assets centrally through the asset center, asset topology, and map views |
-| Search Engines | Individual and aggregated searches with FOFA, Hunter, and Quake, including query history, quota information, and a download center |
-| Company Information | Collect company information and related assets, review task results, and export individual or merged Excel files |
-| Request Repeater | Edit and send HTTP requests, inspect responses, persist tabs, and refine and debug Nuclei templates |
-| PoC Management | Search and edit Nuclei templates, manage additional template directories, debug templates, and test out-of-band (OOB) connectivity |
-| Analysis Tools | Encoding and decoding, JWT tools, API documentation testing, text comparison, and antivirus identification from process lists; the desktop client also provides mini-program decompilation |
-| Data and Credentials | Database connections and data inspection, and key management |
+| Attack Surface Assessment | Website fingerprinting, vulnerability scanning, port and service identification, weak password testing, directory, subdomain, and JS/API scanning |
+| Task Management | Concurrency control, pause and resume, cancellation, history, scheduling, parameter templates, and result search |
+| AI Workbench | Projects, sessions, tool calls, image input, testing records, and evidence review |
+| AI Batch Tasks | Batch task creation, queue management, and execution status |
+| Vulnerability Management | Consolidate scan and AI findings, review reproduction steps and evidence, and track manual remediation |
+| Asset Management | Centralized asset results, topology, and map views |
+| Search Engines | FOFA, Hunter, and Quake queries and aggregated searches, with history, quota information, and downloads |
+| Company Information | Collect company information and related assets, with individual or merged Excel exports |
+| Request Repeater | Edit HTTP requests, inspect responses, save tabs, and refine and debug Nuclei templates |
+| PoC Management | Nuclei template search, editing, additional directories, debugging, and out-of-band (OOB) connectivity testing |
+| Analysis Tools | Encoding and decoding, JWT, API documentation testing, text comparison, and antivirus identification; mini-program decompilation on desktop |
+| Data and Credentials | Database connections, data inspection, and key management |
 
 ## Choose a Deployment Mode
 
@@ -37,7 +45,7 @@ Hephaestus is a security testing platform that combines asset collection, attack
 | --- | --- | --- |
 | Web Service | PostgreSQL by default, with an explicit SQLite configuration option; frontend static assets are embedded in the backend; default port: `18181` | Browser access, team use, or server deployment |
 | Desktop Client | SQLite by default, with PostgreSQL support; includes a local service and a separate settings window | Single-machine use and integration with local tools |
-| Distributed Scanning Agent | Persistent nodes use a shared PostgreSQL database to claim tasks, send heartbeats, and return results | Scanning across multiple nodes or executing tasks on remote networks |
+| Scanning Agent | Persistent nodes use a shared PostgreSQL database to claim tasks, send heartbeats, and return results | Scanning across multiple nodes or executing tasks on remote networks |
 
 ## Quick Start: Web Service
 
@@ -97,9 +105,29 @@ database:
 
 If `database.path` is omitted, the database is stored at `~/.config/hephaestus/data/hephaestus.db` by default. Set `path` to specify an absolute location. SQLite standalone mode does not support the current distributed Agent deployment, which requires a shared database.
 
-## Desktop Client
+### 3. Open the Web Interface and Complete Activation and Setup
+
+Save the configuration, restart the application, and open [http://localhost:18181](http://localhost:18181). For server deployments, replace `localhost` with the server address. If you changed the port, use the value configured in `web.port`.
+
+1. Follow the page instructions to activate with a license key online or import an offline license. Use the official website linked above to register for a license.
+2. After activation, a new instance prompts you to create an administrator account. If the instance has already been initialized, sign in.
+
+### 4. Prepare Your First Scan or AI Session
+
+After signing in, configure the features you plan to use:
+
+- **Scanning resources**: Open **System Settings → System Update** and use **Config Update** to download or update resources such as PoCs, directory wordlists, and weak password dictionaries.
+- **Search engines**: Before using services such as FOFA, Hunter, or Quake, enter their keys under **System Settings → API Keys**.
+- **AI Workbench**: Configure the provider, API URL, key, and model under **System Settings → AI Config**, then test the connection.
+- **Remote nodes**: Before using Agents, prepare a PostgreSQL database shared by the main service and nodes, then follow the deployment instructions in the [Agent repository](https://github.com/qiwentaidi/Hephaestus-Agent).
+
+Once the required configuration is ready, create a scan task or start an AI Workbench session with your authorized target and testing scope.
+
+## Quick Start: Desktop Client
 
 Download the installer for your operating system and CPU architecture from the [desktop repository](https://github.com/qiwentaidi/Hephaestus-Desktop).
+
+Install and launch the client, then follow the page instructions to activate your license and create an administrator account or sign in. Prepare scanning resources, API keys, and AI configuration using the same steps as the Web service.
 
 - Default configuration file: `~/.config/hephaestus/config-desktop.yaml`.
 - Default database: `~/.config/hephaestus/data/hephaestus.db`. You can also switch to PostgreSQL.
@@ -111,14 +139,14 @@ The Web service and desktop client use separate configuration files but share th
 
 ## Frequently Asked Questions
 
-### 1️⃣ Browser Screenshots Are Unavailable
+### Browser Screenshots Are Unavailable
 
 Screenshots require a working Chromium browser and its runtime dependencies. On Linux servers and minimal containers, check that the browser, fonts, and graphics dependencies are installed.
 
-### 2️⃣ AI Local Commands Cannot Run
+### AI Local Commands Cannot Run
 
 Local commands and interactive terminals in AI sessions run with filesystem write isolation. Output files are written to the session working directory. macOS uses `sandbox-exec`, while Linux uses Bubblewrap (`bwrap`). Execution is refused if the isolation tool is missing or initialization fails.
 
-### 3️⃣ TCP Discovery and SYN Permissions
+### TCP Discovery and SYN Permissions
 
 TCP discovery uses Connect mode by default. When choosing SYN mode, check system permissions, packet capture dependencies, and SYN capability status. Enable the required permissions through the platform's authorization interface when needed.
