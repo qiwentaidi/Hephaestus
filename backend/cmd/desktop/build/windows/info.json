@@ -1,0 +1,15 @@
+{
+	"fixed": {
+		"file_version": "0.1.0"
+	},
+	"info": {
+		"0000": {
+			"ProductVersion": "0.1.0",
+			"CompanyName": "Hephaestus",
+			"FileDescription": "Hephaestus desktop client",
+			"LegalCopyright": "(c) 2026, Hephaestus",
+			"ProductName": "Hephaestus",
+			"Comments": "Desktop shell for the Hephaestus Gin application"
+		}
+	}
+}

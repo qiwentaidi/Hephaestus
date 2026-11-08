@@ -1,0 +1,5984 @@
+// Generated from MITRE CWE official dataset (https://cwe.mitre.org/data/downloads.html)
+// Source file: CWE Comprehensive View XML.zip (View 2000)
+
+export type CWEEntry = {
+  name: string
+  description: string
+  status: string
+  abstraction: string
+}
+
+export const CWE_MAP: Record<string, CWEEntry> = {
+  "CWE-1004": {
+    "name": "Sensitive Cookie Without 'HttpOnly' Flag",
+    "description": "The product uses a cookie to store sensitive information, but the cookie is not marked with the HttpOnly flag.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-1007": {
+    "name": "Insufficient Visual Distinction of Homoglyphs Presented to User",
+    "description": "The product displays information or identifiers to a user, but the display mechanism does not make it easy for the user to distinguish between visually similar or identical glyphs (homoglyphs), which may cause the user to misinterpret a glyph and perform an unintended, insecure action.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-102": {
+    "name": "Struts: Duplicate Validation Forms",
+    "description": "The product uses multiple validation forms with the same name, which might cause the Struts Validator to validate a form that the programmer does not expect.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-1021": {
+    "name": "Improper Restriction of Rendered UI Layers or Frames",
+    "description": "The web application does not restrict or incorrectly restricts frame objects or UI layers that belong to another application or domain, which can lead to user confusion about which interface the user is interacting with.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1022": {
+    "name": "Use of Web Link to Untrusted Target with window.opener Access",
+    "description": "The web application produces links to untrusted external sites outside of its sphere of control, but it does not properly prevent the external site from modifying security-critical properties of the window.opener object, such as the location property.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-1023": {
+    "name": "Incomplete Comparison with Missing Factors",
+    "description": "The product performs a comparison between entities that must consider multiple factors or characteristics of each entity, but the comparison does not include one or more of these factors.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-1024": {
+    "name": "Comparison of Incompatible Types",
+    "description": "The product performs a comparison between two entities, but the entities are of different, incompatible types that cannot be guaranteed to provide correct results when they are directly compared.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1025": {
+    "name": "Comparison Using Wrong Factors",
+    "description": "The code performs a comparison between two entities, but the comparison examines the wrong factors or characteristics of the entities, which can lead to incorrect results and resultant weaknesses.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-103": {
+    "name": "Struts: Incomplete validate() Method Definition",
+    "description": "The product has a validator form that either does not define a validate() method, or defines a validate() method but does not call super.validate().",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-1037": {
+    "name": "Processor Optimization Removal or Modification of Security-critical Code",
+    "description": "The developer builds a security-critical protection mechanism into the software, but the processor optimizes the execution of the program such that the mechanism is removed or modified.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1038": {
+    "name": "Insecure Automated Optimizations",
+    "description": "The product uses a mechanism that automatically optimizes code, e.g. to improve a characteristic such as performance, but the optimizations can have an unintended side effect that might violate an intended security assumption.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-1039": {
+    "name": "Inadequate Detection or Handling of Adversarial Input Perturbations in Automated Recognition Mechanism",
+    "description": "The product uses an automated mechanism such as machine learning to recognize complex data inputs (e.g. image or audio) as a particular concept or category, but it does not properly detect or handle inputs that have been modified or constructed in a way that causes the mechanism to detect a different, incorrect concept.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-104": {
+    "name": "Struts: Form Bean Does Not Extend Validation Class",
+    "description": "If a form bean does not extend an ActionForm subclass of the Validator framework, it can expose the application to other weaknesses related to insufficient input validation.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-1041": {
+    "name": "Use of Redundant Code",
+    "description": "The product has multiple functions, methods, procedures, macros, etc. that contain the same code.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1042": {
+    "name": "Static Member Data Element outside of a Singleton Class Element",
+    "description": "The code contains a member element that is declared as static (but not final), in which its parent class element is not a singleton class - that is, a class element that can be used only once in the 'to' association of a Create action.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-1043": {
+    "name": "Data Element Aggregating an Excessively Large Number of Non-Primitive Elements",
+    "description": "The product uses a data element that has an excessively large number of sub-elements with non-primitive data types such as structures or aggregated objects.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1044": {
+    "name": "Architecture with Number of Horizontal Layers Outside of Expected Range",
+    "description": "The product's architecture contains too many - or too few - horizontal layers.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1045": {
+    "name": "Parent Class with a Virtual Destructor and a Child Class without a Virtual Destructor",
+    "description": "A parent class has a virtual destructor method, but the parent has a child class that does not have a virtual destructor.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1046": {
+    "name": "Creation of Immutable Text Using String Concatenation",
+    "description": "The product creates an immutable text string using string concatenation operations.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1047": {
+    "name": "Modules with Circular Dependencies",
+    "description": "The product contains modules in which one module has references that cycle back to itself, i.e., there are circular dependencies.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1048": {
+    "name": "Invokable Control Element with Large Number of Outward Calls",
+    "description": "The code contains callable control elements that contain an excessively large number of references to other application objects external to the context of the callable, i.e. a Fan-Out value that is excessively large.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1049": {
+    "name": "Excessive Data Query Operations in a Large Data Table",
+    "description": "The product performs a data query with a large number of joins and sub-queries on a large data table.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-105": {
+    "name": "Struts: Form Field Without Validator",
+    "description": "The product has a form field that is not validated by a corresponding validation form, which can introduce other weaknesses related to insufficient input validation.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-1050": {
+    "name": "Excessive Platform Resource Consumption within a Loop",
+    "description": "The product has a loop body or loop condition that contains a control element that directly or indirectly consumes platform resources, e.g. messaging, sessions, locks, or file descriptors.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1051": {
+    "name": "Initialization with Hard-Coded Network Resource Configuration Data",
+    "description": "The product initializes data using hard-coded values that act as network resource identifiers.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1052": {
+    "name": "Excessive Use of Hard-Coded Literals in Initialization",
+    "description": "The product initializes a data element using a hard-coded literal that is not a simple integer or static constant element.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1053": {
+    "name": "Missing Documentation for Design",
+    "description": "The product does not have documentation that represents how it is designed.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1054": {
+    "name": "Invocation of a Control Element at an Unnecessarily Deep Horizontal Layer",
+    "description": "The code at one architectural layer invokes code that resides at a deeper layer than the adjacent layer, i.e., the invocation skips at least one layer, and the invoked code is not part of a vertical utility layer that can be referenced from any horizontal layer.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1055": {
+    "name": "Multiple Inheritance from Concrete Classes",
+    "description": "The product contains a class with inheritance from more than one concrete class.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1056": {
+    "name": "Invokable Control Element with Variadic Parameters",
+    "description": "A named-callable or method control element has a signature that supports a variable (variadic) number of parameters or arguments.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1057": {
+    "name": "Data Access Operations Outside of Expected Data Manager Component",
+    "description": "The product uses a dedicated, central data manager component as required by design, but it contains code that performs data-access operations that do not use this data manager.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1058": {
+    "name": "Invokable Control Element in Multi-Thread Context with non-Final Static Storable or Member Element",
+    "description": "The code contains a function or method that operates in a multi-threaded environment but owns an unsafe non-final static storable or member data element.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1059": {
+    "name": "Insufficient Technical Documentation",
+    "description": "The product does not contain sufficient technical or engineering documentation (whether on paper or in electronic form) that contains descriptions of all the relevant software/hardware elements of the product, such as its usage, structure, architectural components, interfaces, design, implementation, configuration, operation, etc.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-106": {
+    "name": "Struts: Plug-in Framework not in Use",
+    "description": "When an application does not use an input validation framework such as the Struts Validator, there is a greater risk of introducing weaknesses related to insufficient input validation.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-1060": {
+    "name": "Excessive Number of Inefficient Server-Side Data Accesses",
+    "description": "The product performs too many data queries without using efficient data processing functionality such as stored procedures.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1061": {
+    "name": "Insufficient Encapsulation",
+    "description": "The product does not sufficiently hide the internal representation and implementation details of data or methods, which might allow external components or modules to modify data unexpectedly, invoke unexpected functionality, or introduce dependencies that the programmer did not intend.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-1062": {
+    "name": "Parent Class with References to Child Class",
+    "description": "The code has a parent class that contains references to a child class, its methods, or its members.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1063": {
+    "name": "Creation of Class Instance within a Static Code Block",
+    "description": "A static code block creates an instance of a class.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1064": {
+    "name": "Invokable Control Element with Signature Containing an Excessive Number of Parameters",
+    "description": "The product contains a function, subroutine, or method whose signature has an unnecessarily large number of parameters/arguments.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1065": {
+    "name": "Runtime Resource Management Control Element in a Component Built to Run on Application Servers",
+    "description": "The product uses deployed components from application servers, but it also uses low-level functions/methods for management of resources, instead of the API provided by the application server.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1066": {
+    "name": "Missing Serialization Control Element",
+    "description": "The product contains a serializable data element that does not have an associated serialization method.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1067": {
+    "name": "Excessive Execution of Sequential Searches of Data Resource",
+    "description": "The product contains a data query against an SQL table or view that is configured in a way that does not utilize an index and may cause sequential searches to be performed.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1068": {
+    "name": "Inconsistency Between Implementation and Documented Design",
+    "description": "The implementation of the product is not consistent with the design as described within the relevant documentation.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1069": {
+    "name": "Empty Exception Block",
+    "description": "An invokable code block contains an exception handling block that does not contain any code, i.e. is empty.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-107": {
+    "name": "Struts: Unused Validation Form",
+    "description": "An unused validation form indicates that validation logic is not up-to-date.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-1070": {
+    "name": "Serializable Data Element Containing non-Serializable Item Elements",
+    "description": "The product contains a serializable, storable data element such as a field or member, but the data element contains member elements that are not serializable.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1071": {
+    "name": "Empty Code Block",
+    "description": "The source code contains a block that does not contain any code, i.e., the block is empty.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1072": {
+    "name": "Data Resource Access without Use of Connection Pooling",
+    "description": "The product accesses a data resource through a database without using a connection pooling capability.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1073": {
+    "name": "Non-SQL Invokable Control Element with Excessive Number of Data Resource Accesses",
+    "description": "The product contains a client with a function or method that contains a large number of data accesses/queries that are sent through a data manager, i.e., does not use efficient database capabilities.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1074": {
+    "name": "Class with Excessively Deep Inheritance",
+    "description": "A class has an inheritance level that is too high, i.e., it has a large number of parent classes.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1075": {
+    "name": "Unconditional Control Flow Transfer outside of Switch Block",
+    "description": "The product performs unconditional control transfer (such as a \"goto\") in code outside of a branching structure such as a switch block.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1076": {
+    "name": "Insufficient Adherence to Expected Conventions",
+    "description": "The product's architecture, source code, design, documentation, or other artifact does not follow required conventions.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-1077": {
+    "name": "Floating Point Comparison with Incorrect Operator",
+    "description": "The code performs a comparison such as an equality test between two float (floating point) values, but it uses comparison operators that do not account for the possibility of loss of precision.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-1078": {
+    "name": "Inappropriate Source Code Style or Formatting",
+    "description": "The source code does not follow desired style or formatting for indentation, white space, comments, etc.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-1079": {
+    "name": "Parent Class without Virtual Destructor Method",
+    "description": "A parent class contains one or more child classes, but the parent class does not have a virtual destructor method.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-108": {
+    "name": "Struts: Unvalidated Action Form",
+    "description": "Every Action Form must have a corresponding validation form.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-1080": {
+    "name": "Source Code File with Excessive Number of Lines of Code",
+    "description": "A source code file has too many lines of code.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1082": {
+    "name": "Class Instance Self Destruction Control Element",
+    "description": "The code contains a class instance that calls the method or function to delete or destroy itself.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1083": {
+    "name": "Data Access from Outside Expected Data Manager Component",
+    "description": "The product is intended to manage data access through a particular data manager component such as a relational or non-SQL database, but it contains code that performs data access operations without using that component.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1084": {
+    "name": "Invokable Control Element with Excessive File or Data Access Operations",
+    "description": "A function or method contains too many operations that utilize a data manager or file resource.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1085": {
+    "name": "Invokable Control Element with Excessive Volume of Commented-out Code",
+    "description": "A function, method, procedure, etc. contains an excessive amount of code that has been commented out within its body.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1086": {
+    "name": "Class with Excessive Number of Child Classes",
+    "description": "A class contains an unnecessarily large number of children.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1087": {
+    "name": "Class with Virtual Method without a Virtual Destructor",
+    "description": "A class contains a virtual method, but the method does not have an associated virtual destructor.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1088": {
+    "name": "Synchronous Access of Remote Resource without Timeout",
+    "description": "The code has a synchronous call to a remote resource, but there is no timeout for the call, or the timeout is set to infinite.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1089": {
+    "name": "Large Data Table with Excessive Number of Indices",
+    "description": "The product uses a large data table that contains an excessively large number of indices.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-109": {
+    "name": "Struts: Validator Turned Off",
+    "description": "Automatic filtering via a Struts bean has been turned off, which disables the Struts Validator and custom validation logic. This exposes the application to other weaknesses related to insufficient input validation.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-1090": {
+    "name": "Method Containing Access of a Member Element from Another Class",
+    "description": "A method for a class performs an operation that directly accesses a member element from another class.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1091": {
+    "name": "Use of Object without Invoking Destructor Method",
+    "description": "The product contains a method that accesses an object but does not later invoke the element's associated finalize/destructor method.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1092": {
+    "name": "Use of Same Invokable Control Element in Multiple Architectural Layers",
+    "description": "The product uses the same control element across multiple architectural layers.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1093": {
+    "name": "Excessively Complex Data Representation",
+    "description": "The product uses an unnecessarily complex internal representation for its data structures or interrelationships between those structures.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-1094": {
+    "name": "Excessive Index Range Scan for a Data Resource",
+    "description": "The product contains an index range scan for a large data table, but the scan can cover a large number of rows.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1095": {
+    "name": "Loop Condition Value Update within the Loop",
+    "description": "The product uses a loop with a control flow condition based on a value that is updated within the body of the loop.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1096": {
+    "name": "Singleton Class Instance Creation without Proper Locking or Synchronization",
+    "description": "The product implements a Singleton design pattern but does not use appropriate locking or other synchronization mechanism to ensure that the singleton class is only instantiated once.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-1097": {
+    "name": "Persistent Storable Data Element without Associated Comparison Control Element",
+    "description": "The product uses a storable data element that does not have all of the associated functions or methods that are necessary to support comparison.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1098": {
+    "name": "Data Element containing Pointer Item without Proper Copy Control Element",
+    "description": "The code contains a data element with a pointer that does not have an associated copy or constructor method.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1099": {
+    "name": "Inconsistent Naming Conventions for Identifiers",
+    "description": "The product's code, documentation, or other artifacts do not consistently use the same naming conventions for variables, callables, groups of related callables, I/O capabilities, data types, file names, or similar types of elements.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-11": {
+    "name": "ASP.NET Misconfiguration: Creating Debug Binary",
+    "description": "Debugging messages help attackers learn about the system and plan a form of attack.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-110": {
+    "name": "Struts: Validator Without Form Field",
+    "description": "Validation fields that do not appear in forms they are associated with indicate that the validation logic is out of date.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-1100": {
+    "name": "Insufficient Isolation of System-Dependent Functions",
+    "description": "The product or code does not isolate system-dependent functionality into separate standalone modules.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1101": {
+    "name": "Reliance on Runtime Component in Generated Code",
+    "description": "The product uses automatically-generated code that cannot be executed without a specific runtime support component.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1102": {
+    "name": "Reliance on Machine-Dependent Data Representation",
+    "description": "The code uses a data representation that relies on low-level data representation or constructs that may vary across different processors, physical machines, OSes, or other physical components.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1103": {
+    "name": "Use of Platform-Dependent Third Party Components",
+    "description": "The product relies on third-party components that do not provide equivalent functionality across all desirable platforms.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1104": {
+    "name": "Use of Unmaintained Third Party Components",
+    "description": "The product relies on third-party components that are not actively supported or maintained by the original developer or a trusted proxy for the original developer.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1105": {
+    "name": "Insufficient Encapsulation of Machine-Dependent Functionality",
+    "description": "The product or code uses machine-dependent functionality, but it does not sufficiently encapsulate or isolate this functionality from the rest of the code.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1106": {
+    "name": "Insufficient Use of Symbolic Constants",
+    "description": "The source code uses literal constants that may need to change or evolve over time, instead of using symbolic constants.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1107": {
+    "name": "Insufficient Isolation of Symbolic Constant Definitions",
+    "description": "The source code uses symbolic constants, but it does not sufficiently place the definitions of these constants into a more centralized or isolated location.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1108": {
+    "name": "Excessive Reliance on Global Variables",
+    "description": "The code is structured in a way that relies too much on using or setting global variables throughout various points in the code, instead of preserving the associated information in a narrower, more local context.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1109": {
+    "name": "Use of Same Variable for Multiple Purposes",
+    "description": "The code contains a callable, block, or other code element in which the same variable is used to control more than one unique task or store more than one instance of data.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-111": {
+    "name": "Direct Use of Unsafe JNI",
+    "description": "When a Java application uses the Java Native Interface (JNI) to call code written in another programming language, it can expose the application to weaknesses in that code, even if those weaknesses cannot occur in Java.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-1110": {
+    "name": "Incomplete Design Documentation",
+    "description": "The product's design documentation does not adequately describe control flow, data flow, system initialization, relationships between tasks, components, rationales, or other important aspects of the design.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1111": {
+    "name": "Incomplete I/O Documentation",
+    "description": "The product's documentation does not adequately define inputs, outputs, or system/software interfaces.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1112": {
+    "name": "Incomplete Documentation of Program Execution",
+    "description": "The document does not fully define all mechanisms that are used to control or influence how product-specific programs are executed.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1113": {
+    "name": "Inappropriate Comment Style",
+    "description": "The source code uses comment styles or formats that are inconsistent or do not follow expected standards for the product.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1114": {
+    "name": "Inappropriate Whitespace Style",
+    "description": "The source code contains whitespace that is inconsistent across the code or does not follow expected standards for the product.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1115": {
+    "name": "Source Code Element without Standard Prologue",
+    "description": "The source code contains elements such as source files that do not consistently provide a prologue or header that has been standardized for the project.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1116": {
+    "name": "Inaccurate Source Code Comments",
+    "description": "The source code contains comments that do not accurately describe or explain aspects of the portion of the code with which the comment is associated.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1117": {
+    "name": "Callable with Insufficient Behavioral Summary",
+    "description": "The code contains a function or method whose signature and/or associated inline documentation does not sufficiently describe the callable's inputs, outputs, side effects, assumptions, or return codes.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1118": {
+    "name": "Insufficient Documentation of Error Handling Techniques",
+    "description": "The documentation does not sufficiently describe the techniques that are used for error handling, exception processing, or similar mechanisms.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1119": {
+    "name": "Excessive Use of Unconditional Branching",
+    "description": "The code uses too many unconditional branches (such as \"goto\").",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-112": {
+    "name": "Missing XML Validation",
+    "description": "The product accepts XML from an untrusted source but does not validate the XML against the proper schema.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1120": {
+    "name": "Excessive Code Complexity",
+    "description": "The code is too complex, as calculated using a well-defined, quantitative measure.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-1121": {
+    "name": "Excessive McCabe Cyclomatic Complexity",
+    "description": "The code contains McCabe cyclomatic complexity that exceeds a desirable maximum.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1122": {
+    "name": "Excessive Halstead Complexity",
+    "description": "The code is structured in a way that a Halstead complexity measure exceeds a desirable maximum.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1123": {
+    "name": "Excessive Use of Self-Modifying Code",
+    "description": "The product uses too much self-modifying code.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1124": {
+    "name": "Excessively Deep Nesting",
+    "description": "The code contains a callable or other code grouping in which the nesting / branching is too deep.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1125": {
+    "name": "Excessive Attack Surface",
+    "description": "The product has an attack surface whose quantitative measurement exceeds a desirable maximum.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1126": {
+    "name": "Declaration of Variable with Unnecessarily Wide Scope",
+    "description": "The source code declares a variable in one scope, but the variable is only used within a narrower scope.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1127": {
+    "name": "Compilation with Insufficient Warnings or Errors",
+    "description": "The code is compiled without sufficient warnings enabled, which may prevent the detection of subtle bugs or quality issues.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-113": {
+    "name": "Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Request/Response Splitting')",
+    "description": "The product receives data from an HTTP agent/component (e.g., web server, proxy, browser, etc.), but it does not neutralize or incorrectly neutralizes CR and LF characters before the data is included in outgoing HTTP headers.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-114": {
+    "name": "Process Control",
+    "description": "Executing commands or loading libraries from an untrusted source or in an untrusted environment can cause an application to execute malicious commands (and payloads) on behalf of an attacker.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-115": {
+    "name": "Misinterpretation of Input",
+    "description": "The product misinterprets an input, whether from an attacker or another product, in a security-relevant fashion.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-116": {
+    "name": "Improper Encoding or Escaping of Output",
+    "description": "The product prepares a structured message for communication with another component, but encoding or escaping of the data is either missing or done incorrectly. As a result, the intended structure of the message is not preserved.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-1164": {
+    "name": "Irrelevant Code",
+    "description": "The product contains code that is not essential for execution, i.e. makes no state changes and has no side effects that alter data or control flow, such that removal of the code would have no impact to functionality or correctness.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-117": {
+    "name": "Improper Output Neutralization for Logs",
+    "description": "The product constructs a log message from external input, but it does not neutralize or incorrectly neutralizes special elements when the message is written to a log file.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1173": {
+    "name": "Improper Use of Validation Framework",
+    "description": "The product does not use, or incorrectly uses, an input validation framework that is provided by the source language or an independent library.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1174": {
+    "name": "ASP.NET Misconfiguration: Improper Model Validation",
+    "description": "The ASP.NET application does not use, or incorrectly uses, the model validation framework.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-1176": {
+    "name": "Inefficient CPU Computation",
+    "description": "The product performs CPU computations using algorithms that are not as efficient as they could be for the needs of the developer, i.e., the computations can be optimized further.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-1177": {
+    "name": "Use of Prohibited Code",
+    "description": "The product uses a function, library, or third party component that has been explicitly prohibited, whether by the developer or the customer.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-118": {
+    "name": "Incorrect Access of Indexable Resource ('Range Error')",
+    "description": "The product does not restrict or incorrectly restricts operations within the boundaries of a resource that is accessed using an index or pointer, such as memory or files.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-1187": {
+    "name": "DEPRECATED: Use of Uninitialized Resource",
+    "description": "This entry has been deprecated because it was a duplicate of CWE-908. All content has been transferred to CWE-908.",
+    "status": "Deprecated",
+    "abstraction": "Base"
+  },
+  "CWE-1188": {
+    "name": "Initialization of a Resource with an Insecure Default",
+    "description": "The product initializes or sets a resource with a default that is intended to be changed by the product's installer, administrator, or maintainer, but the default is not secure.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1189": {
+    "name": "Improper Isolation of Shared Resources on System-on-a-Chip (SoC)",
+    "description": "The System-On-a-Chip (SoC) does not properly isolate shared resources between trusted and untrusted agents.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-119": {
+    "name": "Improper Restriction of Operations within the Bounds of a Memory Buffer",
+    "description": "The product performs operations on a memory buffer, but it reads from or writes to a memory location outside the buffer's intended boundary. This may result in read or write operations on unexpected memory locations that could be linked to other variables, data structures, or internal program data.",
+    "status": "Stable",
+    "abstraction": "Class"
+  },
+  "CWE-1190": {
+    "name": "DMA Device Enabled Too Early in Boot Phase",
+    "description": "The product enables a Direct Memory Access (DMA) capable device before the security configuration settings are established, which allows an attacker to extract data from or gain privileges on the product.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1191": {
+    "name": "On-Chip Debug and Test Interface With Improper Access Control",
+    "description": "The chip does not implement or does not correctly perform access control to check whether users are authorized to access internal registers and test modes through the physical debug/test interface.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-1192": {
+    "name": "Improper Identifier for IP Block used in System-On-Chip (SOC)",
+    "description": "The System-on-Chip (SoC) does not have unique, immutable identifiers for each of its components.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1193": {
+    "name": "Power-On of Untrusted Execution Core Before Enabling Fabric Access Control",
+    "description": "The product enables components that contain untrusted firmware before memory and fabric access controls have been enabled.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-12": {
+    "name": "ASP.NET Misconfiguration: Missing Custom Error Page",
+    "description": "An ASP .NET application must enable custom error pages in order to prevent attackers from mining information from the framework's built-in responses.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-120": {
+    "name": "Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')",
+    "description": "The product copies an input buffer to an output buffer without verifying that the size of the input buffer is less than the size of the output buffer.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1204": {
+    "name": "Generation of Weak Initialization Vector (IV)",
+    "description": "The product uses a cryptographic primitive that uses an Initialization Vector (IV), but the product does not generate IVs that are sufficiently unpredictable or unique according to the expected cryptographic requirements for that primitive.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1209": {
+    "name": "Failure to Disable Reserved Bits",
+    "description": "The reserved bits in a hardware design are not disabled prior to production. Typically, reserved bits are used for future capabilities and should not support any functional logic in the design. However, designers might covertly use these bits to debug or further develop new capabilities in production hardware. Adversaries with access to these bits will write to them in hopes of compromising hardware state.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-121": {
+    "name": "Stack-based Buffer Overflow",
+    "description": "A stack-based buffer overflow condition is a condition where the buffer being overwritten is allocated on the stack (i.e., is a local variable or, rarely, a parameter to a function).",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-122": {
+    "name": "Heap-based Buffer Overflow",
+    "description": "A heap overflow condition is a buffer overflow, where the buffer that can be overwritten is allocated in the heap portion of memory, generally meaning that the buffer was allocated using a routine such as malloc().",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-1220": {
+    "name": "Insufficient Granularity of Access Control",
+    "description": "The product implements access controls via a policy or other feature with the intention to disable or restrict accesses (reads and/or writes) to assets in a system from untrusted agents. However, implemented access controls lack required granularity, which renders the control policy too broad because it allows accesses from unauthorized agents to the security-sensitive assets.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1221": {
+    "name": "Incorrect Register Defaults or Module Parameters",
+    "description": "Hardware description language code incorrectly defines register defaults or hardware Intellectual Property (IP) parameters to insecure values.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1222": {
+    "name": "Insufficient Granularity of Address Regions Protected by Register Locks",
+    "description": "The product defines a large address region protected from modification by the same register lock control bit. This results in a conflict between the functional requirement that some addresses need to be writable by software during operation and the security requirement that the system configuration lock bit must be set during the boot process.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-1223": {
+    "name": "Race Condition for Write-Once Attributes",
+    "description": "A write-once register in hardware design is programmable by an untrusted software component earlier than the trusted software component, resulting in a race condition issue.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1224": {
+    "name": "Improper Restriction of Write-Once Bit Fields",
+    "description": "The hardware design control register \"sticky bits\" or write-once bit fields are improperly implemented, such that they can be reprogrammed by software.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1229": {
+    "name": "Creation of Emergent Resource",
+    "description": "The product manages resources or behaves in a way that indirectly creates a new, distinct resource that can be used by attackers in violation of the intended policy.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-123": {
+    "name": "Write-what-where Condition",
+    "description": "Any condition where the attacker has the ability to write an arbitrary value to an arbitrary location, often as the result of a buffer overflow.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1230": {
+    "name": "Exposure of Sensitive Information Through Metadata",
+    "description": "The product prevents direct access to a resource containing sensitive information, but it does not sufficiently limit access to metadata that is derived from the original, sensitive information.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1231": {
+    "name": "Improper Prevention of Lock Bit Modification",
+    "description": "The product uses a trusted lock bit for restricting access to registers, address regions, or other resources, but the product does not prevent the value of the lock bit from being modified after it has been set.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-1232": {
+    "name": "Improper Lock Behavior After Power State Transition",
+    "description": "Register lock bit protection disables changes to system configuration once the bit is set. Some of the protected registers or lock bits become programmable after power state transitions (e.g., Entry and wake from low power sleep modes) causing the system configuration to be changeable.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1233": {
+    "name": "Security-Sensitive Hardware Controls with Missing Lock Bit Protection",
+    "description": "The product uses a register lock bit protection mechanism, but it does not ensure that the lock bit prevents modification of system registers or controls that perform changes to important hardware system configuration.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-1234": {
+    "name": "Hardware Internal or Debug Modes Allow Override of Locks",
+    "description": "System configuration protection may be bypassed during debug mode.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1235": {
+    "name": "Incorrect Use of Autoboxing and Unboxing for Performance Critical Operations",
+    "description": "The code uses boxed primitives, which may introduce inefficiencies into performance-critical operations.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1236": {
+    "name": "Improper Neutralization of Formula Elements in a CSV File",
+    "description": "The product saves user-provided information into a Comma-Separated Value (CSV) file, but it does not neutralize or incorrectly neutralizes special elements that could be interpreted as a command when the file is opened by a spreadsheet product.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1239": {
+    "name": "Improper Zeroization of Hardware Register",
+    "description": "The hardware product does not properly clear sensitive information from built-in registers when the user of the hardware block changes.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-124": {
+    "name": "Buffer Underwrite ('Buffer Underflow')",
+    "description": "The product writes to a buffer using an index or pointer that references a memory location prior to the beginning of the buffer.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1240": {
+    "name": "Use of a Cryptographic Primitive with a Risky Implementation",
+    "description": "To fulfill the need for a cryptographic primitive, the product implements a cryptographic algorithm using a non-standard, unproven, or disallowed/non-compliant cryptographic implementation.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1241": {
+    "name": "Use of Predictable Algorithm in Random Number Generator",
+    "description": "The device uses an algorithm that is predictable and generates a pseudo-random number.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1242": {
+    "name": "Inclusion of Undocumented Features or Chicken Bits",
+    "description": "The device includes chicken bits or undocumented features that can create entry points for unauthorized actors.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1243": {
+    "name": "Sensitive Non-Volatile Information Not Protected During Debug",
+    "description": "Access to security-sensitive information stored in fuses is not limited during debug.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1244": {
+    "name": "Internal Asset Exposed to Unsafe Debug Access Level or State",
+    "description": "The product uses physical debug or test interfaces with support for multiple access levels, but it assigns the wrong debug access level to an internal asset, providing unintended access to the asset from untrusted debug agents.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-1245": {
+    "name": "Improper Finite State Machines (FSMs) in Hardware Logic",
+    "description": "Faulty finite state machines (FSMs) in the hardware logic allow an attacker to put the system in an undefined state, to cause a denial of service (DoS) or gain privileges on the victim's system.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1246": {
+    "name": "Improper Write Handling in Limited-write Non-Volatile Memories",
+    "description": "The product does not implement or incorrectly implements wear leveling operations in limited-write non-volatile memories.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1247": {
+    "name": "Improper Protection Against Voltage and Clock Glitches",
+    "description": "The device does not contain or contains incorrectly implemented circuitry or sensors to detect and mitigate voltage and clock glitches and protect sensitive information or software contained on the device.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-1248": {
+    "name": "Semiconductor Defects in Hardware Logic with Security-Sensitive Implications",
+    "description": "The security-sensitive hardware module contains semiconductor defects.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1249": {
+    "name": "Application-Level Admin Tool with Inconsistent View of Underlying Operating System",
+    "description": "The product provides an application for administrators to manage parts of the underlying operating system, but the application does not accurately identify all of the relevant entities or resources that exist in the OS; that is, the application's model of the OS's state is inconsistent with the OS's actual state.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-125": {
+    "name": "Out-of-bounds Read",
+    "description": "The product reads data past the end, or before the beginning, of the intended buffer.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1250": {
+    "name": "Improper Preservation of Consistency Between Independent Representations of Shared State",
+    "description": "The product has or supports multiple distributed components or sub-systems that are each required to keep their own local copy of shared data - such as state or cache - but the product does not ensure that all local copies remain consistent with each other.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1251": {
+    "name": "Mirrored Regions with Different Values",
+    "description": "The product's architecture mirrors regions without ensuring that their contents always stay in sync.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1252": {
+    "name": "CPU Hardware Not Configured to Support Exclusivity of Write and Execute Operations",
+    "description": "The CPU is not configured to provide hardware support for exclusivity of write and execute operations on memory. This allows an attacker to execute data from all of memory.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1253": {
+    "name": "Incorrect Selection of Fuse Values",
+    "description": "The logic level used to set a system to a secure state relies on a fuse being unblown.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1254": {
+    "name": "Incorrect Comparison Logic Granularity",
+    "description": "The product's comparison logic is performed over a series of steps rather than across the entire string in one operation. If there is a comparison logic failure on one of these steps, the operation may be vulnerable to a timing attack that can result in the interception of the process for nefarious purposes.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1255": {
+    "name": "Comparison Logic is Vulnerable to Power Side-Channel Attacks",
+    "description": "A device's real time power consumption may be monitored during security token evaluation and the information gleaned may be used to determine the value of the reference token.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-1256": {
+    "name": "Improper Restriction of Software Interfaces to Hardware Features",
+    "description": "The product provides software-controllable device functionality for capabilities such as power and clock management, but it does not properly limit functionality that can lead to modification of hardware memory or register bits, or the ability to observe physical side channels.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-1257": {
+    "name": "Improper Access Control Applied to Mirrored or Aliased Memory Regions",
+    "description": "Aliased or mirrored memory regions in hardware designs may have inconsistent read/write permissions enforced by the hardware. A possible result is that an untrusted agent is blocked from accessing a memory region but is not blocked from accessing the corresponding aliased memory region.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1258": {
+    "name": "Exposure of Sensitive System Information Due to Uncleared Debug Information",
+    "description": "The hardware does not fully clear security-sensitive values, such as keys and intermediate values in cryptographic operations, when debug mode is entered.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1259": {
+    "name": "Improper Restriction of Security Token Assignment",
+    "description": "The System-On-A-Chip (SoC) implements a Security Token mechanism to differentiate what actions are allowed or disallowed when a transaction originates from an entity. However, the Security Tokens are improperly protected.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-126": {
+    "name": "Buffer Over-read",
+    "description": "The product reads from a buffer using buffer access mechanisms such as indexes or pointers that reference memory locations after the targeted buffer.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-1260": {
+    "name": "Improper Handling of Overlap Between Protected Memory Ranges",
+    "description": "The product allows address regions to overlap, which can result in the bypassing of intended memory protection.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-1261": {
+    "name": "Improper Handling of Single Event Upsets",
+    "description": "The hardware logic does not effectively handle when single-event upsets (SEUs) occur.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1262": {
+    "name": "Improper Access Control for Register Interface",
+    "description": "The product uses memory-mapped I/O registers that act as an interface to hardware functionality from software, but there is improper access control to those registers.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-1263": {
+    "name": "Improper Physical Access Control",
+    "description": "The product is designed with access restricted to certain information, but it does not sufficiently protect against an unauthorized actor with physical access to these areas.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-1264": {
+    "name": "Hardware Logic with Insecure De-Synchronization between Control and Data Channels",
+    "description": "The hardware logic for error handling and security checks can incorrectly forward data before the security check is complete.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1265": {
+    "name": "Unintended Reentrant Invocation of Non-reentrant Code Via Nested Calls",
+    "description": "The product invokes code that is believed to be reentrant, but the code performs a call that unintentionally produces a nested invocation of the non-reentrant code.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1266": {
+    "name": "Improper Scrubbing of Sensitive Data from Decommissioned Device",
+    "description": "The product does not properly provide a capability for the product administrator to remove sensitive data at the time the product is decommissioned. A scrubbing capability could be missing, insufficient, or incorrect.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1267": {
+    "name": "Policy Uses Obsolete Encoding",
+    "description": "The product uses an obsolete encoding mechanism to implement access controls.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1268": {
+    "name": "Policy Privileges are not Assigned Consistently Between Control and Data Agents",
+    "description": "The product's hardware-enforced access control for a particular resource improperly accounts for privilege discrepancies between control and write policies.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1269": {
+    "name": "Product Released in Non-Release Configuration",
+    "description": "The product released to market is released in pre-production or manufacturing configuration.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-127": {
+    "name": "Buffer Under-read",
+    "description": "The product reads from a buffer using buffer access mechanisms such as indexes or pointers that reference memory locations prior to the targeted buffer.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-1270": {
+    "name": "Generation of Incorrect Security Tokens",
+    "description": "The product implements a Security Token mechanism to differentiate what actions are allowed or disallowed when a transaction originates from an entity. However, the Security Tokens generated in the system are incorrect.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1271": {
+    "name": "Uninitialized Value on Reset for Registers Holding Security Settings",
+    "description": "Security-critical logic is not set to a known value on reset.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1272": {
+    "name": "Sensitive Information Uncleared Before Debug/Power State Transition",
+    "description": "The product performs a power or debug state transition, but it does not clear sensitive information that should no longer be accessible due to changes to information access restrictions.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-1273": {
+    "name": "Device Unlock Credential Sharing",
+    "description": "The credentials necessary for unlocking a device are shared across multiple parties and may expose sensitive information.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1274": {
+    "name": "Improper Access Control for Volatile Memory Containing Boot Code",
+    "description": "The product conducts a secure-boot process that transfers bootloader code from Non-Volatile Memory (NVM) into Volatile Memory (VM), but it does not have sufficient access control or other protections for the Volatile Memory.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-1275": {
+    "name": "Sensitive Cookie with Improper SameSite Attribute",
+    "description": "The SameSite attribute for sensitive cookies is not set, or an insecure value is used.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-1276": {
+    "name": "Hardware Child Block Incorrectly Connected to Parent System",
+    "description": "Signals between a hardware IP and the parent system design are incorrectly connected causing security risks.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1277": {
+    "name": "Firmware Not Updateable",
+    "description": "The product does not provide its users with the ability to update or patch its firmware to address any vulnerabilities or weaknesses that may be present.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1278": {
+    "name": "Missing Protection Against Hardware Reverse Engineering Using Integrated Circuit (IC) Imaging Techniques",
+    "description": "Information stored in hardware may be recovered by an attacker with the capability to capture and analyze images of the integrated circuit using techniques such as scanning electron microscopy.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1279": {
+    "name": "Cryptographic Operations are run Before Supporting Units are Ready",
+    "description": "Performing cryptographic operations without ensuring that the supporting inputs are ready to supply valid data may compromise the cryptographic result.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-128": {
+    "name": "Wrap-around Error",
+    "description": "Wrap around errors occur whenever a value is incremented past the maximum value for its type and therefore \"wraps around\" to a very small, negative, or undefined value.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1280": {
+    "name": "Access Control Check Implemented After Asset is Accessed",
+    "description": "A product's hardware-based access control check occurs after the asset has been accessed.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1281": {
+    "name": "Sequence of Processor Instructions Leads to Unexpected Behavior",
+    "description": "Specific combinations of processor instructions lead to undesirable behavior such as locking the processor until a hard reset performed.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1282": {
+    "name": "Assumed-Immutable Data is Stored in Writable Memory",
+    "description": "Immutable data, such as a first-stage bootloader, device identifiers, and \"write-once\" configuration settings are stored in writable memory that can be re-programmed or updated in the field.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1283": {
+    "name": "Mutable Attestation or Measurement Reporting Data",
+    "description": "The register contents used for attestation or measurement reporting data to verify boot flow are modifiable by an adversary.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1284": {
+    "name": "Improper Validation of Specified Quantity in Input",
+    "description": "The product receives input that is expected to specify a quantity (such as size or length), but it does not validate or incorrectly validates that the quantity has the required properties.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1285": {
+    "name": "Improper Validation of Specified Index, Position, or Offset in Input",
+    "description": "The product receives input that is expected to specify an index, position, or offset into an indexable resource such as a buffer or file, but it does not validate or incorrectly validates that the specified index/position/offset has the required properties.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1286": {
+    "name": "Improper Validation of Syntactic Correctness of Input",
+    "description": "The product receives input that is expected to be well-formed - i.e., to comply with a certain syntax - but it does not validate or incorrectly validates that the input complies with the syntax.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1287": {
+    "name": "Improper Validation of Specified Type of Input",
+    "description": "The product receives input that is expected to be of a certain type, but it does not validate or incorrectly validates that the input is actually of the expected type.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1288": {
+    "name": "Improper Validation of Consistency within Input",
+    "description": "The product receives a complex input with multiple elements or fields that must be consistent with each other, but it does not validate or incorrectly validates that the input is actually consistent.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1289": {
+    "name": "Improper Validation of Unsafe Equivalence in Input",
+    "description": "The product receives an input value that is used as a resource identifier or other type of reference, but it does not validate or incorrectly validates that the input is equivalent to a potentially-unsafe value.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-129": {
+    "name": "Improper Validation of Array Index",
+    "description": "The product uses untrusted input when calculating or using an array index, but the product does not validate or incorrectly validates the index to ensure the index references a valid position within the array.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-1290": {
+    "name": "Incorrect Decoding of Security Identifiers",
+    "description": "The product implements a decoding mechanism to decode certain bus-transaction signals to security identifiers. If the decoding is implemented incorrectly, then untrusted agents can now gain unauthorized access to the asset.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1291": {
+    "name": "Public Key Re-Use for Signing both Debug and Production Code",
+    "description": "The same public key is used for signing both debug and production code.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1292": {
+    "name": "Incorrect Conversion of Security Identifiers",
+    "description": "The product implements a conversion mechanism to map certain bus-transaction signals to security identifiers. However, if the conversion is incorrectly implemented, untrusted agents can gain unauthorized access to the asset.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1293": {
+    "name": "Missing Source Correlation of Multiple Independent Data",
+    "description": "The product relies on one source of data, preventing the ability to detect if an adversary has compromised a data source.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1294": {
+    "name": "Insecure Security Identifier Mechanism",
+    "description": "The System-on-Chip (SoC) implements a Security Identifier mechanism to differentiate what actions are allowed or disallowed when a transaction originates from an entity. However, the Security Identifiers are not correctly implemented.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-1295": {
+    "name": "Debug Messages Revealing Unnecessary Information",
+    "description": "The product fails to adequately prevent the revealing of unnecessary and potentially sensitive system information within debugging messages.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1296": {
+    "name": "Incorrect Chaining or Granularity of Debug Components",
+    "description": "The product's debug components contain incorrect chaining or granularity of debug components.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1297": {
+    "name": "Unprotected Confidential Information on Device is Accessible by OSAT Vendors",
+    "description": "The product does not adequately protect confidential information on the device from being accessed by Outsourced Semiconductor Assembly and Test (OSAT) vendors.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1298": {
+    "name": "Hardware Logic Contains Race Conditions",
+    "description": "A race condition in the hardware logic results in undermining security guarantees of the system.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1299": {
+    "name": "Missing Protection Mechanism for Alternate Hardware Interface",
+    "description": "The lack of protections on alternate paths to access control-protected assets (such as unprotected shadow registers and other external facing unguarded interfaces) allows an attacker to bypass existing protections to the asset that are only performed against the primary path.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-13": {
+    "name": "ASP.NET Misconfiguration: Password in Configuration File",
+    "description": "Storing a plaintext password in a configuration file allows anyone who can read the file access to the password-protected resource making them an easy target for attackers.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-130": {
+    "name": "Improper Handling of Length Parameter Inconsistency",
+    "description": "The product parses a formatted message or structure, but it does not handle or incorrectly handles a length field that is inconsistent with the actual length of the associated data.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1300": {
+    "name": "Improper Protection of Physical Side Channels",
+    "description": "The device does not contain sufficient protection mechanisms to prevent physical side channels from exposing sensitive information due to patterns in physically observable phenomena such as variations in power consumption, electromagnetic emissions (EME), or acoustic emissions.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-1301": {
+    "name": "Insufficient or Incomplete Data Removal within Hardware Component",
+    "description": "The product's data removal process does not completely delete all data and potentially sensitive information within hardware components.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1302": {
+    "name": "Missing Source Identifier in Entity Transactions on a System-On-Chip (SOC)",
+    "description": "The product implements a security identifier mechanism to differentiate what actions are allowed or disallowed when a transaction originates from an entity. A transaction is sent without a security identifier.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1303": {
+    "name": "Non-Transparent Sharing of Microarchitectural Resources",
+    "description": "Hardware structures shared across execution contexts (e.g., caches and branch predictors) can violate the expected architecture isolation between contexts.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1304": {
+    "name": "Improperly Preserved Integrity of Hardware Configuration State During a Power Save/Restore Operation",
+    "description": "The product performs a power save/restore operation, but it does not ensure that the integrity of the configuration state is maintained and/or verified between the beginning and ending of the operation.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-131": {
+    "name": "Incorrect Calculation of Buffer Size",
+    "description": "The product does not correctly calculate the size to be used when allocating a buffer, which could lead to a buffer overflow.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1310": {
+    "name": "Missing Ability to Patch ROM Code",
+    "description": "Missing an ability to patch ROM code may leave a System or System-on-Chip (SoC) in a vulnerable state.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1311": {
+    "name": "Improper Translation of Security Attributes by Fabric Bridge",
+    "description": "The bridge incorrectly translates security attributes from either trusted to untrusted or from untrusted to trusted when converting from one fabric protocol to another.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1312": {
+    "name": "Missing Protection for Mirrored Regions in On-Chip Fabric Firewall",
+    "description": "The firewall in an on-chip fabric protects the main addressed region, but it does not protect any mirrored memory or memory-mapped-IO (MMIO) regions.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1313": {
+    "name": "Hardware Allows Activation of Test or Debug Logic at Runtime",
+    "description": "During runtime, the hardware allows for test or debug logic (feature) to be activated, which allows for changing the state of the hardware. This feature can alter the intended behavior of the system and allow for alteration and leakage of sensitive data by an adversary.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1314": {
+    "name": "Missing Write Protection for Parametric Data Values",
+    "description": "The device does not write-protect the parametric data values for sensors that scale the sensor value, allowing untrusted software to manipulate the apparent result and potentially damage hardware or cause operational failure.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1315": {
+    "name": "Improper Setting of Bus Controlling Capability in Fabric End-point",
+    "description": "The bus controller enables bits in the fabric end-point to allow responder devices to control transactions on the fabric.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1316": {
+    "name": "Fabric-Address Map Allows Programming of Unwarranted Overlaps of Protected and Unprotected Ranges",
+    "description": "The address map of the on-chip fabric has protected and unprotected regions overlapping, allowing an attacker to bypass access control to the overlapping portion of the protected region.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1317": {
+    "name": "Improper Access Control in Fabric Bridge",
+    "description": "The product uses a fabric bridge for transactions between two Intellectual Property (IP) blocks, but the bridge does not properly perform the expected privilege, identity, or other access control checks between those IP blocks.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1318": {
+    "name": "Missing Support for Security Features in On-chip Fabrics or Buses",
+    "description": "On-chip fabrics or buses either do not support or are not configured to support privilege separation or other security features, such as access control.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1319": {
+    "name": "Improper Protection against Electromagnetic Fault Injection (EM-FI)",
+    "description": "The device is susceptible to electromagnetic fault injection attacks, causing device internal information to be compromised or security mechanisms to be bypassed.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-132": {
+    "name": "DEPRECATED: Miscalculated Null Termination",
+    "description": "This entry has been deprecated because it was a duplicate of CWE-170. All content has been transferred to CWE-170.",
+    "status": "Deprecated",
+    "abstraction": "Base"
+  },
+  "CWE-1320": {
+    "name": "Improper Protection for Outbound Error Messages and Alert Signals",
+    "description": "Untrusted agents can disable alerts about signal conditions exceeding limits or the response mechanism that handles such alerts.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1321": {
+    "name": "Improperly Controlled Modification of Object Prototype Attributes ('Prototype Pollution')",
+    "description": "The product receives input from an upstream component that specifies attributes that are to be initialized or updated in an object, but it does not properly control modifications of attributes of the object prototype.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-1322": {
+    "name": "Use of Blocking Code in Single-threaded, Non-blocking Context",
+    "description": "The product uses a non-blocking model that relies on a single threaded process for features such as scalability, but it contains code that can block when it is invoked.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1323": {
+    "name": "Improper Management of Sensitive Trace Data",
+    "description": "Trace data collected from several sources on the System-on-Chip (SoC) is stored in unprotected locations or transported to untrusted agents.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1324": {
+    "name": "DEPRECATED: Sensitive Information Accessible by Physical Probing of JTAG Interface",
+    "description": "This entry has been deprecated because it was at a lower level of abstraction than supported by CWE. All relevant content has been integrated into CWE-319.",
+    "status": "Deprecated",
+    "abstraction": "Base"
+  },
+  "CWE-1325": {
+    "name": "Improperly Controlled Sequential Memory Allocation",
+    "description": "The product manages a group of objects or resources and performs a separate memory allocation for each object, but it does not properly limit the total amount of memory that is consumed by all of the combined objects.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1326": {
+    "name": "Missing Immutable Root of Trust in Hardware",
+    "description": "A missing immutable root of trust in the hardware results in the ability to bypass secure boot or execute untrusted or adversarial boot code.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1327": {
+    "name": "Binding to an Unrestricted IP Address",
+    "description": "The product assigns the address 0.0.0.0 for a database server, a cloud service/instance, or any computing resource that communicates remotely.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1328": {
+    "name": "Security Version Number Mutable to Older Versions",
+    "description": "Security-version number in hardware is mutable, resulting in the ability to downgrade (roll-back) the boot firmware to vulnerable code versions.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1329": {
+    "name": "Reliance on Component That is Not Updateable",
+    "description": "The product contains a component that cannot be updated or patched in order to remove vulnerabilities or significant bugs.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1330": {
+    "name": "Remanent Data Readable after Memory Erase",
+    "description": "Confidential information stored in memory circuits is readable or recoverable after being cleared or erased.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-1331": {
+    "name": "Improper Isolation of Shared Resources in Network On Chip (NoC)",
+    "description": "The Network On Chip (NoC) does not isolate or incorrectly isolates its on-chip-fabric and internal resources such that they are shared between trusted and untrusted agents, creating timing channels.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-1332": {
+    "name": "Improper Handling of Faults that Lead to Instruction Skips",
+    "description": "The device is missing or incorrectly implements circuitry or sensors that detect and mitigate the skipping of security-critical CPU instructions when they occur.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-1333": {
+    "name": "Inefficient Regular Expression Complexity",
+    "description": "The product uses a regular expression with an inefficient, possibly exponential worst-case computational complexity that consumes excessive CPU cycles.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1334": {
+    "name": "Unauthorized Error Injection Can Degrade Hardware Redundancy",
+    "description": "An unauthorized agent can inject errors into a redundant block to deprive the system of redundancy or put the system in a degraded operating mode.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1335": {
+    "name": "Incorrect Bitwise Shift of Integer",
+    "description": "An integer value is specified to be shifted by a negative amount or an amount greater than or equal to the number of bits contained in the value causing an unexpected or indeterminate result.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1336": {
+    "name": "Improper Neutralization of Special Elements Used in a Template Engine",
+    "description": "The product uses a template engine to insert or process externally-influenced input, but it does not neutralize or incorrectly neutralizes special elements or syntax that can be interpreted as template expressions or other code directives when processed by the engine.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1338": {
+    "name": "Improper Protections Against Hardware Overheating",
+    "description": "A hardware device is missing or has inadequate protection features to prevent overheating.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1339": {
+    "name": "Insufficient Precision or Accuracy of a Real Number",
+    "description": "The product processes a real number with an implementation in which the number's representation does not preserve required accuracy and precision in its fractional part, causing an incorrect result.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-134": {
+    "name": "Use of Externally-Controlled Format String",
+    "description": "The product uses a function that accepts a format string as an argument, but the format string originates from an external source.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1341": {
+    "name": "Multiple Releases of Same Resource or Handle",
+    "description": "The product attempts to close or release a resource or handle more than once, without any successful open between the close operations.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1342": {
+    "name": "Information Exposure through Microarchitectural State after Transient Execution",
+    "description": "The processor does not properly clear microarchitectural state after incorrect microcode assists or speculative execution, resulting in transient execution.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-135": {
+    "name": "Incorrect Calculation of Multi-Byte String Length",
+    "description": "The product does not correctly calculate the length of strings that can contain wide or multi-byte characters.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-1351": {
+    "name": "Improper Handling of Hardware Behavior in Exceptionally Cold Environments",
+    "description": "A hardware device, or the firmware running on it, is missing or has incorrect protection features to maintain goals of security primitives when the device is cooled below standard operating temperatures.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1357": {
+    "name": "Reliance on Insufficiently Trustworthy Component",
+    "description": "The product is built from multiple separate components, but it uses a component that is not sufficiently trusted to meet expectations for security, reliability, updateability, and maintainability.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-138": {
+    "name": "Improper Neutralization of Special Elements",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could be interpreted as control elements or syntactic markers when they are sent to a downstream component.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-1384": {
+    "name": "Improper Handling of Physical or Environmental Conditions",
+    "description": "The product does not properly handle unexpected physical or environmental conditions that occur naturally or are artificially induced.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-1385": {
+    "name": "Missing Origin Validation in WebSockets",
+    "description": "The product uses a WebSocket, but it does not properly verify that the source of data or communication is valid.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-1386": {
+    "name": "Insecure Operation on Windows Junction / Mount Point",
+    "description": "The product opens a file or directory, but it does not properly prevent the name from being associated with a junction or mount point to a destination that is outside of the intended control sphere.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1389": {
+    "name": "Incorrect Parsing of Numbers with Different Radices",
+    "description": "The product parses numeric input assuming base 10 (decimal) values, but it does not account for inputs that use a different base number (radix).",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1390": {
+    "name": "Weak Authentication",
+    "description": "The product uses an authentication mechanism to restrict access to specific users or identities, but the mechanism does not sufficiently prove that the claimed identity is correct.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-1391": {
+    "name": "Use of Weak Credentials",
+    "description": "The product uses weak credentials (such as a default key or hard-coded password) that can be calculated, derived, reused, or guessed by an attacker.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-1392": {
+    "name": "Use of Default Credentials",
+    "description": "The product uses default credentials (such as passwords or cryptographic keys) for potentially critical functionality.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1393": {
+    "name": "Use of Default Password",
+    "description": "The product uses default passwords for potentially critical functionality.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1394": {
+    "name": "Use of Default Cryptographic Key",
+    "description": "The product uses a default cryptographic key for potentially critical functionality.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1395": {
+    "name": "Dependency on Vulnerable Third-Party Component",
+    "description": "The product has a dependency on a third-party component that contains one or more known vulnerabilities.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-14": {
+    "name": "Compiler Removal of Code to Clear Buffers",
+    "description": "Sensitive memory is cleared according to the source code, but compiler optimizations leave the memory untouched when it is not read from again, aka \"dead store removal.\"",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-140": {
+    "name": "Improper Neutralization of Delimiters",
+    "description": "The product does not neutralize or incorrectly neutralizes delimiters.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-141": {
+    "name": "Improper Neutralization of Parameter/Argument Delimiters",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could be interpreted as parameter or argument delimiters when they are sent to a downstream component.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-1419": {
+    "name": "Incorrect Initialization of Resource",
+    "description": "The product attempts to initialize a resource but does not correctly do so, which might leave the resource in an unexpected, incorrect, or insecure state when it is accessed.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-142": {
+    "name": "Improper Neutralization of Value Delimiters",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could be interpreted as value delimiters when they are sent to a downstream component.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-1420": {
+    "name": "Exposure of Sensitive Information during Transient Execution",
+    "description": "A processor event or prediction may allow incorrect operations (or correct operations with incorrect data) to execute transiently, potentially exposing data over a covert channel.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1421": {
+    "name": "Exposure of Sensitive Information in Shared Microarchitectural Structures during Transient Execution",
+    "description": "A processor event may allow transient operations to access architecturally restricted data (for example, in another address space) in a shared microarchitectural structure (for example, a CPU cache), potentially exposing the data over a covert channel.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1422": {
+    "name": "Exposure of Sensitive Information caused by Incorrect Data Forwarding during Transient Execution",
+    "description": "A processor event or prediction may allow incorrect or stale data to be forwarded to transient operations, potentially exposing data over a covert channel.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1423": {
+    "name": "Exposure of Sensitive Information caused by Shared Microarchitectural Predictor State that Influences Transient Execution",
+    "description": "Shared microarchitectural predictor state may allow code to influence transient execution across a hardware boundary, potentially exposing data that is accessible beyond the boundary over a covert channel.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1426": {
+    "name": "Improper Validation of Generative AI Output",
+    "description": "The product invokes a generative AI/ML component whose behaviors and outputs cannot be directly controlled, but the product does not validate or insufficiently validates the outputs to ensure that they align with the intended security, content, or privacy policy.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1427": {
+    "name": "Improper Neutralization of Input Used for LLM Prompting",
+    "description": "The product uses externally-provided data to build prompts provided to large language models (LLMs), but the way these prompts are constructed causes the LLM to fail to distinguish between user-supplied inputs and developer provided system directives.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1428": {
+    "name": "Reliance on HTTP instead of HTTPS",
+    "description": "The product provides or relies on use of HTTP communications when HTTPS is available.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1429": {
+    "name": "Missing Security-Relevant Feedback for Unexecuted Operations in Hardware Interface",
+    "description": "The product has a hardware interface that silently discards operations in situations for which feedback would be security-relevant, such as the timely detection of failures or attacks.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-143": {
+    "name": "Improper Neutralization of Record Delimiters",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could be interpreted as record delimiters when they are sent to a downstream component.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-1431": {
+    "name": "Driving Intermediate Cryptographic State/Results to Hardware Module Outputs",
+    "description": "The product uses a hardware module implementing a cryptographic algorithm that writes sensitive information about the intermediate state or results of its cryptographic operations via one of its output wires (typically the output port containing the final result).",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-1434": {
+    "name": "Insecure Setting of Generative AI/ML Model Inference Parameters",
+    "description": "The product has a component that relies on a generative AI/ML model configured with inference parameters that produce an unacceptably high rate of erroneous or unexpected outputs.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-144": {
+    "name": "Improper Neutralization of Line Delimiters",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could be interpreted as line delimiters when they are sent to a downstream component.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-145": {
+    "name": "Improper Neutralization of Section Delimiters",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could be interpreted as section delimiters when they are sent to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-146": {
+    "name": "Improper Neutralization of Expression/Command Delimiters",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could be interpreted as expression or command delimiters when they are sent to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-147": {
+    "name": "Improper Neutralization of Input Terminators",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could be interpreted as input terminators when they are sent to a downstream component.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-148": {
+    "name": "Improper Neutralization of Input Leaders",
+    "description": "The product does not properly handle when a leading character or sequence (\"leader\") is missing or malformed, or if multiple leaders are used when only one should be allowed.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-149": {
+    "name": "Improper Neutralization of Quoting Syntax",
+    "description": "Quotes injected into a product can be used to compromise a system. As data are parsed, an injected/absent/duplicate/malformed use of quotes may cause the process to take unexpected actions.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-15": {
+    "name": "External Control of System or Configuration Setting",
+    "description": "One or more system settings or configuration elements can be externally controlled by a user.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-150": {
+    "name": "Improper Neutralization of Escape, Meta, or Control Sequences",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could be interpreted as escape, meta, or control character sequences when they are sent to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-151": {
+    "name": "Improper Neutralization of Comment Delimiters",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could be interpreted as comment delimiters when they are sent to a downstream component.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-152": {
+    "name": "Improper Neutralization of Macro Symbols",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could be interpreted as macro symbols when they are sent to a downstream component.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-153": {
+    "name": "Improper Neutralization of Substitution Characters",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could be interpreted as substitution characters when they are sent to a downstream component.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-154": {
+    "name": "Improper Neutralization of Variable Name Delimiters",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could be interpreted as variable name delimiters when they are sent to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-155": {
+    "name": "Improper Neutralization of Wildcards or Matching Symbols",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could be interpreted as wildcards or matching symbols when they are sent to a downstream component.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-156": {
+    "name": "Improper Neutralization of Whitespace",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could be interpreted as whitespace when they are sent to a downstream component.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-157": {
+    "name": "Failure to Sanitize Paired Delimiters",
+    "description": "The product does not properly handle the characters that are used to mark the beginning and ending of a group of entities, such as parentheses, brackets, and braces.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-158": {
+    "name": "Improper Neutralization of Null Byte or NUL Character",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes NUL characters or null bytes when they are sent to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-159": {
+    "name": "Improper Handling of Invalid Use of Special Elements",
+    "description": "The product does not properly filter, remove, quote, or otherwise manage the invalid use of special elements in user-controlled input, which could cause adverse effect on its behavior and integrity.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-160": {
+    "name": "Improper Neutralization of Leading Special Elements",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes leading special elements that could be interpreted in unexpected ways when they are sent to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-161": {
+    "name": "Improper Neutralization of Multiple Leading Special Elements",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes multiple leading special elements that could be interpreted in unexpected ways when they are sent to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-162": {
+    "name": "Improper Neutralization of Trailing Special Elements",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes trailing special elements that could be interpreted in unexpected ways when they are sent to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-163": {
+    "name": "Improper Neutralization of Multiple Trailing Special Elements",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes multiple trailing special elements that could be interpreted in unexpected ways when they are sent to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-164": {
+    "name": "Improper Neutralization of Internal Special Elements",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes internal special elements that could be interpreted in unexpected ways when they are sent to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-165": {
+    "name": "Improper Neutralization of Multiple Internal Special Elements",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes multiple internal special elements that could be interpreted in unexpected ways when they are sent to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-166": {
+    "name": "Improper Handling of Missing Special Element",
+    "description": "The product receives input from an upstream component, but it does not handle or incorrectly handles when an expected special element is missing.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-167": {
+    "name": "Improper Handling of Additional Special Element",
+    "description": "The product receives input from an upstream component, but it does not handle or incorrectly handles when an additional unexpected special element is provided.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-168": {
+    "name": "Improper Handling of Inconsistent Special Elements",
+    "description": "The product does not properly handle input in which an inconsistency exists between two or more special characters or reserved words.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-170": {
+    "name": "Improper Null Termination",
+    "description": "The product does not terminate or incorrectly terminates a string or array with a null character or equivalent terminator.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-172": {
+    "name": "Encoding Error",
+    "description": "The product does not properly encode or decode the data, resulting in unexpected values.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-173": {
+    "name": "Improper Handling of Alternate Encoding",
+    "description": "The product does not properly handle when an input uses an alternate encoding that is valid for the control sphere to which the input is being sent.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-174": {
+    "name": "Double Decoding of the Same Data",
+    "description": "The product decodes the same input twice, which can limit the effectiveness of any protection mechanism that occurs in between the decoding operations.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-175": {
+    "name": "Improper Handling of Mixed Encoding",
+    "description": "The product does not properly handle when the same input uses several different (mixed) encodings.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-176": {
+    "name": "Improper Handling of Unicode Encoding",
+    "description": "The product does not properly handle when an input contains Unicode encoding.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-177": {
+    "name": "Improper Handling of URL Encoding (Hex Encoding)",
+    "description": "The product does not properly handle when all or part of an input has been URL encoded.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-178": {
+    "name": "Improper Handling of Case Sensitivity",
+    "description": "The product does not properly account for differences in case sensitivity when accessing or determining the properties of a resource, leading to inconsistent results.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-179": {
+    "name": "Incorrect Behavior Order: Early Validation",
+    "description": "The product validates input before applying protection mechanisms that modify the input, which could allow an attacker to bypass the validation via dangerous inputs that only arise after the modification.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-180": {
+    "name": "Incorrect Behavior Order: Validate Before Canonicalize",
+    "description": "The product validates input before it is canonicalized, which prevents the product from detecting data that becomes invalid after the canonicalization step.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-181": {
+    "name": "Incorrect Behavior Order: Validate Before Filter",
+    "description": "The product validates data before it has been filtered, which prevents the product from detecting data that becomes invalid after the filtering step.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-182": {
+    "name": "Collapse of Data into Unsafe Value",
+    "description": "The product filters data in a way that causes it to be reduced or \"collapsed\" into an unsafe value that violates an expected security property.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-183": {
+    "name": "Permissive List of Allowed Inputs",
+    "description": "The product implements a protection mechanism that relies on a list of inputs (or properties of inputs) that are explicitly allowed by policy because the inputs are assumed to be safe, but the list is too permissive - that is, it allows an input that is unsafe, leading to resultant weaknesses.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-184": {
+    "name": "Incomplete List of Disallowed Inputs",
+    "description": "The product implements a protection mechanism that relies on a list of inputs (or properties of inputs) that are not allowed by policy or otherwise require other action to neutralize before additional processing takes place, but the list is incomplete.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-185": {
+    "name": "Incorrect Regular Expression",
+    "description": "The product specifies a regular expression in a way that causes data to be improperly matched or compared.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-186": {
+    "name": "Overly Restrictive Regular Expression",
+    "description": "A regular expression is overly restrictive, which prevents dangerous values from being detected.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-187": {
+    "name": "Partial String Comparison",
+    "description": "The product performs a comparison that only examines a portion of a factor before determining whether there is a match, such as a substring, leading to resultant weaknesses.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-188": {
+    "name": "Reliance on Data/Memory Layout",
+    "description": "The product makes invalid assumptions about how protocol data or memory is organized at a lower level, resulting in unintended program behavior.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-190": {
+    "name": "Integer Overflow or Wraparound",
+    "description": "The product performs a calculation that can produce an integer overflow or wraparound when the logic assumes that the resulting value will always be larger than the original value. This occurs when an integer value is incremented to a value that is too large to store in the associated representation. When this occurs, the value may become a very small or negative number.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-191": {
+    "name": "Integer Underflow (Wrap or Wraparound)",
+    "description": "The product subtracts one value from another, such that the result is less than the minimum allowable integer value, which produces a value that is not equal to the correct result.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-192": {
+    "name": "Integer Coercion Error",
+    "description": "Integer coercion refers to a set of flaws pertaining to the type casting, extension, or truncation of primitive data types.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-193": {
+    "name": "Off-by-one Error",
+    "description": "A product calculates or uses an incorrect maximum or minimum value that is 1 more, or 1 less, than the correct value.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-194": {
+    "name": "Unexpected Sign Extension",
+    "description": "The product performs an operation on a number that causes it to be sign extended when it is transformed into a larger data type. When the original number is negative, this can produce unexpected values that lead to resultant weaknesses.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-195": {
+    "name": "Signed to Unsigned Conversion Error",
+    "description": "The product uses a signed primitive and performs a cast to an unsigned primitive, which can produce an unexpected value if the value of the signed primitive can not be represented using an unsigned primitive.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-196": {
+    "name": "Unsigned to Signed Conversion Error",
+    "description": "The product uses an unsigned primitive and performs a cast to a signed primitive, which can produce an unexpected value if the value of the unsigned primitive can not be represented using a signed primitive.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-197": {
+    "name": "Numeric Truncation Error",
+    "description": "Truncation errors occur when a primitive is cast to a primitive of a smaller size and data is lost in the conversion.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-198": {
+    "name": "Use of Incorrect Byte Ordering",
+    "description": "The product receives input from an upstream component, but it does not account for byte ordering (e.g. big-endian and little-endian) when processing the input, causing an incorrect number or value to be used.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-20": {
+    "name": "Improper Input Validation",
+    "description": "The product receives input or data, but it does not validate or incorrectly validates that the input has the properties that are required to process the data safely and correctly.",
+    "status": "Stable",
+    "abstraction": "Class"
+  },
+  "CWE-200": {
+    "name": "Exposure of Sensitive Information to an Unauthorized Actor",
+    "description": "The product exposes sensitive information to an actor that is not explicitly authorized to have access to that information.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-201": {
+    "name": "Insertion of Sensitive Information Into Sent Data",
+    "description": "The code transmits data to another actor, but a portion of the data includes sensitive information that should not be accessible to that actor.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-202": {
+    "name": "Exposure of Sensitive Information Through Data Queries",
+    "description": "When trying to keep information confidential, an attacker can often infer some of the information by using statistics.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-203": {
+    "name": "Observable Discrepancy",
+    "description": "The product behaves differently or sends different responses under different circumstances in a way that is observable to an unauthorized actor, which exposes security-relevant information about the state of the product, such as whether a particular operation was successful or not.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-204": {
+    "name": "Observable Response Discrepancy",
+    "description": "The product provides different responses to incoming requests in a way that reveals internal state information to an unauthorized actor outside of the intended control sphere.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-205": {
+    "name": "Observable Behavioral Discrepancy",
+    "description": "The product's behaviors indicate important differences that may be observed by unauthorized actors in a way that reveals (1) its internal state or decision process, or (2) differences from other products with equivalent functionality.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-206": {
+    "name": "Observable Internal Behavioral Discrepancy",
+    "description": "The product performs multiple behaviors that are combined to produce a single result, but the individual behaviors are observable separately in a way that allows attackers to reveal internal state or internal decision points.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-207": {
+    "name": "Observable Behavioral Discrepancy With Equivalent Products",
+    "description": "The product operates in an environment in which its existence or specific identity should not be known, but it behaves differently than other products with equivalent functionality, in a way that is observable to an attacker.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-208": {
+    "name": "Observable Timing Discrepancy",
+    "description": "Two separate operations in a product require different amounts of time to complete, in a way that is observable to an actor and reveals security-relevant information about the state of the product, such as whether a particular operation was successful or not.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-209": {
+    "name": "Generation of Error Message Containing Sensitive Information",
+    "description": "The product generates an error message that includes sensitive information about its environment, users, or associated data.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-210": {
+    "name": "Self-generated Error Message Containing Sensitive Information",
+    "description": "The product identifies an error condition and creates its own diagnostic or error messages that contain sensitive information.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-211": {
+    "name": "Externally-Generated Error Message Containing Sensitive Information",
+    "description": "The product performs an operation that triggers an external diagnostic or error message that is not directly generated or controlled by the product, such as an error generated by the programming language interpreter that a software application uses. The error can contain sensitive system information.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-212": {
+    "name": "Improper Removal of Sensitive Information Before Storage or Transfer",
+    "description": "The product stores, transfers, or shares a resource that contains sensitive information, but it does not properly remove that information before the product makes the resource available to unauthorized actors.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-213": {
+    "name": "Exposure of Sensitive Information Due to Incompatible Policies",
+    "description": "The product's intended functionality exposes information to certain actors in accordance with the developer's security policy, but this information is regarded as sensitive according to the intended security policies of other stakeholders such as the product's administrator, users, or others whose information is being processed.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-214": {
+    "name": "Invocation of Process Using Visible Sensitive Information",
+    "description": "A process is invoked with sensitive command-line arguments, environment variables, or other elements that can be seen by other processes on the operating system.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-215": {
+    "name": "Insertion of Sensitive Information Into Debugging Code",
+    "description": "The product inserts sensitive information into debugging code, which could expose this information if the debugging code is not disabled in production.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-216": {
+    "name": "DEPRECATED: Containment Errors (Container Errors)",
+    "description": "This entry has been deprecated, as it was not effective as a weakness and was structured more like a category. In addition, the name is inappropriate, since the \"container\" term is widely understood by developers in different ways than originally intended by PLOVER, the original source for this entry.",
+    "status": "Deprecated",
+    "abstraction": "Class"
+  },
+  "CWE-217": {
+    "name": "DEPRECATED: Failure to Protect Stored Data from Modification",
+    "description": "This entry has been deprecated because it incorporated and confused multiple weaknesses. The issues formerly covered in this entry can be found at CWE-766 and CWE-767.",
+    "status": "Deprecated",
+    "abstraction": "Base"
+  },
+  "CWE-218": {
+    "name": "DEPRECATED: Failure to provide confidentiality for stored data",
+    "description": "This weakness has been deprecated because it was a duplicate of CWE-493. All content has been transferred to CWE-493.",
+    "status": "Deprecated",
+    "abstraction": "Base"
+  },
+  "CWE-219": {
+    "name": "Storage of File with Sensitive Data Under Web Root",
+    "description": "The product stores sensitive data under the web document root with insufficient access control, which might make it accessible to untrusted parties.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-22": {
+    "name": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')",
+    "description": "The product uses external input to construct a pathname that is intended to identify a file or directory that is located underneath a restricted parent directory, but the product does not properly neutralize special elements within the pathname that can cause the pathname to resolve to a location that is outside of the restricted directory.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-220": {
+    "name": "Storage of File With Sensitive Data Under FTP Root",
+    "description": "The product stores sensitive data under the FTP server root with insufficient access control, which might make it accessible to untrusted parties.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-221": {
+    "name": "Information Loss or Omission",
+    "description": "The product does not record, or improperly records, security-relevant information that leads to an incorrect decision or hampers later analysis.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-222": {
+    "name": "Truncation of Security-relevant Information",
+    "description": "The product truncates the display, recording, or processing of security-relevant information in a way that can obscure the source or nature of an attack.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-223": {
+    "name": "Omission of Security-relevant Information",
+    "description": "The product does not record or display information that would be important for identifying the source or nature of an attack, or determining if an action is safe.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-224": {
+    "name": "Obscured Security-relevant Information by Alternate Name",
+    "description": "The product records security-relevant information according to an alternate name of the affected entity, instead of the canonical name.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-225": {
+    "name": "DEPRECATED: General Information Management Problems",
+    "description": "This weakness can be found at CWE-199.",
+    "status": "Deprecated",
+    "abstraction": "Base"
+  },
+  "CWE-226": {
+    "name": "Sensitive Information in Resource Not Removed Before Reuse",
+    "description": "The product releases a resource such as memory or a file so that it can be made available for reuse, but it does not clear or \"zeroize\" the information contained in the resource before the product performs a critical state transition or makes the resource available for reuse by other entities.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-228": {
+    "name": "Improper Handling of Syntactically Invalid Structure",
+    "description": "The product does not handle or incorrectly handles input that is not syntactically well-formed with respect to the associated specification.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-229": {
+    "name": "Improper Handling of Values",
+    "description": "The product does not properly handle when the expected number of values for parameters, fields, or arguments is not provided in input, or if those values are undefined.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-23": {
+    "name": "Relative Path Traversal",
+    "description": "The product uses external input to construct a pathname that should be within a restricted directory, but it does not properly neutralize sequences such as \"..\" that can resolve to a location that is outside of that directory.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-230": {
+    "name": "Improper Handling of Missing Values",
+    "description": "The product does not handle or incorrectly handles when a parameter, field, or argument name is specified, but the associated value is missing, i.e. it is empty, blank, or null.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-231": {
+    "name": "Improper Handling of Extra Values",
+    "description": "The product does not handle or incorrectly handles when more values are provided than expected.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-232": {
+    "name": "Improper Handling of Undefined Values",
+    "description": "The product does not handle or incorrectly handles when a value is not defined or supported for the associated parameter, field, or argument name.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-233": {
+    "name": "Improper Handling of Parameters",
+    "description": "The product does not properly handle when the expected number of parameters, fields, or arguments is not provided in input, or if those parameters are undefined.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-234": {
+    "name": "Failure to Handle Missing Parameter",
+    "description": "If too few arguments are sent to a function, the function will still pop the expected number of arguments from the stack. Potentially, a variable number of arguments could be exhausted in a function as well.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-235": {
+    "name": "Improper Handling of Extra Parameters",
+    "description": "The product does not handle or incorrectly handles when the number of parameters, fields, or arguments with the same name exceeds the expected amount.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-236": {
+    "name": "Improper Handling of Undefined Parameters",
+    "description": "The product does not handle or incorrectly handles when a particular parameter, field, or argument name is not defined or supported by the product.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-237": {
+    "name": "Improper Handling of Structural Elements",
+    "description": "The product does not handle or incorrectly handles inputs that are related to complex structures.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-238": {
+    "name": "Improper Handling of Incomplete Structural Elements",
+    "description": "The product does not handle or incorrectly handles when a particular structural element is not completely specified.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-239": {
+    "name": "Failure to Handle Incomplete Element",
+    "description": "The product does not properly handle when a particular element is not completely specified.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-24": {
+    "name": "Path Traversal: '../filedir'",
+    "description": "The product uses external input to construct a pathname that should be within a restricted directory, but it does not properly neutralize \"../\" sequences that can resolve to a location that is outside of that directory.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-240": {
+    "name": "Improper Handling of Inconsistent Structural Elements",
+    "description": "The product does not handle or incorrectly handles when two or more structural elements should be consistent, but are not.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-241": {
+    "name": "Improper Handling of Unexpected Data Type",
+    "description": "The product does not handle or incorrectly handles when a particular element is not the expected type, e.g. it expects a digit (0-9) but is provided with a letter (A-Z).",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-242": {
+    "name": "Use of Inherently Dangerous Function",
+    "description": "The product calls a function that can never be guaranteed to work safely.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-243": {
+    "name": "Creation of chroot Jail Without Changing Working Directory",
+    "description": "The product uses the chroot() system call to create a jail, but does not change the working directory afterward. This does not prevent access to files outside of the jail.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-244": {
+    "name": "Improper Clearing of Heap Memory Before Release ('Heap Inspection')",
+    "description": "Using realloc() to resize buffers that store sensitive information can leave the sensitive information exposed to attack, because it is not removed from memory.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-245": {
+    "name": "J2EE Bad Practices: Direct Management of Connections",
+    "description": "The J2EE application directly manages connections, instead of using the container's connection management facilities.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-246": {
+    "name": "J2EE Bad Practices: Direct Use of Sockets",
+    "description": "The J2EE application directly uses sockets instead of using framework method calls.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-247": {
+    "name": "DEPRECATED: Reliance on DNS Lookups in a Security Decision",
+    "description": "This entry has been deprecated because it was a duplicate of CWE-350. All content has been transferred to CWE-350.",
+    "status": "Deprecated",
+    "abstraction": "Base"
+  },
+  "CWE-248": {
+    "name": "Uncaught Exception",
+    "description": "An exception is thrown from a function, but it is not caught.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-249": {
+    "name": "DEPRECATED: Often Misused: Path Manipulation",
+    "description": "This entry has been deprecated because of name confusion and an accidental combination of multiple weaknesses. Most of its content has been transferred to CWE-785.",
+    "status": "Deprecated",
+    "abstraction": "Variant"
+  },
+  "CWE-25": {
+    "name": "Path Traversal: '/../filedir'",
+    "description": "The product uses external input to construct a pathname that should be within a restricted directory, but it does not properly neutralize \"/../\" sequences that can resolve to a location that is outside of that directory.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-250": {
+    "name": "Execution with Unnecessary Privileges",
+    "description": "The product performs an operation at a privilege level that is higher than the minimum level required, which creates new weaknesses or amplifies the consequences of other weaknesses.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-252": {
+    "name": "Unchecked Return Value",
+    "description": "The product does not check the return value from a method or function, which can prevent it from detecting unexpected states and conditions.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-253": {
+    "name": "Incorrect Check of Function Return Value",
+    "description": "The product incorrectly checks a return value from a function, which prevents it from detecting errors or exceptional conditions.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-256": {
+    "name": "Plaintext Storage of a Password",
+    "description": "The product stores a password in plaintext within resources such as memory or files.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-257": {
+    "name": "Storing Passwords in a Recoverable Format",
+    "description": "The storage of passwords in a recoverable format makes them subject to password reuse attacks by malicious users. In fact, it should be noted that recoverable encrypted passwords provide no significant benefit over plaintext passwords since they are subject not only to reuse by malicious attackers but also by malicious insiders. If a system administrator can recover a password directly, or use a brute force search on the available information, the administrator can use the password on other accounts.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-258": {
+    "name": "Empty Password in Configuration File",
+    "description": "Using an empty string as a password is insecure.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-259": {
+    "name": "Use of Hard-coded Password",
+    "description": "The product contains a hard-coded password, which it uses for its own inbound authentication or for outbound communication to external components.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-26": {
+    "name": "Path Traversal: '/dir/../filename'",
+    "description": "The product uses external input to construct a pathname that should be within a restricted directory, but it does not properly neutralize \"/dir/../filename\" sequences that can resolve to a location that is outside of that directory.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-260": {
+    "name": "Password in Configuration File",
+    "description": "The product stores a password in a configuration file that might be accessible to actors who do not know the password.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-261": {
+    "name": "Weak Encoding for Password",
+    "description": "Obscuring a password with a trivial encoding does not protect the password.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-262": {
+    "name": "Not Using Password Aging",
+    "description": "The product does not have a mechanism in place for managing password aging.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-263": {
+    "name": "Password Aging with Long Expiration",
+    "description": "The product supports password aging, but the expiration period is too long.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-266": {
+    "name": "Incorrect Privilege Assignment",
+    "description": "A product incorrectly assigns a privilege to a particular actor, creating an unintended sphere of control for that actor.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-267": {
+    "name": "Privilege Defined With Unsafe Actions",
+    "description": "A particular privilege, role, capability, or right can be used to perform unsafe actions that were not intended, even when it is assigned to the correct entity.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-268": {
+    "name": "Privilege Chaining",
+    "description": "Two distinct privileges, roles, capabilities, or rights can be combined in a way that allows an entity to perform unsafe actions that would not be allowed without that combination.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-269": {
+    "name": "Improper Privilege Management",
+    "description": "The product does not properly assign, modify, track, or check privileges for an actor, creating an unintended sphere of control for that actor.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-27": {
+    "name": "Path Traversal: 'dir/../../filename'",
+    "description": "The product uses external input to construct a pathname that should be within a restricted directory, but it does not properly neutralize multiple internal \"../\" sequences that can resolve to a location that is outside of that directory.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-270": {
+    "name": "Privilege Context Switching Error",
+    "description": "The product does not properly manage privileges while it is switching between different contexts that have different privileges or spheres of control.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-271": {
+    "name": "Privilege Dropping / Lowering Errors",
+    "description": "The product does not drop privileges before passing control of a resource to an actor that does not have those privileges.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-272": {
+    "name": "Least Privilege Violation",
+    "description": "The elevated privilege level required to perform operations such as chroot() should be dropped immediately after the operation is performed.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-273": {
+    "name": "Improper Check for Dropped Privileges",
+    "description": "The product attempts to drop privileges but does not check or incorrectly checks to see if the drop succeeded.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-274": {
+    "name": "Improper Handling of Insufficient Privileges",
+    "description": "The product does not handle or incorrectly handles when it has insufficient privileges to perform an operation, leading to resultant weaknesses.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-276": {
+    "name": "Incorrect Default Permissions",
+    "description": "During installation, installed file permissions are set to allow anyone to modify those files.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-277": {
+    "name": "Insecure Inherited Permissions",
+    "description": "A product defines a set of insecure permissions that are inherited by objects that are created by the program.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-278": {
+    "name": "Insecure Preserved Inherited Permissions",
+    "description": "A product inherits a set of insecure permissions for an object, e.g. when copying from an archive file, without user awareness or involvement.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-279": {
+    "name": "Incorrect Execution-Assigned Permissions",
+    "description": "While it is executing, the product sets the permissions of an object in a way that violates the intended permissions that have been specified by the user.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-28": {
+    "name": "Path Traversal: '..\\filedir'",
+    "description": "The product uses external input to construct a pathname that should be within a restricted directory, but it does not properly neutralize \"..\\\" sequences that can resolve to a location that is outside of that directory.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-280": {
+    "name": "Improper Handling of Insufficient Permissions or Privileges",
+    "description": "The product does not handle or incorrectly handles when it has insufficient privileges to access resources or functionality as specified by their permissions. This may cause it to follow unexpected code paths that may leave the product in an invalid state.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-281": {
+    "name": "Improper Preservation of Permissions",
+    "description": "The product does not preserve permissions or incorrectly preserves permissions when copying, restoring, or sharing objects, which can cause them to have less restrictive permissions than intended.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-282": {
+    "name": "Improper Ownership Management",
+    "description": "The product assigns the wrong ownership, or does not properly verify the ownership, of an object or resource.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-283": {
+    "name": "Unverified Ownership",
+    "description": "The product does not properly verify that a critical resource is owned by the proper entity.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-284": {
+    "name": "Improper Access Control",
+    "description": "The product does not restrict or incorrectly restricts access to a resource from an unauthorized actor.",
+    "status": "Incomplete",
+    "abstraction": "Pillar"
+  },
+  "CWE-285": {
+    "name": "Improper Authorization",
+    "description": "The product does not perform or incorrectly performs an authorization check when an actor attempts to access a resource or perform an action.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-286": {
+    "name": "Incorrect User Management",
+    "description": "The product does not properly manage a user within its environment.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-287": {
+    "name": "Improper Authentication",
+    "description": "When an actor claims to have a given identity, the product does not prove or insufficiently proves that the claim is correct.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-288": {
+    "name": "Authentication Bypass Using an Alternate Path or Channel",
+    "description": "The product requires authentication, but the product has an alternate path or channel that does not require authentication.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-289": {
+    "name": "Authentication Bypass by Alternate Name",
+    "description": "The product performs authentication based on the name of a resource being accessed, or the name of the actor performing the access, but it does not properly check all possible names for that resource or actor.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-29": {
+    "name": "Path Traversal: '\\..\\filename'",
+    "description": "The product uses external input to construct a pathname that should be within a restricted directory, but it does not properly neutralize '\\..\\filename' (leading backslash dot dot) sequences that can resolve to a location that is outside of that directory.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-290": {
+    "name": "Authentication Bypass by Spoofing",
+    "description": "This attack-focused weakness is caused by incorrectly implemented authentication schemes that are subject to spoofing attacks.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-291": {
+    "name": "Reliance on IP Address for Authentication",
+    "description": "The product uses an IP address for authentication.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-292": {
+    "name": "DEPRECATED: Trusting Self-reported DNS Name",
+    "description": "This entry has been deprecated because it was a duplicate of CWE-350. All content has been transferred to CWE-350.",
+    "status": "Deprecated",
+    "abstraction": "Variant"
+  },
+  "CWE-293": {
+    "name": "Using Referer Field for Authentication",
+    "description": "The referer field in HTTP requests can be easily modified and, as such, is not a valid means of message integrity checking.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-294": {
+    "name": "Authentication Bypass by Capture-replay",
+    "description": "A capture-replay flaw exists when the design of the product makes it possible for a malicious user to sniff network traffic and bypass authentication by replaying it to the server in question to the same effect as the original message (or with minor changes).",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-295": {
+    "name": "Improper Certificate Validation",
+    "description": "The product does not validate, or incorrectly validates, a certificate.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-296": {
+    "name": "Improper Following of a Certificate's Chain of Trust",
+    "description": "The product does not follow, or incorrectly follows, the chain of trust for a certificate back to a trusted root certificate, resulting in incorrect trust of any resource that is associated with that certificate.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-297": {
+    "name": "Improper Validation of Certificate with Host Mismatch",
+    "description": "The product communicates with a host that provides a certificate, but the product does not properly ensure that the certificate is actually associated with that host.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-298": {
+    "name": "Improper Validation of Certificate Expiration",
+    "description": "A certificate expiration is not validated or is incorrectly validated, so trust may be assigned to certificates that have been abandoned due to age.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-299": {
+    "name": "Improper Check for Certificate Revocation",
+    "description": "The product does not check or incorrectly checks the revocation status of a certificate, which may cause it to use a certificate that has been compromised.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-30": {
+    "name": "Path Traversal: '\\dir\\..\\filename'",
+    "description": "The product uses external input to construct a pathname that should be within a restricted directory, but it does not properly neutralize '\\dir\\..\\filename' (leading backslash dot dot) sequences that can resolve to a location that is outside of that directory.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-300": {
+    "name": "Channel Accessible by Non-Endpoint",
+    "description": "The product does not adequately verify the identity of actors at both ends of a communication channel, or does not adequately ensure the integrity of the channel, in a way that allows the channel to be accessed or influenced by an actor that is not an endpoint.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-301": {
+    "name": "Reflection Attack in an Authentication Protocol",
+    "description": "Simple authentication protocols are subject to reflection attacks if a malicious user can use the target machine to impersonate a trusted user.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-302": {
+    "name": "Authentication Bypass by Assumed-Immutable Data",
+    "description": "The authentication scheme or implementation uses key data elements that are assumed to be immutable, but can be controlled or modified by the attacker.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-303": {
+    "name": "Incorrect Implementation of Authentication Algorithm",
+    "description": "The requirements for the product dictate the use of an established authentication algorithm, but the implementation of the algorithm is incorrect.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-304": {
+    "name": "Missing Critical Step in Authentication",
+    "description": "The product implements an authentication technique, but it skips a step that weakens the technique.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-305": {
+    "name": "Authentication Bypass by Primary Weakness",
+    "description": "The authentication algorithm is sound, but the implemented mechanism can be bypassed as the result of a separate weakness that is primary to the authentication error.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-306": {
+    "name": "Missing Authentication for Critical Function",
+    "description": "The product does not perform any authentication for functionality that requires a provable user identity or consumes a significant amount of resources.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-307": {
+    "name": "Improper Restriction of Excessive Authentication Attempts",
+    "description": "The product does not implement sufficient measures to prevent multiple failed authentication attempts within a short time frame.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-308": {
+    "name": "Use of Single-factor Authentication",
+    "description": "The product uses an authentication algorithm that uses a single factor (e.g., a password) in a security context that should require more than one factor.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-309": {
+    "name": "Use of Password System for Primary Authentication",
+    "description": "The use of password systems as the primary means of authentication may be subject to several flaws or shortcomings, each reducing the effectiveness of the mechanism.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-31": {
+    "name": "Path Traversal: 'dir\\..\\..\\filename'",
+    "description": "The product uses external input to construct a pathname that should be within a restricted directory, but it does not properly neutralize 'dir\\..\\..\\filename' (multiple internal backslash dot dot) sequences that can resolve to a location that is outside of that directory.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-311": {
+    "name": "Missing Encryption of Sensitive Data",
+    "description": "The product does not encrypt sensitive or critical information before storage or transmission.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-312": {
+    "name": "Cleartext Storage of Sensitive Information",
+    "description": "The product stores sensitive information in cleartext within a resource that might be accessible to another control sphere.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-313": {
+    "name": "Cleartext Storage in a File or on Disk",
+    "description": "The product stores sensitive information in cleartext in a file, or on disk.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-314": {
+    "name": "Cleartext Storage in the Registry",
+    "description": "The product stores sensitive information in cleartext in the registry.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-315": {
+    "name": "Cleartext Storage of Sensitive Information in a Cookie",
+    "description": "The product stores sensitive information in cleartext in a cookie.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-316": {
+    "name": "Cleartext Storage of Sensitive Information in Memory",
+    "description": "The product stores sensitive information in cleartext in memory.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-317": {
+    "name": "Cleartext Storage of Sensitive Information in GUI",
+    "description": "The product stores sensitive information in cleartext within the GUI.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-318": {
+    "name": "Cleartext Storage of Sensitive Information in Executable",
+    "description": "The product stores sensitive information in cleartext in an executable.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-319": {
+    "name": "Cleartext Transmission of Sensitive Information",
+    "description": "The product transmits sensitive or security-critical data in cleartext in a communication channel that can be sniffed by unauthorized actors.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-32": {
+    "name": "Path Traversal: '...' (Triple Dot)",
+    "description": "The product uses external input to construct a pathname that should be within a restricted directory, but it does not properly neutralize '...' (triple dot) sequences that can resolve to a location that is outside of that directory.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-321": {
+    "name": "Use of Hard-coded Cryptographic Key",
+    "description": "The product uses a hard-coded, unchangeable cryptographic key.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-322": {
+    "name": "Key Exchange without Entity Authentication",
+    "description": "The product performs a key exchange with an actor without verifying the identity of that actor.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-323": {
+    "name": "Reusing a Nonce, Key Pair in Encryption",
+    "description": "Nonces should be used for the present occasion and only once.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-324": {
+    "name": "Use of a Key Past its Expiration Date",
+    "description": "The product uses a cryptographic key or password past its expiration date, which diminishes its safety significantly by increasing the timing window for cracking attacks against that key.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-325": {
+    "name": "Missing Cryptographic Step",
+    "description": "The product does not implement a required step in a cryptographic algorithm, resulting in weaker encryption than advertised by the algorithm.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-326": {
+    "name": "Inadequate Encryption Strength",
+    "description": "The product stores or transmits sensitive data using an encryption scheme that is theoretically sound, but is not strong enough for the level of protection required.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-327": {
+    "name": "Use of a Broken or Risky Cryptographic Algorithm",
+    "description": "The product uses a broken or risky cryptographic algorithm or protocol.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-328": {
+    "name": "Use of Weak Hash",
+    "description": "The product uses an algorithm that produces a digest (output value) that does not meet security expectations for a hash function that allows an adversary to reasonably determine the original input (preimage attack), find another input that can produce the same hash (2nd preimage attack), or find multiple inputs that evaluate to the same hash (birthday attack).",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-329": {
+    "name": "Generation of Predictable IV with CBC Mode",
+    "description": "The product generates and uses a predictable initialization Vector (IV) with Cipher Block Chaining (CBC) Mode, which causes algorithms to be susceptible to dictionary attacks when they are encrypted under the same key.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-33": {
+    "name": "Path Traversal: '....' (Multiple Dot)",
+    "description": "The product uses external input to construct a pathname that should be within a restricted directory, but it does not properly neutralize '....' (multiple dot) sequences that can resolve to a location that is outside of that directory.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-330": {
+    "name": "Use of Insufficiently Random Values",
+    "description": "The product uses insufficiently random numbers or values in a security context that depends on unpredictable numbers.",
+    "status": "Stable",
+    "abstraction": "Class"
+  },
+  "CWE-331": {
+    "name": "Insufficient Entropy",
+    "description": "The product uses an algorithm or scheme that produces insufficient entropy, leaving patterns or clusters of values that are more likely to occur than others.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-332": {
+    "name": "Insufficient Entropy in PRNG",
+    "description": "The lack of entropy available for, or used by, a Pseudo-Random Number Generator (PRNG) can be a stability and security threat.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-333": {
+    "name": "Improper Handling of Insufficient Entropy in TRNG",
+    "description": "True random number generators (TRNG) generally have a limited source of entropy and therefore can fail or block.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-334": {
+    "name": "Small Space of Random Values",
+    "description": "The number of possible random values is smaller than needed by the product, making it more susceptible to brute force attacks.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-335": {
+    "name": "Incorrect Usage of Seeds in Pseudo-Random Number Generator (PRNG)",
+    "description": "The product uses a Pseudo-Random Number Generator (PRNG) but does not correctly manage seeds.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-336": {
+    "name": "Same Seed in Pseudo-Random Number Generator (PRNG)",
+    "description": "A Pseudo-Random Number Generator (PRNG) uses the same seed each time the product is initialized.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-337": {
+    "name": "Predictable Seed in Pseudo-Random Number Generator (PRNG)",
+    "description": "A Pseudo-Random Number Generator (PRNG) is initialized from a predictable seed, such as the process ID or system time.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-338": {
+    "name": "Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG)",
+    "description": "The product uses a Pseudo-Random Number Generator (PRNG) in a security context, but the PRNG's algorithm is not cryptographically strong.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-339": {
+    "name": "Small Seed Space in PRNG",
+    "description": "A Pseudo-Random Number Generator (PRNG) uses a relatively small seed space, which makes it more susceptible to brute force attacks.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-34": {
+    "name": "Path Traversal: '....//'",
+    "description": "The product uses external input to construct a pathname that should be within a restricted directory, but it does not properly neutralize '....//' (doubled dot dot slash) sequences that can resolve to a location that is outside of that directory.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-340": {
+    "name": "Generation of Predictable Numbers or Identifiers",
+    "description": "The product uses a scheme that generates numbers or identifiers that are more predictable than required.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-341": {
+    "name": "Predictable from Observable State",
+    "description": "A number or object is predictable based on observations that the attacker can make about the state of the system or network, such as time, process ID, etc.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-342": {
+    "name": "Predictable Exact Value from Previous Values",
+    "description": "An exact value or random number can be precisely predicted by observing previous values.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-343": {
+    "name": "Predictable Value Range from Previous Values",
+    "description": "The product's random number generator produces a series of values which, when observed, can be used to infer a relatively small range of possibilities for the next value that could be generated.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-344": {
+    "name": "Use of Invariant Value in Dynamically Changing Context",
+    "description": "The product uses a constant value, name, or reference, but this value can (or should) vary across different environments.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-345": {
+    "name": "Insufficient Verification of Data Authenticity",
+    "description": "The product does not sufficiently verify the origin or authenticity of data, in a way that causes it to accept invalid data.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-346": {
+    "name": "Origin Validation Error",
+    "description": "The product does not properly verify that the source of data or communication is valid.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-347": {
+    "name": "Improper Verification of Cryptographic Signature",
+    "description": "The product does not verify, or incorrectly verifies, the cryptographic signature for data.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-348": {
+    "name": "Use of Less Trusted Source",
+    "description": "The product has two different sources of the same data or information, but it uses the source that has less support for verification, is less trusted, or is less resistant to attack.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-349": {
+    "name": "Acceptance of Extraneous Untrusted Data With Trusted Data",
+    "description": "The product, when processing trusted data, accepts any untrusted data that is also included with the trusted data, treating the untrusted data as if it were trusted.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-35": {
+    "name": "Path Traversal: '.../...//'",
+    "description": "The product uses external input to construct a pathname that should be within a restricted directory, but it does not properly neutralize '.../...//' (doubled triple dot slash) sequences that can resolve to a location that is outside of that directory.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-350": {
+    "name": "Reliance on Reverse DNS Resolution for a Security-Critical Action",
+    "description": "The product performs reverse DNS resolution on an IP address to obtain the hostname and make a security decision, but it does not properly ensure that the IP address is truly associated with the hostname.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-351": {
+    "name": "Insufficient Type Distinction",
+    "description": "The product does not properly distinguish between different types of elements in a way that leads to insecure behavior.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-352": {
+    "name": "Cross-Site Request Forgery (CSRF)",
+    "description": "The web application does not, or cannot, sufficiently verify whether a request was intentionally provided by the user who sent the request, which could have originated from an unauthorized actor.",
+    "status": "Stable",
+    "abstraction": "Compound"
+  },
+  "CWE-353": {
+    "name": "Missing Support for Integrity Check",
+    "description": "The product uses a transmission protocol that does not include a mechanism for verifying the integrity of the data during transmission, such as a checksum.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-354": {
+    "name": "Improper Validation of Integrity Check Value",
+    "description": "The product does not validate or incorrectly validates the integrity check values or \"checksums\" of a message. This may prevent it from detecting if the data has been modified or corrupted in transmission.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-356": {
+    "name": "Product UI does not Warn User of Unsafe Actions",
+    "description": "The product's user interface does not warn the user before undertaking an unsafe action on behalf of that user. This makes it easier for attackers to trick users into inflicting damage to their system.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-357": {
+    "name": "Insufficient UI Warning of Dangerous Operations",
+    "description": "The user interface provides a warning to a user regarding dangerous or sensitive operations, but the warning is not noticeable enough to warrant attention.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-358": {
+    "name": "Improperly Implemented Security Check for Standard",
+    "description": "The product does not implement or incorrectly implements one or more security-relevant checks as specified by the design of a standardized algorithm, protocol, or technique.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-359": {
+    "name": "Exposure of Private Personal Information to an Unauthorized Actor",
+    "description": "The product does not properly prevent a person's private, personal information from being accessed by actors who either (1) are not explicitly authorized to access the information or (2) do not have the implicit consent of the person about whom the information is collected.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-36": {
+    "name": "Absolute Path Traversal",
+    "description": "The product uses external input to construct a pathname that should be within a restricted directory, but it does not properly neutralize absolute path sequences such as \"/abs/path\" that can resolve to a location that is outside of that directory.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-360": {
+    "name": "Trust of System Event Data",
+    "description": "Security based on event locations are insecure and can be spoofed.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-362": {
+    "name": "Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition')",
+    "description": "The product contains a concurrent code sequence that requires temporary, exclusive access to a shared resource, but a timing window exists in which the shared resource can be modified by another code sequence operating concurrently.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-363": {
+    "name": "Race Condition Enabling Link Following",
+    "description": "The product checks the status of a file or directory before accessing it, which produces a race condition in which the file can be replaced with a link before the access is performed, causing the product to access the wrong file.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-364": {
+    "name": "Signal Handler Race Condition",
+    "description": "The product uses a signal handler that introduces a race condition.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-365": {
+    "name": "DEPRECATED: Race Condition in Switch",
+    "description": "This entry has been deprecated. There are no documented cases in which a switch's control expression is evaluated more than once.",
+    "status": "Deprecated",
+    "abstraction": "Base"
+  },
+  "CWE-366": {
+    "name": "Race Condition within a Thread",
+    "description": "If two threads of execution use a resource simultaneously, there exists the possibility that resources may be used while invalid, in turn making the state of execution undefined.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-367": {
+    "name": "Time-of-check Time-of-use (TOCTOU) Race Condition",
+    "description": "The product checks the state of a resource before using that resource, but the resource's state can change between the check and the use in a way that invalidates the results of the check.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-368": {
+    "name": "Context Switching Race Condition",
+    "description": "A product performs a series of non-atomic actions to switch between contexts that cross privilege or other security boundaries, but a race condition allows an attacker to modify or misrepresent the product's behavior during the switch.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-369": {
+    "name": "Divide By Zero",
+    "description": "The product divides a value by zero.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-37": {
+    "name": "Path Traversal: '/absolute/pathname/here'",
+    "description": "The product accepts input in the form of a slash absolute path ('/absolute/pathname/here') without appropriate validation, which can allow an attacker to traverse the file system to unintended locations or access arbitrary files.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-370": {
+    "name": "Missing Check for Certificate Revocation after Initial Check",
+    "description": "The product does not check the revocation status of a certificate after its initial revocation check, which can cause the product to perform privileged actions even after the certificate is revoked at a later time.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-372": {
+    "name": "Incomplete Internal State Distinction",
+    "description": "The product does not properly determine which state it is in, causing it to assume it is in state X when in fact it is in state Y, causing it to perform incorrect operations in a security-relevant manner.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-373": {
+    "name": "DEPRECATED: State Synchronization Error",
+    "description": "This entry was deprecated because it overlapped the same concepts as race condition (CWE-362) and Improper Synchronization (CWE-662).",
+    "status": "Deprecated",
+    "abstraction": "Base"
+  },
+  "CWE-374": {
+    "name": "Passing Mutable Objects to an Untrusted Method",
+    "description": "The product sends non-cloned mutable data as an argument to a method or function.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-375": {
+    "name": "Returning a Mutable Object to an Untrusted Caller",
+    "description": "Sending non-cloned mutable data as a return value may result in that data being altered or deleted by the calling function.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-377": {
+    "name": "Insecure Temporary File",
+    "description": "Creating and using insecure temporary files can leave application and system data vulnerable to attack.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-378": {
+    "name": "Creation of Temporary File With Insecure Permissions",
+    "description": "Opening temporary files without appropriate measures or controls can leave the file, its contents and any function that it impacts vulnerable to attack.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-379": {
+    "name": "Creation of Temporary File in Directory with Insecure Permissions",
+    "description": "The product creates a temporary file in a directory whose permissions allow unintended actors to determine the file's existence or otherwise access that file.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-38": {
+    "name": "Path Traversal: '\\absolute\\pathname\\here'",
+    "description": "The product accepts input in the form of a backslash absolute path ('\\absolute\\pathname\\here') without appropriate validation, which can allow an attacker to traverse the file system to unintended locations or access arbitrary files.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-382": {
+    "name": "J2EE Bad Practices: Use of System.exit()",
+    "description": "A J2EE application uses System.exit(), which also shuts down its container.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-383": {
+    "name": "J2EE Bad Practices: Direct Use of Threads",
+    "description": "Thread management in a Web application is forbidden in some circumstances and is always highly error prone.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-384": {
+    "name": "Session Fixation",
+    "description": "Authenticating a user, or otherwise establishing a new user session, without invalidating any existing session identifier gives an attacker the opportunity to steal authenticated sessions.",
+    "status": "Incomplete",
+    "abstraction": "Compound"
+  },
+  "CWE-385": {
+    "name": "Covert Timing Channel",
+    "description": "Covert timing channels convey information by modulating some aspect of system behavior over time, so that the program receiving the information can observe system behavior and infer protected information.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-386": {
+    "name": "Symbolic Name not Mapping to Correct Object",
+    "description": "A constant symbolic reference to an object is used, even though the reference can resolve to a different object over time.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-39": {
+    "name": "Path Traversal: 'C:dirname'",
+    "description": "The product accepts input that contains a drive letter or Windows volume letter ('C:dirname') that potentially redirects access to an unintended location or arbitrary file.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-390": {
+    "name": "Detection of Error Condition Without Action",
+    "description": "The product detects a specific error, but takes no actions to handle the error.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-391": {
+    "name": "Unchecked Error Condition",
+    "description": "[PLANNED FOR DEPRECATION. SEE MAINTENANCE NOTES AND CONSIDER CWE-252, CWE-248, OR CWE-1069.] Ignoring exceptions and other error conditions may allow an attacker to induce unexpected behavior unnoticed.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-392": {
+    "name": "Missing Report of Error Condition",
+    "description": "The product encounters an error but does not provide a status code or return value to indicate that an error has occurred.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-393": {
+    "name": "Return of Wrong Status Code",
+    "description": "A function or operation returns an incorrect return value or status code that does not indicate the true result of execution, causing the product to modify its behavior based on the incorrect result.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-394": {
+    "name": "Unexpected Status Code or Return Value",
+    "description": "The product does not properly check when a function or operation returns a value that is legitimate for the function, but is not expected by the product.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-395": {
+    "name": "Use of NullPointerException Catch to Detect NULL Pointer Dereference",
+    "description": "Catching NullPointerException should not be used as an alternative to programmatic checks to prevent dereferencing a null pointer.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-396": {
+    "name": "Declaration of Catch for Generic Exception",
+    "description": "Catching overly broad exceptions promotes complex error handling code that is more likely to contain security vulnerabilities.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-397": {
+    "name": "Declaration of Throws for Generic Exception",
+    "description": "The product throws or raises an overly broad exceptions that can hide important details and produce inappropriate responses to certain conditions.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-40": {
+    "name": "Path Traversal: '\\\\UNC\\share\\name\\' (Windows UNC Share)",
+    "description": "The product accepts input that identifies a Windows UNC share ('\\\\UNC\\share\\name') that potentially redirects access to an unintended location or arbitrary file.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-400": {
+    "name": "Uncontrolled Resource Consumption",
+    "description": "The product does not properly control the allocation and maintenance of a limited resource.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-401": {
+    "name": "Missing Release of Memory after Effective Lifetime",
+    "description": "The product does not sufficiently track and release allocated memory after it has been used, making the memory unavailable for reallocation and reuse.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-402": {
+    "name": "Transmission of Private Resources into a New Sphere ('Resource Leak')",
+    "description": "The product makes resources available to untrusted parties when those resources are only intended to be accessed by the product.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-403": {
+    "name": "Exposure of File Descriptor to Unintended Control Sphere ('File Descriptor Leak')",
+    "description": "A process does not close sensitive file descriptors before invoking a child process, which allows the child to perform unauthorized I/O operations using those descriptors.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-404": {
+    "name": "Improper Resource Shutdown or Release",
+    "description": "The product does not release or incorrectly releases a resource before it is made available for re-use.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-405": {
+    "name": "Asymmetric Resource Consumption (Amplification)",
+    "description": "The product does not properly control situations in which an adversary can cause the product to consume or produce excessive resources without requiring the adversary to invest equivalent work or otherwise prove authorization, i.e., the adversary's influence is \"asymmetric.\"",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-406": {
+    "name": "Insufficient Control of Network Message Volume (Network Amplification)",
+    "description": "The product does not sufficiently monitor or control transmitted network traffic volume, so that an actor can cause the product to transmit more traffic than should be allowed for that actor.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-407": {
+    "name": "Inefficient Algorithmic Complexity",
+    "description": "An algorithm in a product has an inefficient worst-case computational complexity that may be detrimental to system performance and can be triggered by an attacker, typically using crafted manipulations that ensure that the worst case is being reached.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-408": {
+    "name": "Incorrect Behavior Order: Early Amplification",
+    "description": "The product allows an entity to perform a legitimate but expensive operation before authentication or authorization has taken place.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-409": {
+    "name": "Improper Handling of Highly Compressed Data (Data Amplification)",
+    "description": "The product does not handle or incorrectly handles a compressed input with a very high compression ratio that produces a large output.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-41": {
+    "name": "Improper Resolution of Path Equivalence",
+    "description": "The product is vulnerable to file system contents disclosure through path equivalence. Path equivalence involves the use of special characters in file and directory names. The associated manipulations are intended to generate multiple names for the same object.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-410": {
+    "name": "Insufficient Resource Pool",
+    "description": "The product's resource pool is not large enough to handle peak demand, which allows an attacker to prevent others from accessing the resource by using a (relatively) large number of requests for resources.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-412": {
+    "name": "Unrestricted Externally Accessible Lock",
+    "description": "The product properly checks for the existence of a lock, but the lock can be externally controlled or influenced by an actor that is outside of the intended sphere of control.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-413": {
+    "name": "Improper Resource Locking",
+    "description": "The product does not lock or does not correctly lock a resource when the product must have exclusive access to the resource.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-414": {
+    "name": "Missing Lock Check",
+    "description": "A product does not check to see if a lock is present before performing sensitive operations on a resource.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-415": {
+    "name": "Double Free",
+    "description": "The product calls free() twice on the same memory address.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-416": {
+    "name": "Use After Free",
+    "description": "The product reuses or references memory after it has been freed. At some point afterward, the memory may be allocated again and saved in another pointer, while the original pointer references a location somewhere within the new allocation. Any operations using the original pointer are no longer valid because the memory \"belongs\" to the code that operates on the new pointer.",
+    "status": "Stable",
+    "abstraction": "Variant"
+  },
+  "CWE-419": {
+    "name": "Unprotected Primary Channel",
+    "description": "The product uses a primary channel for administration or restricted functionality, but it does not properly protect the channel.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-42": {
+    "name": "Path Equivalence: 'filename.' (Trailing Dot)",
+    "description": "The product accepts path input in the form of trailing dot ('filedir.') without appropriate validation, which can lead to ambiguous path resolution and allow an attacker to traverse the file system to unintended locations or access arbitrary files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-420": {
+    "name": "Unprotected Alternate Channel",
+    "description": "The product protects a primary channel, but it does not use the same level of protection for an alternate channel.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-421": {
+    "name": "Race Condition During Access to Alternate Channel",
+    "description": "The product opens an alternate channel to communicate with an authorized user, but the channel is accessible to other actors.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-422": {
+    "name": "Unprotected Windows Messaging Channel ('Shatter')",
+    "description": "The product does not properly verify the source of a message in the Windows Messaging System while running at elevated privileges, creating an alternate channel through which an attacker can directly send a message to the product.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-423": {
+    "name": "DEPRECATED: Proxied Trusted Channel",
+    "description": "This entry has been deprecated because it was a duplicate of CWE-441. All content has been transferred to CWE-441.",
+    "status": "Deprecated",
+    "abstraction": "Base"
+  },
+  "CWE-424": {
+    "name": "Improper Protection of Alternate Path",
+    "description": "The product does not sufficiently protect all possible paths that a user can take to access restricted functionality or resources.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-425": {
+    "name": "Direct Request ('Forced Browsing')",
+    "description": "The web application does not adequately enforce appropriate authorization on all restricted URLs, scripts, or files.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-426": {
+    "name": "Untrusted Search Path",
+    "description": "The product searches for critical resources using an externally-supplied search path that can point to resources that are not under the product's direct control.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-427": {
+    "name": "Uncontrolled Search Path Element",
+    "description": "The product uses a fixed or controlled search path to find resources, but one or more locations in that path can be under the control of unintended actors.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-428": {
+    "name": "Unquoted Search Path or Element",
+    "description": "The product uses a search path that contains an unquoted element, in which the element contains whitespace or other separators. This can cause the product to access resources in a parent path.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-43": {
+    "name": "Path Equivalence: 'filename....' (Multiple Trailing Dot)",
+    "description": "The product accepts path input in the form of multiple trailing dot ('filedir....') without appropriate validation, which can lead to ambiguous path resolution and allow an attacker to traverse the file system to unintended locations or access arbitrary files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-430": {
+    "name": "Deployment of Wrong Handler",
+    "description": "The wrong \"handler\" is assigned to process an object.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-431": {
+    "name": "Missing Handler",
+    "description": "A handler is not available or implemented.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-432": {
+    "name": "Dangerous Signal Handler not Disabled During Sensitive Operations",
+    "description": "The product uses a signal handler that shares state with other signal handlers, but it does not properly mask or prevent those signal handlers from being invoked while the original signal handler is still running.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-433": {
+    "name": "Unparsed Raw Web Content Delivery",
+    "description": "The product stores raw content or supporting code under the web document root with an extension that is not specifically handled by the server.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-434": {
+    "name": "Unrestricted Upload of File with Dangerous Type",
+    "description": "The product allows the upload or transfer of dangerous file types that are automatically processed within its environment.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-435": {
+    "name": "Improper Interaction Between Multiple Correctly-Behaving Entities",
+    "description": "An interaction error occurs when two entities have correct behavior when running independently of each other, but when they are integrated as components in a larger system or process, they introduce incorrect behaviors that may cause resultant weaknesses.",
+    "status": "Draft",
+    "abstraction": "Pillar"
+  },
+  "CWE-436": {
+    "name": "Interpretation Conflict",
+    "description": "Product A handles inputs or steps differently than Product B, which causes A to perform incorrect actions based on its perception of B's state.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-437": {
+    "name": "Incomplete Model of Endpoint Features",
+    "description": "A product acts as an intermediary or monitor between two or more endpoints, but it does not have a complete model of an endpoint's features, behaviors, or state, potentially causing the product to perform incorrect actions based on this incomplete model.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-439": {
+    "name": "Behavioral Change in New Version or Environment",
+    "description": "A's behavior or functionality changes with a new version of A, or a new environment, which is not known (or manageable) by B.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-44": {
+    "name": "Path Equivalence: 'file.name' (Internal Dot)",
+    "description": "The product accepts path input in the form of internal dot ('file.ordir') without appropriate validation, which can lead to ambiguous path resolution and allow an attacker to traverse the file system to unintended locations or access arbitrary files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-440": {
+    "name": "Expected Behavior Violation",
+    "description": "A feature, API, or function does not perform according to its specification.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-441": {
+    "name": "Unintended Proxy or Intermediary ('Confused Deputy')",
+    "description": "The product receives a request, message, or directive from an upstream component, but the product does not sufficiently preserve the original source of the request before forwarding the request to an external actor that is outside of the product's control sphere. This causes the product to appear to be the source of the request, leading it to act as a proxy or other intermediary between the upstream component and the external actor.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-443": {
+    "name": "DEPRECATED: HTTP response splitting",
+    "description": "This weakness can be found at CWE-113.",
+    "status": "Deprecated",
+    "abstraction": "Base"
+  },
+  "CWE-444": {
+    "name": "Inconsistent Interpretation of HTTP Requests ('HTTP Request/Response Smuggling')",
+    "description": "The product acts as an intermediary HTTP agent (such as a proxy or firewall) in the data flow between two entities such as a client and server, but it does not interpret malformed HTTP requests or responses in ways that are consistent with how the messages will be processed by those entities that are at the ultimate destination.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-446": {
+    "name": "UI Discrepancy for Security Feature",
+    "description": "The user interface does not correctly enable or configure a security feature, but the interface provides feedback that causes the user to believe that the feature is in a secure state.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-447": {
+    "name": "Unimplemented or Unsupported Feature in UI",
+    "description": "A UI function for a security feature appears to be supported and gives feedback to the user that suggests that it is supported, but the underlying functionality is not implemented.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-448": {
+    "name": "Obsolete Feature in UI",
+    "description": "A UI function is obsolete and the product does not warn the user.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-449": {
+    "name": "The UI Performs the Wrong Action",
+    "description": "The UI performs the wrong action with respect to the user's request.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-45": {
+    "name": "Path Equivalence: 'file...name' (Multiple Internal Dot)",
+    "description": "The product accepts path input in the form of multiple internal dot ('file...dir') without appropriate validation, which can lead to ambiguous path resolution and allow an attacker to traverse the file system to unintended locations or access arbitrary files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-450": {
+    "name": "Multiple Interpretations of UI Input",
+    "description": "The UI has multiple interpretations of user input but does not prompt the user when it selects the less secure interpretation.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-451": {
+    "name": "User Interface (UI) Misrepresentation of Critical Information",
+    "description": "The user interface (UI) does not properly represent critical information to the user, allowing the information - or its source - to be obscured or spoofed. This is often a component in phishing attacks.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-453": {
+    "name": "Insecure Default Variable Initialization",
+    "description": "The product, by default, initializes an internal variable with an insecure or less secure value than is possible.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-454": {
+    "name": "External Initialization of Trusted Variables or Data Stores",
+    "description": "The product initializes critical internal variables or data stores using inputs that can be modified by untrusted actors.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-455": {
+    "name": "Non-exit on Failed Initialization",
+    "description": "The product does not exit or otherwise modify its operation when security-relevant errors occur during initialization, such as when a configuration file has a format error or a hardware security module (HSM) cannot be activated, which can cause the product to execute in a less secure fashion than intended by the administrator.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-456": {
+    "name": "Missing Initialization of a Variable",
+    "description": "The product does not initialize critical variables, which causes the execution environment to use unexpected values.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-457": {
+    "name": "Use of Uninitialized Variable",
+    "description": "The code uses a variable that has not been initialized, leading to unpredictable or unintended results.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-458": {
+    "name": "DEPRECATED: Incorrect Initialization",
+    "description": "This weakness has been deprecated because its name and description did not match. The description duplicated CWE-454, while the name suggested a more abstract initialization problem. Please refer to CWE-665 for the more abstract problem.",
+    "status": "Deprecated",
+    "abstraction": "Base"
+  },
+  "CWE-459": {
+    "name": "Incomplete Cleanup",
+    "description": "The product does not properly \"clean up\" and remove temporary or supporting resources after they have been used.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-46": {
+    "name": "Path Equivalence: 'filename ' (Trailing Space)",
+    "description": "The product accepts path input in the form of trailing space ('filedir ') without appropriate validation, which can lead to ambiguous path resolution and allow an attacker to traverse the file system to unintended locations or access arbitrary files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-460": {
+    "name": "Improper Cleanup on Thrown Exception",
+    "description": "The product does not clean up its state or incorrectly cleans up its state when an exception is thrown, leading to unexpected state or control flow.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-462": {
+    "name": "Duplicate Key in Associative List (Alist)",
+    "description": "Duplicate keys in associative lists can lead to non-unique keys being mistaken for an error.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-463": {
+    "name": "Deletion of Data Structure Sentinel",
+    "description": "The accidental deletion of a data-structure sentinel can cause serious programming logic problems.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-464": {
+    "name": "Addition of Data Structure Sentinel",
+    "description": "The accidental addition of a data-structure sentinel can cause serious programming logic problems.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-466": {
+    "name": "Return of Pointer Value Outside of Expected Range",
+    "description": "A function can return a pointer to memory that is outside of the buffer that the pointer is expected to reference.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-467": {
+    "name": "Use of sizeof() on a Pointer Type",
+    "description": "The code calls sizeof() on a pointer type, which can be an incorrect calculation if the programmer intended to determine the size of the data that is being pointed to.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-468": {
+    "name": "Incorrect Pointer Scaling",
+    "description": "In C and C++, one may often accidentally refer to the wrong memory due to the semantics of when math operations are implicitly scaled.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-469": {
+    "name": "Use of Pointer Subtraction to Determine Size",
+    "description": "The product subtracts one pointer from another in order to determine size, but this calculation can be incorrect if the pointers do not exist in the same memory chunk.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-47": {
+    "name": "Path Equivalence: ' filename' (Leading Space)",
+    "description": "The product accepts path input in the form of leading space (' filedir') without appropriate validation, which can lead to ambiguous path resolution and allow an attacker to traverse the file system to unintended locations or access arbitrary files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-470": {
+    "name": "Use of Externally-Controlled Input to Select Classes or Code ('Unsafe Reflection')",
+    "description": "The product uses external input with reflection to select which classes or code to use, but it does not sufficiently prevent the input from selecting improper classes or code.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-471": {
+    "name": "Modification of Assumed-Immutable Data (MAID)",
+    "description": "The product does not properly protect an assumed-immutable element from being modified by an attacker.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-472": {
+    "name": "External Control of Assumed-Immutable Web Parameter",
+    "description": "The web application does not sufficiently verify inputs that are assumed to be immutable but are actually externally controllable, such as hidden form fields.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-473": {
+    "name": "PHP External Variable Modification",
+    "description": "A PHP application does not properly protect against the modification of variables from external sources, such as query parameters or cookies. This can expose the application to numerous weaknesses that would not exist otherwise.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-474": {
+    "name": "Use of Function with Inconsistent Implementations",
+    "description": "The code uses a function that has inconsistent implementations across operating systems and versions.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-475": {
+    "name": "Undefined Behavior for Input to API",
+    "description": "The behavior of this function is undefined unless its control parameter is set to a specific value.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-476": {
+    "name": "NULL Pointer Dereference",
+    "description": "The product dereferences a pointer that it expects to be valid but is NULL.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-477": {
+    "name": "Use of Obsolete Function",
+    "description": "The code uses deprecated or obsolete functions, which suggests that the code has not been actively reviewed or maintained.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-478": {
+    "name": "Missing Default Case in Multiple Condition Expression",
+    "description": "The code does not have a default case in an expression with multiple conditions, such as a switch statement.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-479": {
+    "name": "Signal Handler Use of a Non-reentrant Function",
+    "description": "The product defines a signal handler that calls a non-reentrant function.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-48": {
+    "name": "Path Equivalence: 'file name' (Internal Whitespace)",
+    "description": "The product accepts path input in the form of internal space ('file(SPACE)name') without appropriate validation, which can lead to ambiguous path resolution and allow an attacker to traverse the file system to unintended locations or access arbitrary files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-480": {
+    "name": "Use of Incorrect Operator",
+    "description": "The product accidentally uses the wrong operator, which changes the logic in security-relevant ways.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-481": {
+    "name": "Assigning instead of Comparing",
+    "description": "The code uses an operator for assignment when the intention was to perform a comparison.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-482": {
+    "name": "Comparing instead of Assigning",
+    "description": "The code uses an operator for comparison when the intention was to perform an assignment.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-483": {
+    "name": "Incorrect Block Delimitation",
+    "description": "The code does not explicitly delimit a block that is intended to contain 2 or more statements, creating a logic error.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-484": {
+    "name": "Omitted Break Statement in Switch",
+    "description": "The product omits a break statement within a switch or similar construct, causing code associated with multiple conditions to execute. This can cause problems when the programmer only intended to execute code associated with one condition.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-486": {
+    "name": "Comparison of Classes by Name",
+    "description": "The product compares classes by name, which can cause it to use the wrong class when multiple classes can have the same name.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-487": {
+    "name": "Reliance on Package-level Scope",
+    "description": "Java packages are not inherently closed; therefore, relying on them for code security is not a good practice.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-488": {
+    "name": "Exposure of Data Element to Wrong Session",
+    "description": "The product does not sufficiently enforce boundaries between the states of different sessions, causing data to be provided to, or used by, the wrong session.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-489": {
+    "name": "Active Debug Code",
+    "description": "The product is released with debugging code still enabled or active.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-49": {
+    "name": "Path Equivalence: 'filename/' (Trailing Slash)",
+    "description": "The product accepts path input in the form of trailing slash ('filedir/') without appropriate validation, which can lead to ambiguous path resolution and allow an attacker to traverse the file system to unintended locations or access arbitrary files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-491": {
+    "name": "Public cloneable() Method Without Final ('Object Hijack')",
+    "description": "A class has a cloneable() method that is not declared final, which allows an object to be created without calling the constructor. This can cause the object to be in an unexpected state.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-492": {
+    "name": "Use of Inner Class Containing Sensitive Data",
+    "description": "Inner classes are translated into classes that are accessible at package scope and may expose code that the programmer intended to keep private to attackers.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-493": {
+    "name": "Critical Public Variable Without Final Modifier",
+    "description": "The product has a critical public variable that is not final, which allows the variable to be modified to contain unexpected values.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-494": {
+    "name": "Download of Code Without Integrity Check",
+    "description": "The product downloads source code or an executable from a remote location and executes the code without sufficiently verifying the origin and integrity of the code.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-495": {
+    "name": "Private Data Structure Returned From A Public Method",
+    "description": "The product has a method that is declared public, but returns a reference to a private data structure, which could then be modified in unexpected ways.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-496": {
+    "name": "Public Data Assigned to Private Array-Typed Field",
+    "description": "Assigning public data to a private array is equivalent to giving public access to the array.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-497": {
+    "name": "Exposure of Sensitive System Information to an Unauthorized Control Sphere",
+    "description": "The product does not properly prevent sensitive system-level information from being accessed by unauthorized actors who do not have the same level of access to the underlying system as the product does.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-498": {
+    "name": "Cloneable Class Containing Sensitive Information",
+    "description": "The code contains a class with sensitive data, but the class is cloneable. The data can then be accessed by cloning the class.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-499": {
+    "name": "Serializable Class Containing Sensitive Data",
+    "description": "The code contains a class with sensitive data, but the class does not explicitly deny serialization. The data can be accessed by serializing the class through another class.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-5": {
+    "name": "J2EE Misconfiguration: Data Transmission Without Encryption",
+    "description": "Information sent over a network can be compromised while in transit. An attacker may be able to read or modify the contents if the data are sent in plaintext or are weakly encrypted.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-50": {
+    "name": "Path Equivalence: '//multiple/leading/slash'",
+    "description": "The product accepts path input in the form of multiple leading slash ('//multiple/leading/slash') without appropriate validation, which can lead to ambiguous path resolution and allow an attacker to traverse the file system to unintended locations or access arbitrary files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-500": {
+    "name": "Public Static Field Not Marked Final",
+    "description": "An object contains a public static field that is not marked final, which might allow it to be modified in unexpected ways.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-501": {
+    "name": "Trust Boundary Violation",
+    "description": "The product mixes trusted and untrusted data in the same data structure or structured message.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-502": {
+    "name": "Deserialization of Untrusted Data",
+    "description": "The product deserializes untrusted data without sufficiently ensuring that the resulting data will be valid.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-506": {
+    "name": "Embedded Malicious Code",
+    "description": "The product contains code that appears to be malicious in nature.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-507": {
+    "name": "Trojan Horse",
+    "description": "The product appears to contain benign or useful functionality, but it also contains code that is hidden from normal operation that violates the intended security policy of the user or the system administrator.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-508": {
+    "name": "Non-Replicating Malicious Code",
+    "description": "Non-replicating malicious code only resides on the target system or product that is attacked; it does not attempt to spread to other systems.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-509": {
+    "name": "Replicating Malicious Code (Virus or Worm)",
+    "description": "Replicating malicious code, including viruses and worms, will attempt to attack other systems once it has successfully compromised the target system or the product.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-51": {
+    "name": "Path Equivalence: '/multiple//internal/slash'",
+    "description": "The product accepts path input in the form of multiple internal slash ('/multiple//internal/slash/') without appropriate validation, which can lead to ambiguous path resolution and allow an attacker to traverse the file system to unintended locations or access arbitrary files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-510": {
+    "name": "Trapdoor",
+    "description": "A trapdoor is a hidden piece of code that responds to a special input, allowing its user access to resources without passing through the normal security enforcement mechanism.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-511": {
+    "name": "Logic/Time Bomb",
+    "description": "The product contains code that is designed to disrupt the legitimate operation of the product (or its environment) when a certain time passes, or when a certain logical condition is met.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-512": {
+    "name": "Spyware",
+    "description": "The product collects personally identifiable information about a human user or the user's activities, but the product accesses this information using other resources besides itself, and it does not require that user's explicit approval or direct input into the product.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-514": {
+    "name": "Covert Channel",
+    "description": "A covert channel is a path that can be used to transfer information in a way not intended by the system's designers.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-515": {
+    "name": "Covert Storage Channel",
+    "description": "A covert storage channel transfers information through the setting of bits by one program and the reading of those bits by another. What distinguishes this case from that of ordinary operation is that the bits are used to convey encoded information.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-516": {
+    "name": "DEPRECATED: Covert Timing Channel",
+    "description": "This weakness can be found at CWE-385.",
+    "status": "Deprecated",
+    "abstraction": "Base"
+  },
+  "CWE-52": {
+    "name": "Path Equivalence: '/multiple/trailing/slash//'",
+    "description": "The product accepts path input in the form of multiple trailing slash ('/multiple/trailing/slash//') without appropriate validation, which can lead to ambiguous path resolution and allow an attacker to traverse the file system to unintended locations or access arbitrary files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-520": {
+    "name": ".NET Misconfiguration: Use of Impersonation",
+    "description": "Allowing a .NET application to run at potentially escalated levels of access to the underlying operating and file systems can be dangerous and result in various forms of attacks.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-521": {
+    "name": "Weak Password Requirements",
+    "description": "The product does not require that users should have strong passwords.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-522": {
+    "name": "Insufficiently Protected Credentials",
+    "description": "The product transmits or stores authentication credentials, but it uses an insecure method that is susceptible to unauthorized interception and/or retrieval.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-523": {
+    "name": "Unprotected Transport of Credentials",
+    "description": "Login pages do not use adequate measures to protect the user name and password while they are in transit from the client to the server.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-524": {
+    "name": "Use of Cache Containing Sensitive Information",
+    "description": "The code uses a cache that contains sensitive information, but the cache can be read by an actor outside of the intended control sphere.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-525": {
+    "name": "Use of Web Browser Cache Containing Sensitive Information",
+    "description": "The web application does not use an appropriate caching policy that specifies the extent to which each web page and associated form fields should be cached.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-526": {
+    "name": "Cleartext Storage of Sensitive Information in an Environment Variable",
+    "description": "The product uses an environment variable to store unencrypted sensitive information.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-527": {
+    "name": "Exposure of Version-Control Repository to an Unauthorized Control Sphere",
+    "description": "The product stores a CVS, git, or other repository in a directory, archive, or other resource that is stored, transferred, or otherwise made accessible to unauthorized actors.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-528": {
+    "name": "Exposure of Core Dump File to an Unauthorized Control Sphere",
+    "description": "The product generates a core dump file in a directory, archive, or other resource that is stored, transferred, or otherwise made accessible to unauthorized actors.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-529": {
+    "name": "Exposure of Access Control List Files to an Unauthorized Control Sphere",
+    "description": "The product stores access control list files in a directory or other container that is accessible to actors outside of the intended control sphere.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-53": {
+    "name": "Path Equivalence: '\\multiple\\\\internal\\backslash'",
+    "description": "The product accepts path input in the form of multiple internal backslash ('\\multiple\\trailing\\\\slash') without appropriate validation, which can lead to ambiguous path resolution and allow an attacker to traverse the file system to unintended locations or access arbitrary files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-530": {
+    "name": "Exposure of Backup File to an Unauthorized Control Sphere",
+    "description": "A backup file is stored in a directory or archive that is made accessible to unauthorized actors.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-531": {
+    "name": "Inclusion of Sensitive Information in Test Code",
+    "description": "Accessible test applications can pose a variety of security risks. Since developers or administrators rarely consider that someone besides themselves would even know about the existence of these applications, it is common for them to contain sensitive information or functions.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-532": {
+    "name": "Insertion of Sensitive Information into Log File",
+    "description": "The product writes sensitive information to a log file.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-533": {
+    "name": "DEPRECATED: Information Exposure Through Server Log Files",
+    "description": "This entry has been deprecated because its abstraction was too low-level. See CWE-532.",
+    "status": "Deprecated",
+    "abstraction": "Variant"
+  },
+  "CWE-534": {
+    "name": "DEPRECATED: Information Exposure Through Debug Log Files",
+    "description": "This entry has been deprecated because its abstraction was too low-level. See CWE-532.",
+    "status": "Deprecated",
+    "abstraction": "Variant"
+  },
+  "CWE-535": {
+    "name": "Exposure of Information Through Shell Error Message",
+    "description": "A command shell error message indicates that there exists an unhandled exception in the web application code. In many cases, an attacker can leverage the conditions that cause these errors in order to gain unauthorized access to the system.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-536": {
+    "name": "Servlet Runtime Error Message Containing Sensitive Information",
+    "description": "A servlet error message indicates that there exists an unhandled exception in the web application code and may provide useful information to an attacker.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-537": {
+    "name": "Java Runtime Error Message Containing Sensitive Information",
+    "description": "In many cases, an attacker can leverage the conditions that cause unhandled exception errors in order to gain unauthorized access to the system.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-538": {
+    "name": "Insertion of Sensitive Information into Externally-Accessible File or Directory",
+    "description": "The product places sensitive information into files or directories that are accessible to actors who are allowed to have access to the files, but not to the sensitive information.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-539": {
+    "name": "Use of Persistent Cookies Containing Sensitive Information",
+    "description": "The web application uses persistent cookies, but the cookies contain sensitive information.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-54": {
+    "name": "Path Equivalence: 'filedir\\' (Trailing Backslash)",
+    "description": "The product accepts path input in the form of trailing backslash ('filedir\\') without appropriate validation, which can lead to ambiguous path resolution and allow an attacker to traverse the file system to unintended locations or access arbitrary files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-540": {
+    "name": "Inclusion of Sensitive Information in Source Code",
+    "description": "Source code on a web server or repository often contains sensitive information and should generally not be accessible to users.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-541": {
+    "name": "Inclusion of Sensitive Information in an Include File",
+    "description": "If an include file source is accessible, the file can contain usernames and passwords, as well as sensitive information pertaining to the application and system.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-542": {
+    "name": "DEPRECATED: Information Exposure Through Cleanup Log Files",
+    "description": "This entry has been deprecated because its abstraction was too low-level. See CWE-532.",
+    "status": "Deprecated",
+    "abstraction": "Variant"
+  },
+  "CWE-543": {
+    "name": "Use of Singleton Pattern Without Synchronization in a Multithreaded Context",
+    "description": "The product uses the singleton pattern when creating a resource within a multithreaded environment.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-544": {
+    "name": "Missing Standardized Error Handling Mechanism",
+    "description": "The product does not use a standardized method for handling errors throughout the code, which might introduce inconsistent error handling and resultant weaknesses.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-545": {
+    "name": "DEPRECATED: Use of Dynamic Class Loading",
+    "description": "This weakness has been deprecated because it partially overlaps CWE-470, it describes legitimate programmer behavior, and other portions will need to be integrated into other entries.",
+    "status": "Deprecated",
+    "abstraction": "Variant"
+  },
+  "CWE-546": {
+    "name": "Suspicious Comment",
+    "description": "The code contains comments that suggest the presence of bugs, incomplete functionality, or weaknesses.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-547": {
+    "name": "Use of Hard-coded, Security-relevant Constants",
+    "description": "The product uses hard-coded constants instead of symbolic names for security-critical values, which increases the likelihood of mistakes during code maintenance or security policy change.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-548": {
+    "name": "Exposure of Information Through Directory Listing",
+    "description": "The product inappropriately exposes a directory listing with an index of all the resources located inside of the directory.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-549": {
+    "name": "Missing Password Field Masking",
+    "description": "The product does not mask passwords during entry, increasing the potential for attackers to observe and capture passwords.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-55": {
+    "name": "Path Equivalence: '/./' (Single Dot Directory)",
+    "description": "The product accepts path input in the form of single dot directory exploit ('/./') without appropriate validation, which can lead to ambiguous path resolution and allow an attacker to traverse the file system to unintended locations or access arbitrary files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-550": {
+    "name": "Server-generated Error Message Containing Sensitive Information",
+    "description": "Certain conditions, such as network failure, will cause a server error message to be displayed.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-551": {
+    "name": "Incorrect Behavior Order: Authorization Before Parsing and Canonicalization",
+    "description": "If a web server does not fully parse requested URLs before it examines them for authorization, it may be possible for an attacker to bypass authorization protection.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-552": {
+    "name": "Files or Directories Accessible to External Parties",
+    "description": "The product makes files or directories accessible to unauthorized actors, even though they should not be.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-553": {
+    "name": "Command Shell in Externally Accessible Directory",
+    "description": "A possible shell file exists in /cgi-bin/ or other accessible directories. This is extremely dangerous and can be used by an attacker to execute commands on the web server.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-554": {
+    "name": "ASP.NET Misconfiguration: Not Using Input Validation Framework",
+    "description": "The ASP.NET application does not use an input validation framework.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-555": {
+    "name": "J2EE Misconfiguration: Plaintext Password in Configuration File",
+    "description": "The J2EE application stores a plaintext password in a configuration file.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-556": {
+    "name": "ASP.NET Misconfiguration: Use of Identity Impersonation",
+    "description": "Configuring an ASP.NET application to run with impersonated credentials may give the application unnecessary privileges.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-558": {
+    "name": "Use of getlogin() in Multithreaded Application",
+    "description": "The product uses the getlogin() function in a multithreaded context, potentially causing it to return incorrect values.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-56": {
+    "name": "Path Equivalence: 'filedir*' (Wildcard)",
+    "description": "The product accepts path input in the form of asterisk wildcard ('filedir*') without appropriate validation, which can lead to ambiguous path resolution and allow an attacker to traverse the file system to unintended locations or access arbitrary files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-560": {
+    "name": "Use of umask() with chmod-style Argument",
+    "description": "The product calls umask() with an incorrect argument that is specified as if it is an argument to chmod().",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-561": {
+    "name": "Dead Code",
+    "description": "The product contains dead code, which can never be executed.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-562": {
+    "name": "Return of Stack Variable Address",
+    "description": "A function returns the address of a stack variable, which will cause unintended program behavior, typically in the form of a crash.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-563": {
+    "name": "Assignment to Variable without Use",
+    "description": "The variable's value is assigned but never used, making it a dead store.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-564": {
+    "name": "SQL Injection: Hibernate",
+    "description": "Using Hibernate to execute a dynamic SQL statement built with user-controlled input can allow an attacker to modify the statement's meaning or to execute arbitrary SQL commands.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-565": {
+    "name": "Reliance on Cookies without Validation and Integrity Checking",
+    "description": "The product relies on the existence or values of cookies when performing security-critical operations, but it does not properly ensure that the setting is valid for the associated user.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-566": {
+    "name": "Authorization Bypass Through User-Controlled SQL Primary Key",
+    "description": "The product uses a database table that includes records that should not be accessible to an actor, but it executes a SQL statement with a primary key that can be controlled by that actor.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-567": {
+    "name": "Unsynchronized Access to Shared Data in a Multithreaded Context",
+    "description": "The product does not properly synchronize shared data, such as static variables across threads, which can lead to undefined behavior and unpredictable data changes.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-568": {
+    "name": "finalize() Method Without super.finalize()",
+    "description": "The product contains a finalize() method that does not call super.finalize().",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-57": {
+    "name": "Path Equivalence: 'fakedir/../realdir/filename'",
+    "description": "The product contains protection mechanisms to restrict access to 'realdir/filename', but it constructs pathnames using external input in the form of 'fakedir/../realdir/filename' that are not handled by those mechanisms. This allows attackers to perform unauthorized actions against the targeted file.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-570": {
+    "name": "Expression is Always False",
+    "description": "The product contains an expression that will always evaluate to false.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-571": {
+    "name": "Expression is Always True",
+    "description": "The product contains an expression that will always evaluate to true.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-572": {
+    "name": "Call to Thread run() instead of start()",
+    "description": "The product calls a thread's run() method instead of calling start(), which causes the code to run in the thread of the caller instead of the callee.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-573": {
+    "name": "Improper Following of Specification by Caller",
+    "description": "The product does not follow or incorrectly follows the specifications as required by the implementation language, environment, framework, protocol, or platform.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-574": {
+    "name": "EJB Bad Practices: Use of Synchronization Primitives",
+    "description": "The product violates the Enterprise JavaBeans (EJB) specification by using thread synchronization primitives.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-575": {
+    "name": "EJB Bad Practices: Use of AWT Swing",
+    "description": "The product violates the Enterprise JavaBeans (EJB) specification by using AWT/Swing.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-576": {
+    "name": "EJB Bad Practices: Use of Java I/O",
+    "description": "The product violates the Enterprise JavaBeans (EJB) specification by using the java.io package.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-577": {
+    "name": "EJB Bad Practices: Use of Sockets",
+    "description": "The product violates the Enterprise JavaBeans (EJB) specification by using sockets.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-578": {
+    "name": "EJB Bad Practices: Use of Class Loader",
+    "description": "The product violates the Enterprise JavaBeans (EJB) specification by using the class loader.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-579": {
+    "name": "J2EE Bad Practices: Non-serializable Object Stored in Session",
+    "description": "The product stores a non-serializable object as an HttpSession attribute, which can hurt reliability.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-58": {
+    "name": "Path Equivalence: Windows 8.3 Filename",
+    "description": "The product contains a protection mechanism that restricts access to a long filename on a Windows operating system, but it does not properly restrict access to the equivalent short \"8.3\" filename.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-580": {
+    "name": "clone() Method Without super.clone()",
+    "description": "The product contains a clone() method that does not call super.clone() to obtain the new object.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-581": {
+    "name": "Object Model Violation: Just One of Equals and Hashcode Defined",
+    "description": "The product does not maintain equal hashcodes for equal objects.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-582": {
+    "name": "Array Declared Public, Final, and Static",
+    "description": "The product declares an array public, final, and static, which is not sufficient to prevent the array's contents from being modified.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-583": {
+    "name": "finalize() Method Declared Public",
+    "description": "The product violates secure coding principles for mobile code by declaring a finalize() method public.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-584": {
+    "name": "Return Inside Finally Block",
+    "description": "The code has a return statement inside a finally block, which will cause any thrown exception in the try block to be discarded.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-585": {
+    "name": "Empty Synchronized Block",
+    "description": "The product contains an empty synchronized block.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-586": {
+    "name": "Explicit Call to Finalize()",
+    "description": "The product makes an explicit call to the finalize() method from outside the finalizer.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-587": {
+    "name": "Assignment of a Fixed Address to a Pointer",
+    "description": "The product sets a pointer to a specific address other than NULL or 0.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-588": {
+    "name": "Attempt to Access Child of a Non-structure Pointer",
+    "description": "Casting a non-structure type to a structure type and accessing a field can lead to memory access errors or data corruption.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-589": {
+    "name": "Call to Non-ubiquitous API",
+    "description": "The product uses an API function that does not exist on all versions of the target platform. This could cause portability problems or inconsistencies that allow denial of service or other consequences.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-59": {
+    "name": "Improper Link Resolution Before File Access ('Link Following')",
+    "description": "The product attempts to access a file based on the filename, but it does not properly prevent that filename from identifying a link or shortcut that resolves to an unintended resource.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-590": {
+    "name": "Free of Memory not on the Heap",
+    "description": "The product calls free() on a pointer to memory that was not allocated using associated heap allocation functions such as malloc(), calloc(), or realloc().",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-591": {
+    "name": "Sensitive Data Storage in Improperly Locked Memory",
+    "description": "The product stores sensitive data in memory that is not locked, or that has been incorrectly locked, which might cause the memory to be written to swap files on disk by the virtual memory manager. This can make the data more accessible to external actors.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-592": {
+    "name": "DEPRECATED: Authentication Bypass Issues",
+    "description": "This weakness has been deprecated because it covered redundant concepts already described in CWE-287.",
+    "status": "Deprecated",
+    "abstraction": "Class"
+  },
+  "CWE-593": {
+    "name": "Authentication Bypass: OpenSSL CTX Object Modified after SSL Objects are Created",
+    "description": "The product modifies the SSL context after connection creation has begun.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-594": {
+    "name": "J2EE Framework: Saving Unserializable Objects to Disk",
+    "description": "When the J2EE container attempts to write unserializable objects to disk there is no guarantee that the process will complete successfully.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-595": {
+    "name": "Comparison of Object References Instead of Object Contents",
+    "description": "The product compares object references instead of the contents of the objects themselves, preventing it from detecting equivalent objects.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-596": {
+    "name": "DEPRECATED: Incorrect Semantic Object Comparison",
+    "description": "This weakness has been deprecated. It was poorly described and difficult to distinguish from other entries. It was also inappropriate to assign a separate ID solely because of domain-specific considerations. Its closest equivalent is CWE-1023.",
+    "status": "Deprecated",
+    "abstraction": "Base"
+  },
+  "CWE-597": {
+    "name": "Use of Wrong Operator in String Comparison",
+    "description": "The product uses the wrong operator when comparing a string, such as using \"==\" when the .equals() method should be used instead.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-598": {
+    "name": "Use of GET Request Method With Sensitive Query Strings",
+    "description": "The web application uses the HTTP GET method to process a request and includes sensitive information in the query string of that request.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-599": {
+    "name": "Missing Validation of OpenSSL Certificate",
+    "description": "The product uses OpenSSL and trusts or uses a certificate without using the SSL_get_verify_result() function to ensure that the certificate satisfies all necessary security requirements.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-6": {
+    "name": "J2EE Misconfiguration: Insufficient Session-ID Length",
+    "description": "The J2EE application is configured to use an insufficient session ID length.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-600": {
+    "name": "Uncaught Exception in Servlet",
+    "description": "The Servlet does not catch all exceptions, which may reveal sensitive debugging information.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-601": {
+    "name": "URL Redirection to Untrusted Site ('Open Redirect')",
+    "description": "The web application accepts a user-controlled input that specifies a link to an external site, and uses that link in a redirect.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-602": {
+    "name": "Client-Side Enforcement of Server-Side Security",
+    "description": "The product is composed of a server that relies on the client to implement a mechanism that is intended to protect the server.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-603": {
+    "name": "Use of Client-Side Authentication",
+    "description": "A client/server product performs authentication within client code but not in server code, allowing server-side authentication to be bypassed via a modified client that omits the authentication check.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-605": {
+    "name": "Multiple Binds to the Same Port",
+    "description": "When multiple sockets are allowed to bind to the same port, other services on that port may be stolen or spoofed.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-606": {
+    "name": "Unchecked Input for Loop Condition",
+    "description": "The product does not properly check inputs that are used for loop conditions, potentially leading to a denial of service or other consequences because of excessive looping.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-607": {
+    "name": "Public Static Final Field References Mutable Object",
+    "description": "A public or protected static final field references a mutable object, which allows the object to be changed by malicious code, or accidentally from another package.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-608": {
+    "name": "Struts: Non-private Field in ActionForm Class",
+    "description": "An ActionForm class contains a field that has not been declared private, which can be accessed without using a setter or getter.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-609": {
+    "name": "Double-Checked Locking",
+    "description": "The product uses double-checked locking to access a resource without the overhead of explicit synchronization, but the locking is insufficient.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-61": {
+    "name": "UNIX Symbolic Link (Symlink) Following",
+    "description": "The product, when opening a file or directory, does not sufficiently account for when the file is a symbolic link that resolves to a target outside of the intended control sphere. This could allow an attacker to cause the product to operate on unauthorized files.",
+    "status": "Incomplete",
+    "abstraction": "Compound"
+  },
+  "CWE-610": {
+    "name": "Externally Controlled Reference to a Resource in Another Sphere",
+    "description": "The product uses an externally controlled name or reference that resolves to a resource that is outside of the intended control sphere.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-611": {
+    "name": "Improper Restriction of XML External Entity Reference",
+    "description": "The product processes an XML document that can contain XML entities with URIs that resolve to documents outside of the intended sphere of control, causing the product to embed incorrect documents into its output.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-612": {
+    "name": "Improper Authorization of Index Containing Sensitive Information",
+    "description": "The product creates a search index of private or sensitive documents, but it does not properly limit index access to actors who are authorized to see the original information.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-613": {
+    "name": "Insufficient Session Expiration",
+    "description": "According to WASC, \"Insufficient Session Expiration is when a web site permits an attacker to reuse old session credentials or session IDs for authorization.\"",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-614": {
+    "name": "Sensitive Cookie in HTTPS Session Without 'Secure' Attribute",
+    "description": "The Secure attribute for sensitive cookies in HTTPS sessions is not set.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-615": {
+    "name": "Inclusion of Sensitive Information in Source Code Comments",
+    "description": "While adding general comments is very useful, some programmers tend to leave important data, such as: filenames related to the web application, old links or links which were not meant to be browsed by users, old code fragments, etc.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-616": {
+    "name": "Incomplete Identification of Uploaded File Variables (PHP)",
+    "description": "The PHP application uses an old method for processing uploaded files by referencing the four global variables that are set for each file (e.g. $varname, $varname_size, $varname_name, $varname_type). These variables could be overwritten by attackers, causing the application to process unauthorized files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-617": {
+    "name": "Reachable Assertion",
+    "description": "The product contains an assert() or similar statement that can be triggered by an attacker, which leads to an application exit or other behavior that is more severe than necessary.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-618": {
+    "name": "Exposed Unsafe ActiveX Method",
+    "description": "An ActiveX control is intended for use in a web browser, but it exposes dangerous methods that perform actions that are outside of the browser's security model (e.g. the zone or domain).",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-619": {
+    "name": "Dangling Database Cursor ('Cursor Injection')",
+    "description": "If a database cursor is not closed properly, then it could become accessible to other users while retaining the same privileges that were originally assigned, leaving the cursor \"dangling.\"",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-62": {
+    "name": "UNIX Hard Link",
+    "description": "The product, when opening a file or directory, does not sufficiently account for when the name is associated with a hard link to a target that is outside of the intended control sphere. This could allow an attacker to cause the product to operate on unauthorized files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-620": {
+    "name": "Unverified Password Change",
+    "description": "When setting a new password for a user, the product does not require knowledge of the original password, or using another form of authentication.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-621": {
+    "name": "Variable Extraction Error",
+    "description": "The product uses external input to determine the names of variables into which information is extracted, without verifying that the names of the specified variables are valid. This could cause the program to overwrite unintended variables.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-622": {
+    "name": "Improper Validation of Function Hook Arguments",
+    "description": "The product adds hooks to user-accessible API functions, but it does not properly validate the arguments. This could lead to resultant vulnerabilities.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-623": {
+    "name": "Unsafe ActiveX Control Marked Safe For Scripting",
+    "description": "An ActiveX control is intended for restricted use, but it has been marked as safe-for-scripting.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-624": {
+    "name": "Executable Regular Expression Error",
+    "description": "The product uses a regular expression that either (1) contains an executable component with user-controlled inputs, or (2) allows a user to enable execution by inserting pattern modifiers.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-625": {
+    "name": "Permissive Regular Expression",
+    "description": "The product uses a regular expression that does not sufficiently restrict the set of allowed values.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-626": {
+    "name": "Null Byte Interaction Error (Poison Null Byte)",
+    "description": "The product does not properly handle null bytes or NUL characters when passing data between different representations or components.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-627": {
+    "name": "Dynamic Variable Evaluation",
+    "description": "In a language where the user can influence the name of a variable at runtime, if the variable names are not controlled, an attacker can read or write to arbitrary variables, or access arbitrary functions.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-628": {
+    "name": "Function Call with Incorrectly Specified Arguments",
+    "description": "The product calls a function, procedure, or routine with arguments that are not correctly specified, leading to always-incorrect behavior and resultant weaknesses.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-636": {
+    "name": "Not Failing Securely ('Failing Open')",
+    "description": "When the product encounters an error condition or failure, its design requires it to fall back to a state that is less secure than other options that are available, such as selecting the weakest encryption algorithm or using the most permissive access control restrictions.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-637": {
+    "name": "Unnecessary Complexity in Protection Mechanism (Not Using 'Economy of Mechanism')",
+    "description": "The product uses a more complex mechanism than necessary, which could lead to resultant weaknesses when the mechanism is not correctly understood, modeled, configured, implemented, or used.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-638": {
+    "name": "Not Using Complete Mediation",
+    "description": "The product does not perform access checks on a resource every time the resource is accessed by an entity, which can create resultant weaknesses if that entity's rights or privileges change over time.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-639": {
+    "name": "Authorization Bypass Through User-Controlled Key",
+    "description": "The system's authorization functionality does not prevent one user from gaining access to another user's data or record by modifying the key value identifying the data.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-64": {
+    "name": "Windows Shortcut Following (.LNK)",
+    "description": "The product, when opening a file or directory, does not sufficiently handle when the file is a Windows shortcut (.LNK) whose target is outside of the intended control sphere. This could allow an attacker to cause the product to operate on unauthorized files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-640": {
+    "name": "Weak Password Recovery Mechanism for Forgotten Password",
+    "description": "The product contains a mechanism for users to recover or change their passwords without knowing the original password, but the mechanism is weak.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-641": {
+    "name": "Improper Restriction of Names for Files and Other Resources",
+    "description": "The product constructs the name of a file or other resource using input from an upstream component, but it does not restrict or incorrectly restricts the resulting name.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-642": {
+    "name": "External Control of Critical State Data",
+    "description": "The product stores security-critical state information about its users, or the product itself, in a location that is accessible to unauthorized actors.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-643": {
+    "name": "Improper Neutralization of Data within XPath Expressions ('XPath Injection')",
+    "description": "The product uses external input to dynamically construct an XPath expression used to retrieve data from an XML database, but it does not neutralize or incorrectly neutralizes that input. This allows an attacker to control the structure of the query.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-644": {
+    "name": "Improper Neutralization of HTTP Headers for Scripting Syntax",
+    "description": "The product does not neutralize or incorrectly neutralizes web scripting syntax in HTTP headers that can be used by web browser components that can process raw headers, such as Flash.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-645": {
+    "name": "Overly Restrictive Account Lockout Mechanism",
+    "description": "The product contains an account lockout protection mechanism, but the mechanism is too restrictive and can be triggered too easily, which allows attackers to deny service to legitimate users by causing their accounts to be locked out.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-646": {
+    "name": "Reliance on File Name or Extension of Externally-Supplied File",
+    "description": "The product allows a file to be uploaded, but it relies on the file name or extension of the file to determine the appropriate behaviors. This could be used by attackers to cause the file to be misclassified and processed in a dangerous fashion.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-647": {
+    "name": "Use of Non-Canonical URL Paths for Authorization Decisions",
+    "description": "The product defines policy namespaces and makes authorization decisions based on the assumption that a URL is canonical. This can allow a non-canonical URL to bypass the authorization.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-648": {
+    "name": "Incorrect Use of Privileged APIs",
+    "description": "The product does not conform to the API requirements for a function call that requires extra privileges. This could allow attackers to gain privileges by causing the function to be called incorrectly.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-649": {
+    "name": "Reliance on Obfuscation or Encryption of Security-Relevant Inputs without Integrity Checking",
+    "description": "The product uses obfuscation or encryption of inputs that should not be mutable by an external actor, but the product does not use integrity checks to detect if those inputs have been modified.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-65": {
+    "name": "Windows Hard Link",
+    "description": "The product, when opening a file or directory, does not sufficiently handle when the name is associated with a hard link to a target that is outside of the intended control sphere. This could allow an attacker to cause the product to operate on unauthorized files.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-650": {
+    "name": "Trusting HTTP Permission Methods on the Server Side",
+    "description": "The server contains a protection mechanism that assumes that any URI that is accessed using HTTP GET will not cause a state change to the associated resource. This might allow attackers to bypass intended access restrictions and conduct resource modification and deletion attacks, since some applications allow GET to modify state.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-651": {
+    "name": "Exposure of WSDL File Containing Sensitive Information",
+    "description": "The Web services architecture may require exposing a Web Service Definition Language (WSDL) file that contains information on the publicly accessible services and how callers of these services should interact with them (e.g. what parameters they expect and what types they return).",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-652": {
+    "name": "Improper Neutralization of Data within XQuery Expressions ('XQuery Injection')",
+    "description": "The product uses external input to dynamically construct an XQuery expression used to retrieve data from an XML database, but it does not neutralize or incorrectly neutralizes that input. This allows an attacker to control the structure of the query.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-653": {
+    "name": "Improper Isolation or Compartmentalization",
+    "description": "The product does not properly compartmentalize or isolate functionality, processes, or resources that require different privilege levels, rights, or permissions.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-654": {
+    "name": "Reliance on a Single Factor in a Security Decision",
+    "description": "A protection mechanism relies exclusively, or to a large extent, on the evaluation of a single condition or the integrity of a single object or entity in order to make a decision about granting access to restricted resources or functionality.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-655": {
+    "name": "Insufficient Psychological Acceptability",
+    "description": "The product has a protection mechanism that is too difficult or inconvenient to use, encouraging non-malicious users to disable or bypass the mechanism, whether by accident or on purpose.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-656": {
+    "name": "Reliance on Security Through Obscurity",
+    "description": "The product uses a protection mechanism whose strength depends heavily on its obscurity, such that knowledge of its algorithms or key data is sufficient to defeat the mechanism.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-657": {
+    "name": "Violation of Secure Design Principles",
+    "description": "The product violates well-established principles for secure design.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-66": {
+    "name": "Improper Handling of File Names that Identify Virtual Resources",
+    "description": "The product does not handle or incorrectly handles a file name that identifies a \"virtual\" resource that is not directly specified within the directory that is associated with the file name, causing the product to perform file-based operations on a resource that is not a file.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-662": {
+    "name": "Improper Synchronization",
+    "description": "The product utilizes multiple threads, processes, components, or systems to allow temporary access to a shared resource that can only be exclusive to one process at a time, but it does not properly synchronize these actions, which might cause simultaneous accesses of this resource by multiple threads or processes.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-663": {
+    "name": "Use of a Non-reentrant Function in a Concurrent Context",
+    "description": "The product calls a non-reentrant function in a concurrent context in which a competing code sequence (e.g. thread or signal handler) may have an opportunity to call the same function or otherwise influence its state.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-664": {
+    "name": "Improper Control of a Resource Through its Lifetime",
+    "description": "The product does not maintain or incorrectly maintains control over a resource throughout its lifetime of creation, use, and release.",
+    "status": "Draft",
+    "abstraction": "Pillar"
+  },
+  "CWE-665": {
+    "name": "Improper Initialization",
+    "description": "The product does not initialize or incorrectly initializes a resource, which might leave the resource in an unexpected state when it is accessed or used.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-666": {
+    "name": "Operation on Resource in Wrong Phase of Lifetime",
+    "description": "The product performs an operation on a resource at the wrong phase of the resource's lifecycle, which can lead to unexpected behaviors.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-667": {
+    "name": "Improper Locking",
+    "description": "The product does not properly acquire or release a lock on a resource, leading to unexpected resource state changes and behaviors.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-668": {
+    "name": "Exposure of Resource to Wrong Sphere",
+    "description": "The product exposes a resource to the wrong control sphere, providing unintended actors with inappropriate access to the resource.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-669": {
+    "name": "Incorrect Resource Transfer Between Spheres",
+    "description": "The product does not properly transfer a resource/behavior to another sphere, or improperly imports a resource/behavior from another sphere, in a manner that provides unintended control over that resource.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-67": {
+    "name": "Improper Handling of Windows Device Names",
+    "description": "The product constructs pathnames from user input, but it does not handle or incorrectly handles a pathname containing a Windows device name such as AUX or CON. This typically leads to denial of service or an information exposure when the application attempts to process the pathname as a regular file.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-670": {
+    "name": "Always-Incorrect Control Flow Implementation",
+    "description": "The code contains a control flow path that does not reflect the algorithm that the path is intended to implement, leading to incorrect behavior any time this path is navigated.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-671": {
+    "name": "Lack of Administrator Control over Security",
+    "description": "The product uses security features in a way that prevents the product's administrator from tailoring security settings to reflect the environment in which the product is being used. This introduces resultant weaknesses or prevents it from operating at a level of security that is desired by the administrator.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-672": {
+    "name": "Operation on a Resource after Expiration or Release",
+    "description": "The product uses, accesses, or otherwise operates on a resource after that resource has been expired, released, or revoked.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-673": {
+    "name": "External Influence of Sphere Definition",
+    "description": "The product does not prevent the definition of control spheres from external actors.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-674": {
+    "name": "Uncontrolled Recursion",
+    "description": "The product does not properly control the amount of recursion that takes place, consuming excessive resources, such as allocated memory or the program stack.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-675": {
+    "name": "Multiple Operations on Resource in Single-Operation Context",
+    "description": "The product performs the same operation on a resource two or more times, when the operation should only be applied once.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-676": {
+    "name": "Use of Potentially Dangerous Function",
+    "description": "The product invokes a potentially dangerous function that could introduce a vulnerability if it is used incorrectly, but the function can also be used safely.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-680": {
+    "name": "Integer Overflow to Buffer Overflow",
+    "description": "The product performs a calculation to determine how much memory to allocate, but an integer overflow can occur that causes less memory to be allocated than expected, leading to a buffer overflow.",
+    "status": "Draft",
+    "abstraction": "Compound"
+  },
+  "CWE-681": {
+    "name": "Incorrect Conversion between Numeric Types",
+    "description": "When converting from one data type to another, such as long to integer, data can be omitted or translated in a way that produces unexpected values. If the resulting values are used in a sensitive context, then dangerous behaviors may occur.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-682": {
+    "name": "Incorrect Calculation",
+    "description": "The product performs a calculation that generates incorrect or unintended results that are later used in security-critical decisions or resource management.",
+    "status": "Draft",
+    "abstraction": "Pillar"
+  },
+  "CWE-683": {
+    "name": "Function Call With Incorrect Order of Arguments",
+    "description": "The product calls a function, procedure, or routine, but the caller specifies the arguments in an incorrect order, leading to resultant weaknesses.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-684": {
+    "name": "Incorrect Provision of Specified Functionality",
+    "description": "The code does not function according to its published specifications, potentially leading to incorrect usage.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-685": {
+    "name": "Function Call With Incorrect Number of Arguments",
+    "description": "The product calls a function, procedure, or routine, but the caller specifies too many arguments, or too few arguments, which may lead to undefined behavior and resultant weaknesses.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-686": {
+    "name": "Function Call With Incorrect Argument Type",
+    "description": "The product calls a function, procedure, or routine, but the caller specifies an argument that is the wrong data type, which may lead to resultant weaknesses.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-687": {
+    "name": "Function Call With Incorrectly Specified Argument Value",
+    "description": "The product calls a function, procedure, or routine, but the caller specifies an argument that contains the wrong value, which may lead to resultant weaknesses.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-688": {
+    "name": "Function Call With Incorrect Variable or Reference as Argument",
+    "description": "The product calls a function, procedure, or routine, but the caller specifies the wrong variable or reference as one of the arguments, which may lead to undefined behavior and resultant weaknesses.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-689": {
+    "name": "Permission Race Condition During Resource Copy",
+    "description": "The product, while copying or cloning a resource, does not set the resource's permissions or access control until the copy is complete, leaving the resource exposed to other spheres while the copy is taking place.",
+    "status": "Draft",
+    "abstraction": "Compound"
+  },
+  "CWE-69": {
+    "name": "Improper Handling of Windows ::DATA Alternate Data Stream",
+    "description": "The product does not properly prevent access to, or detect usage of, alternate data streams (ADS).",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-690": {
+    "name": "Unchecked Return Value to NULL Pointer Dereference",
+    "description": "The product does not check for an error after calling a function that can return with a NULL pointer if the function fails, which leads to a resultant NULL pointer dereference.",
+    "status": "Draft",
+    "abstraction": "Compound"
+  },
+  "CWE-691": {
+    "name": "Insufficient Control Flow Management",
+    "description": "The code does not sufficiently manage its control flow during execution, creating conditions in which the control flow can be modified in unexpected ways.",
+    "status": "Draft",
+    "abstraction": "Pillar"
+  },
+  "CWE-692": {
+    "name": "Incomplete Denylist to Cross-Site Scripting",
+    "description": "The product uses a denylist-based protection mechanism to defend against XSS attacks, but the denylist is incomplete, allowing XSS variants to succeed.",
+    "status": "Draft",
+    "abstraction": "Compound"
+  },
+  "CWE-693": {
+    "name": "Protection Mechanism Failure",
+    "description": "The product does not use or incorrectly uses a protection mechanism that provides sufficient defense against directed attacks against the product.",
+    "status": "Draft",
+    "abstraction": "Pillar"
+  },
+  "CWE-694": {
+    "name": "Use of Multiple Resources with Duplicate Identifier",
+    "description": "The product uses multiple resources that can have the same identifier, in a context in which unique identifiers are required.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-695": {
+    "name": "Use of Low-Level Functionality",
+    "description": "The product uses low-level functionality that is explicitly prohibited by the framework or specification under which the product is supposed to operate.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-696": {
+    "name": "Incorrect Behavior Order",
+    "description": "The product performs multiple related behaviors, but the behaviors are performed in the wrong order in ways that may produce resultant weaknesses.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-697": {
+    "name": "Incorrect Comparison",
+    "description": "The product compares two entities in a security-relevant context, but the comparison is incorrect.",
+    "status": "Incomplete",
+    "abstraction": "Pillar"
+  },
+  "CWE-698": {
+    "name": "Execution After Redirect (EAR)",
+    "description": "The web application sends a redirect to another location, but instead of exiting, it executes additional code.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-7": {
+    "name": "J2EE Misconfiguration: Missing Custom Error Page",
+    "description": "The default error page of a web application should not display sensitive information about the product.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-703": {
+    "name": "Improper Check or Handling of Exceptional Conditions",
+    "description": "The product does not properly anticipate or handle exceptional conditions that rarely occur during normal operation of the product.",
+    "status": "Incomplete",
+    "abstraction": "Pillar"
+  },
+  "CWE-704": {
+    "name": "Incorrect Type Conversion or Cast",
+    "description": "The product does not correctly convert an object, resource, or structure from one type to a different type.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-705": {
+    "name": "Incorrect Control Flow Scoping",
+    "description": "The product does not properly return control flow to the proper location after it has completed a task or detected an unusual condition.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-706": {
+    "name": "Use of Incorrectly-Resolved Name or Reference",
+    "description": "The product uses a name or reference to access a resource, but the name/reference resolves to a resource that is outside of the intended control sphere.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-707": {
+    "name": "Improper Neutralization",
+    "description": "The product does not ensure or incorrectly ensures that structured messages or data are well-formed and that certain security properties are met before being read from an upstream component or sent to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Pillar"
+  },
+  "CWE-708": {
+    "name": "Incorrect Ownership Assignment",
+    "description": "The product assigns an owner to a resource, but the owner is outside of the intended control sphere.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-71": {
+    "name": "DEPRECATED: Apple '.DS_Store'",
+    "description": "This entry has been deprecated as it represents a specific observed example of a UNIX Hard Link weakness type rather than its own individual weakness type. Please refer to CWE-62.",
+    "status": "Deprecated",
+    "abstraction": "Variant"
+  },
+  "CWE-710": {
+    "name": "Improper Adherence to Coding Standards",
+    "description": "The product does not follow certain coding rules for development, which can lead to resultant weaknesses or increase the severity of the associated vulnerabilities.",
+    "status": "Incomplete",
+    "abstraction": "Pillar"
+  },
+  "CWE-72": {
+    "name": "Improper Handling of Apple HFS+ Alternate Data Stream Path",
+    "description": "The product does not properly handle special paths that may identify the data or resource fork of a file on the HFS+ file system.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-73": {
+    "name": "External Control of File Name or Path",
+    "description": "The product allows user input to control or influence paths or file names that are used in filesystem operations.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-732": {
+    "name": "Incorrect Permission Assignment for Critical Resource",
+    "description": "The product specifies permissions for a security-critical resource in a way that allows that resource to be read or modified by unintended actors.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-733": {
+    "name": "Compiler Optimization Removal or Modification of Security-critical Code",
+    "description": "The developer builds a security-critical protection mechanism into the software, but the compiler optimizes the program such that the mechanism is removed or modified.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-74": {
+    "name": "Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')",
+    "description": "The product constructs all or part of a command, data structure, or record using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify how it is parsed or interpreted when it is sent to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-749": {
+    "name": "Exposed Dangerous Method or Function",
+    "description": "The product provides an Applications Programming Interface (API) or similar interface for interaction with external actors, but the interface includes a dangerous method or function that is not properly restricted.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-75": {
+    "name": "Failure to Sanitize Special Elements into a Different Plane (Special Element Injection)",
+    "description": "The product does not adequately filter user-controlled input for special elements with control implications.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-754": {
+    "name": "Improper Check for Unusual or Exceptional Conditions",
+    "description": "The product does not check or incorrectly checks for unusual or exceptional conditions that are not expected to occur frequently during day to day operation of the product.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-755": {
+    "name": "Improper Handling of Exceptional Conditions",
+    "description": "The product does not handle or incorrectly handles an exceptional condition.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-756": {
+    "name": "Missing Custom Error Page",
+    "description": "The product does not return custom error pages to the user, possibly exposing sensitive information.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-757": {
+    "name": "Selection of Less-Secure Algorithm During Negotiation ('Algorithm Downgrade')",
+    "description": "A protocol or its implementation supports interaction between multiple actors and allows those actors to negotiate which algorithm should be used as a protection mechanism such as encryption or authentication, but it does not select the strongest algorithm that is available to both parties.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-758": {
+    "name": "Reliance on Undefined, Unspecified, or Implementation-Defined Behavior",
+    "description": "The product uses an API function, data structure, or other entity in a way that relies on properties that are not always guaranteed to hold for that entity.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-759": {
+    "name": "Use of a One-Way Hash without a Salt",
+    "description": "The product uses a one-way cryptographic hash against an input that should not be reversible, such as a password, but the product does not also use a salt as part of the input.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-76": {
+    "name": "Improper Neutralization of Equivalent Special Elements",
+    "description": "The product correctly neutralizes certain special elements, but it improperly neutralizes equivalent special elements.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-760": {
+    "name": "Use of a One-Way Hash with a Predictable Salt",
+    "description": "The product uses a one-way cryptographic hash against an input that should not be reversible, such as a password, but the product uses a predictable salt as part of the input.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-761": {
+    "name": "Free of Pointer not at Start of Buffer",
+    "description": "The product calls free() on a pointer to a memory resource that was allocated on the heap, but the pointer is not at the start of the buffer.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-762": {
+    "name": "Mismatched Memory Management Routines",
+    "description": "The product attempts to return a memory resource to the system, but it calls a release function that is not compatible with the function that was originally used to allocate that resource.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-763": {
+    "name": "Release of Invalid Pointer or Reference",
+    "description": "The product attempts to return a memory resource to the system, but it calls the wrong release function or calls the appropriate release function incorrectly.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-764": {
+    "name": "Multiple Locks of a Critical Resource",
+    "description": "The product locks a critical resource more times than intended, leading to an unexpected state in the system.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-765": {
+    "name": "Multiple Unlocks of a Critical Resource",
+    "description": "The product unlocks a critical resource more times than intended, leading to an unexpected state in the system.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-766": {
+    "name": "Critical Data Element Declared Public",
+    "description": "The product declares a critical variable, field, or member to be public when intended security policy requires it to be private.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-767": {
+    "name": "Access to Critical Private Variable via Public Method",
+    "description": "The product defines a public method that reads or modifies a private variable.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-768": {
+    "name": "Incorrect Short Circuit Evaluation",
+    "description": "The product contains a conditional statement with multiple logical expressions in which one of the non-leading expressions may produce side effects. This may lead to an unexpected state in the program after the execution of the conditional, because short-circuiting logic may prevent the side effects from occurring.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-769": {
+    "name": "DEPRECATED: Uncontrolled File Descriptor Consumption",
+    "description": "This entry has been deprecated because it was a duplicate of CWE-774. All content has been transferred to CWE-774.",
+    "status": "Deprecated",
+    "abstraction": "Base"
+  },
+  "CWE-77": {
+    "name": "Improper Neutralization of Special Elements used in a Command ('Command Injection')",
+    "description": "The product constructs all or part of a command using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the intended command when it is sent to a downstream component.",
+    "status": "Draft",
+    "abstraction": "Class"
+  },
+  "CWE-770": {
+    "name": "Allocation of Resources Without Limits or Throttling",
+    "description": "The product allocates a reusable resource or group of resources on behalf of an actor without imposing any intended restrictions on the size or number of resources that can be allocated.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-771": {
+    "name": "Missing Reference to Active Allocated Resource",
+    "description": "The product does not properly maintain a reference to a resource that has been allocated, which prevents the resource from being reclaimed.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-772": {
+    "name": "Missing Release of Resource after Effective Lifetime",
+    "description": "The product does not release a resource after its effective lifetime has ended, i.e., after the resource is no longer needed.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-773": {
+    "name": "Missing Reference to Active File Descriptor or Handle",
+    "description": "The product does not properly maintain references to a file descriptor or handle, which prevents that file descriptor/handle from being reclaimed.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-774": {
+    "name": "Allocation of File Descriptors or Handles Without Limits or Throttling",
+    "description": "The product allocates file descriptors or handles on behalf of an actor without imposing any restrictions on how many descriptors can be allocated, in violation of the intended security policy for that actor.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-775": {
+    "name": "Missing Release of File Descriptor or Handle after Effective Lifetime",
+    "description": "The product does not release a file descriptor or handle after its effective lifetime has ended, i.e., after the file descriptor/handle is no longer needed.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-776": {
+    "name": "Improper Restriction of Recursive Entity References in DTDs ('XML Entity Expansion')",
+    "description": "The product uses XML documents and allows their structure to be defined with a Document Type Definition (DTD), but it does not properly control the number of recursive definitions of entities.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-777": {
+    "name": "Regular Expression without Anchors",
+    "description": "The product uses a regular expression to perform neutralization, but the regular expression is not anchored and may allow malicious or malformed data to slip through.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-778": {
+    "name": "Insufficient Logging",
+    "description": "When a security-critical event occurs, the product either does not record the event or omits important details about the event when logging it.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-779": {
+    "name": "Logging of Excessive Data",
+    "description": "The product logs too much information, making log files hard to process and possibly hindering recovery efforts or forensic analysis after an attack.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-78": {
+    "name": "Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')",
+    "description": "The product constructs all or part of an OS command using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the intended OS command when it is sent to a downstream component.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-780": {
+    "name": "Use of RSA Algorithm without OAEP",
+    "description": "The product uses the RSA algorithm but does not incorporate Optimal Asymmetric Encryption Padding (OAEP), which might weaken the encryption.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-781": {
+    "name": "Improper Address Validation in IOCTL with METHOD_NEITHER I/O Control Code",
+    "description": "The product defines an IOCTL that uses METHOD_NEITHER for I/O, but it does not validate or incorrectly validates the addresses that are provided.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-782": {
+    "name": "Exposed IOCTL with Insufficient Access Control",
+    "description": "The product implements an IOCTL with functionality that should be restricted, but it does not properly enforce access control for the IOCTL.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-783": {
+    "name": "Operator Precedence Logic Error",
+    "description": "The product uses an expression in which operator precedence causes incorrect logic to be used.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-784": {
+    "name": "Reliance on Cookies without Validation and Integrity Checking in a Security Decision",
+    "description": "The product uses a protection mechanism that relies on the existence or values of a cookie, but it does not properly ensure that the cookie is valid for the associated user.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-785": {
+    "name": "Use of Path Manipulation Function without Maximum-sized Buffer",
+    "description": "The product invokes a function for normalizing paths or file names, but it provides an output buffer that is smaller than the maximum possible size, such as PATH_MAX.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-786": {
+    "name": "Access of Memory Location Before Start of Buffer",
+    "description": "The product reads or writes to a buffer using an index or pointer that references a memory location prior to the beginning of the buffer.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-787": {
+    "name": "Out-of-bounds Write",
+    "description": "The product writes data past the end, or before the beginning, of the intended buffer.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-788": {
+    "name": "Access of Memory Location After End of Buffer",
+    "description": "The product reads or writes to a buffer using an index or pointer that references a memory location after the end of the buffer.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-789": {
+    "name": "Memory Allocation with Excessive Size Value",
+    "description": "The product allocates memory based on an untrusted, large size value, but it does not ensure that the size is within expected limits, allowing arbitrary amounts of memory to be allocated.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-79": {
+    "name": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+    "description": "The product does not neutralize or incorrectly neutralizes user-controllable input before it is placed in output that is used as a web page that is served to other users.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-790": {
+    "name": "Improper Filtering of Special Elements",
+    "description": "The product receives data from an upstream component, but does not filter or incorrectly filters special elements before sending it to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-791": {
+    "name": "Incomplete Filtering of Special Elements",
+    "description": "The product receives data from an upstream component, but does not completely filter special elements before sending it to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-792": {
+    "name": "Incomplete Filtering of One or More Instances of Special Elements",
+    "description": "The product receives data from an upstream component, but does not completely filter one or more instances of special elements before sending it to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-793": {
+    "name": "Only Filtering One Instance of a Special Element",
+    "description": "The product receives data from an upstream component, but only filters a single instance of a special element before sending it to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-794": {
+    "name": "Incomplete Filtering of Multiple Instances of Special Elements",
+    "description": "The product receives data from an upstream component, but does not filter all instances of a special element before sending it to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-795": {
+    "name": "Only Filtering Special Elements at a Specified Location",
+    "description": "The product receives data from an upstream component, but only accounts for special elements at a specified location, thereby missing remaining special elements that may exist before sending it to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-796": {
+    "name": "Only Filtering Special Elements Relative to a Marker",
+    "description": "The product receives data from an upstream component, but only accounts for special elements positioned relative to a marker (e.g. \"at the beginning/end of a string; the second argument\"), thereby missing remaining special elements that may exist before sending it to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-797": {
+    "name": "Only Filtering Special Elements at an Absolute Position",
+    "description": "The product receives data from an upstream component, but only accounts for special elements at an absolute position (e.g. \"byte number 10\"), thereby missing remaining special elements that may exist before sending it to a downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-798": {
+    "name": "Use of Hard-coded Credentials",
+    "description": "The product contains hard-coded credentials, such as a password or cryptographic key.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-799": {
+    "name": "Improper Control of Interaction Frequency",
+    "description": "The product does not properly limit the number or frequency of interactions that it has with an actor, such as the number of incoming requests.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-8": {
+    "name": "J2EE Misconfiguration: Entity Bean Declared Remote",
+    "description": "When an application exposes a remote interface for an entity bean, it might also expose methods that get or set the bean's data. These methods could be leveraged to read sensitive information, or to change data in ways that violate the application's expectations, potentially leading to other vulnerabilities.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-80": {
+    "name": "Improper Neutralization of Script-Related HTML Tags in a Web Page (Basic XSS)",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes special characters such as \"<\", \">\", and \"&\" that could be interpreted as web-scripting elements when they are sent to a downstream component that processes web pages.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-804": {
+    "name": "Guessable CAPTCHA",
+    "description": "The product uses a CAPTCHA challenge, but the challenge can be guessed or automatically recognized by a non-human actor.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-805": {
+    "name": "Buffer Access with Incorrect Length Value",
+    "description": "The product uses a sequential operation to read or write a buffer, but it uses an incorrect length value that causes it to access memory that is outside of the bounds of the buffer.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-806": {
+    "name": "Buffer Access Using Size of Source Buffer",
+    "description": "The product uses the size of a source buffer when reading from or writing to a destination buffer, which may cause it to access memory that is outside of the bounds of the buffer.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-807": {
+    "name": "Reliance on Untrusted Inputs in a Security Decision",
+    "description": "The product uses a protection mechanism that relies on the existence or values of an input, but the input can be modified by an untrusted actor in a way that bypasses the protection mechanism.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-81": {
+    "name": "Improper Neutralization of Script in an Error Message Web Page",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes special characters that could be interpreted as web-scripting elements when they are sent to an error page.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-82": {
+    "name": "Improper Neutralization of Script in Attributes of IMG Tags in a Web Page",
+    "description": "The web application does not neutralize or incorrectly neutralizes scripting elements within attributes of HTML IMG tags, such as the src attribute.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-820": {
+    "name": "Missing Synchronization",
+    "description": "The product utilizes a shared resource in a concurrent manner but does not attempt to synchronize access to the resource.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-821": {
+    "name": "Incorrect Synchronization",
+    "description": "The product utilizes a shared resource in a concurrent manner, but it does not correctly synchronize access to the resource.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-822": {
+    "name": "Untrusted Pointer Dereference",
+    "description": "The product obtains a value from an untrusted source, converts this value to a pointer, and dereferences the resulting pointer.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-823": {
+    "name": "Use of Out-of-range Pointer Offset",
+    "description": "The product performs pointer arithmetic on a valid pointer, but it uses an offset that can point outside of the intended range of valid memory locations for the resulting pointer.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-824": {
+    "name": "Access of Uninitialized Pointer",
+    "description": "The product accesses or uses a pointer that has not been initialized.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-825": {
+    "name": "Expired Pointer Dereference",
+    "description": "The product dereferences a pointer that contains a location for memory that was previously valid, but is no longer valid.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-826": {
+    "name": "Premature Release of Resource During Expected Lifetime",
+    "description": "The product releases a resource that is still intended to be used by itself or another actor.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-827": {
+    "name": "Improper Control of Document Type Definition",
+    "description": "The product does not restrict a reference to a Document Type Definition (DTD) to the intended control sphere. This might allow attackers to reference arbitrary DTDs, possibly causing the product to expose files, consume excessive system resources, or execute arbitrary http requests on behalf of the attacker.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-828": {
+    "name": "Signal Handler with Functionality that is not Asynchronous-Safe",
+    "description": "The product defines a signal handler that contains code sequences that are not asynchronous-safe, i.e., the functionality is not reentrant, or it can be interrupted.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-829": {
+    "name": "Inclusion of Functionality from Untrusted Control Sphere",
+    "description": "The product imports, requires, or includes executable functionality (such as a library) from a source that is outside of the intended control sphere.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-83": {
+    "name": "Improper Neutralization of Script in Attributes in a Web Page",
+    "description": "The product does not neutralize or incorrectly neutralizes \"javascript:\" or other URIs from dangerous attributes within tags, such as onmouseover, onload, onerror, or style.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-830": {
+    "name": "Inclusion of Web Functionality from an Untrusted Source",
+    "description": "The product includes web functionality (such as a web widget) from another domain, which causes it to operate within the domain of the product, potentially granting total access and control of the product to the untrusted source.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-831": {
+    "name": "Signal Handler Function Associated with Multiple Signals",
+    "description": "The product defines a function that is used as a handler for more than one signal.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-832": {
+    "name": "Unlock of a Resource that is not Locked",
+    "description": "The product attempts to unlock a resource that is not locked.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-833": {
+    "name": "Deadlock",
+    "description": "The product contains multiple threads or executable segments that are waiting for each other to release a necessary lock, resulting in deadlock.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-834": {
+    "name": "Excessive Iteration",
+    "description": "The product performs an iteration or loop without sufficiently limiting the number of times that the loop is executed.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-835": {
+    "name": "Loop with Unreachable Exit Condition ('Infinite Loop')",
+    "description": "The product contains an iteration or loop with an exit condition that cannot be reached, i.e., an infinite loop.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-836": {
+    "name": "Use of Password Hash Instead of Password for Authentication",
+    "description": "The product records password hashes in a data store, receives a hash of a password from a client, and compares the supplied hash to the hash obtained from the data store.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-837": {
+    "name": "Improper Enforcement of a Single, Unique Action",
+    "description": "The product requires that an actor should only be able to perform an action once, or to have only one unique action, but the product does not enforce or improperly enforces this restriction.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-838": {
+    "name": "Inappropriate Encoding for Output Context",
+    "description": "The product uses or specifies an encoding when generating output to a downstream component, but the specified encoding is not the same as the encoding that is expected by the downstream component.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-839": {
+    "name": "Numeric Range Comparison Without Minimum Check",
+    "description": "The product checks a value to ensure that it is less than or equal to a maximum, but it does not also verify that the value is greater than or equal to the minimum.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-84": {
+    "name": "Improper Neutralization of Encoded URI Schemes in a Web Page",
+    "description": "The web application improperly neutralizes user-controlled input for executable script disguised with URI encodings.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-841": {
+    "name": "Improper Enforcement of Behavioral Workflow",
+    "description": "The product supports a session in which more than one behavior must be performed by an actor, but it does not properly ensure that the actor performs the behaviors in the required sequence.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-842": {
+    "name": "Placement of User into Incorrect Group",
+    "description": "The product or the administrator places a user into an incorrect group.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-843": {
+    "name": "Access of Resource Using Incompatible Type ('Type Confusion')",
+    "description": "The product allocates or initializes a resource such as a pointer, object, or variable using one type, but it later accesses that resource using a type that is incompatible with the original type.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-85": {
+    "name": "Doubled Character XSS Manipulations",
+    "description": "The web application does not filter user-controlled input for executable script disguised using doubling of the involved characters.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-86": {
+    "name": "Improper Neutralization of Invalid Characters in Identifiers in Web Pages",
+    "description": "The product does not neutralize or incorrectly neutralizes invalid characters or byte sequences in the middle of tag names, URI schemes, and other identifiers.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-862": {
+    "name": "Missing Authorization",
+    "description": "The product does not perform an authorization check when an actor attempts to access a resource or perform an action.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-863": {
+    "name": "Incorrect Authorization",
+    "description": "The product performs an authorization check when an actor attempts to access a resource or perform an action, but it does not correctly perform the check.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-87": {
+    "name": "Improper Neutralization of Alternate XSS Syntax",
+    "description": "The product does not neutralize or incorrectly neutralizes user-controlled input for alternate script syntax.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-88": {
+    "name": "Improper Neutralization of Argument Delimiters in a Command ('Argument Injection')",
+    "description": "The product constructs a string for a command to be executed by a separate component in another control sphere, but it does not properly delimit the intended arguments, options, or switches within that command string.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-89": {
+    "name": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')",
+    "description": "The product constructs all or part of an SQL command using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the intended SQL command when it is sent to a downstream component. Without sufficient removal or quoting of SQL syntax in user-controllable inputs, the generated SQL query can cause those inputs to be interpreted as SQL instead of ordinary user data.",
+    "status": "Stable",
+    "abstraction": "Base"
+  },
+  "CWE-9": {
+    "name": "J2EE Misconfiguration: Weak Access Permissions for EJB Methods",
+    "description": "If elevated access rights are assigned to EJB methods, then an attacker can take advantage of the permissions to exploit the product.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-90": {
+    "name": "Improper Neutralization of Special Elements used in an LDAP Query ('LDAP Injection')",
+    "description": "The product constructs all or part of an LDAP query using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the intended LDAP query when it is sent to a downstream component.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-908": {
+    "name": "Use of Uninitialized Resource",
+    "description": "The product uses or accesses a resource that has not been initialized.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-909": {
+    "name": "Missing Initialization of Resource",
+    "description": "The product does not initialize a critical resource.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-91": {
+    "name": "XML Injection (aka Blind XPath Injection)",
+    "description": "The product does not properly neutralize special elements that are used in XML, allowing attackers to modify the syntax, content, or commands of the XML before it is processed by an end system.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-910": {
+    "name": "Use of Expired File Descriptor",
+    "description": "The product uses or accesses a file descriptor after it has been closed.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-911": {
+    "name": "Improper Update of Reference Count",
+    "description": "The product uses a reference count to manage a resource, but it does not update or incorrectly updates the reference count.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-912": {
+    "name": "Hidden Functionality",
+    "description": "The product contains functionality that is not documented, not part of the specification, and not accessible through an interface or command sequence that is obvious to the product's users or administrators.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-913": {
+    "name": "Improper Control of Dynamically-Managed Code Resources",
+    "description": "The product does not properly restrict reading from or writing to dynamically-managed code resources such as variables, objects, classes, attributes, functions, or executable instructions or statements.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-914": {
+    "name": "Improper Control of Dynamically-Identified Variables",
+    "description": "The product does not properly restrict reading from or writing to dynamically-identified variables.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-915": {
+    "name": "Improperly Controlled Modification of Dynamically-Determined Object Attributes",
+    "description": "The product receives input from an upstream component that specifies multiple attributes, properties, or fields that are to be initialized or updated in an object, but it does not properly control which attributes can be modified.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-916": {
+    "name": "Use of Password Hash With Insufficient Computational Effort",
+    "description": "The product generates a hash for a password, but it uses a scheme that does not provide a sufficient level of computational effort that would make password cracking attacks infeasible or expensive.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-917": {
+    "name": "Improper Neutralization of Special Elements used in an Expression Language Statement ('Expression Language Injection')",
+    "description": "The product constructs all or part of an expression language (EL) statement in a framework such as a Java Server Page (JSP) using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the intended EL statement before it is executed.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-918": {
+    "name": "Server-Side Request Forgery (SSRF)",
+    "description": "The web server receives a URL or similar request from an upstream component and retrieves the contents of this URL, but it does not sufficiently ensure that the request is being sent to the expected destination.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-92": {
+    "name": "DEPRECATED: Improper Sanitization of Custom Special Characters",
+    "description": "This entry has been deprecated. It originally came from PLOVER, which sometimes defined \"other\" and \"miscellaneous\" categories in order to satisfy exhaustiveness requirements for taxonomies. Within the context of CWE, the use of a more abstract entry is preferred in mapping situations. CWE-75 is a more appropriate mapping.",
+    "status": "Deprecated",
+    "abstraction": "Base"
+  },
+  "CWE-920": {
+    "name": "Improper Restriction of Power Consumption",
+    "description": "The product operates in an environment in which power is a limited resource that cannot be automatically replenished, but the product does not properly restrict the amount of power that its operation consumes.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-921": {
+    "name": "Storage of Sensitive Data in a Mechanism without Access Control",
+    "description": "The product stores sensitive information in a file system or device that does not have built-in access control.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-922": {
+    "name": "Insecure Storage of Sensitive Information",
+    "description": "The product stores sensitive information without properly limiting read or write access by unauthorized actors.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-923": {
+    "name": "Improper Restriction of Communication Channel to Intended Endpoints",
+    "description": "The product establishes a communication channel to (or from) an endpoint for privileged or protected operations, but it does not properly ensure that it is communicating with the correct endpoint.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-924": {
+    "name": "Improper Enforcement of Message Integrity During Transmission in a Communication Channel",
+    "description": "The product establishes a communication channel with an endpoint and receives a message from that endpoint, but it does not sufficiently ensure that the message was not modified during transmission.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-925": {
+    "name": "Improper Verification of Intent by Broadcast Receiver",
+    "description": "The Android application uses a Broadcast Receiver that receives an Intent but does not properly verify that the Intent came from an authorized source.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-926": {
+    "name": "Improper Export of Android Application Components",
+    "description": "The Android application exports a component for use by other applications, but does not properly restrict which applications can launch the component or access the data it contains.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-927": {
+    "name": "Use of Implicit Intent for Sensitive Communication",
+    "description": "The Android application uses an implicit intent for transmitting sensitive data to other applications.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-93": {
+    "name": "Improper Neutralization of CRLF Sequences ('CRLF Injection')",
+    "description": "The product uses CRLF (carriage return line feeds) as a special element, e.g. to separate lines or records, but it does not neutralize or incorrectly neutralizes CRLF sequences from inputs.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-939": {
+    "name": "Improper Authorization in Handler for Custom URL Scheme",
+    "description": "The product uses a handler for a custom URL scheme, but it does not properly restrict which actors can invoke the handler using the scheme.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-94": {
+    "name": "Improper Control of Generation of Code ('Code Injection')",
+    "description": "The product constructs all or part of a code segment using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the syntax or behavior of the intended code segment.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-940": {
+    "name": "Improper Verification of Source of a Communication Channel",
+    "description": "The product establishes a communication channel to handle an incoming request that has been initiated by an actor, but it does not properly verify that the request is coming from the expected origin.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-941": {
+    "name": "Incorrectly Specified Destination in a Communication Channel",
+    "description": "The product creates a communication channel to initiate an outgoing request to an actor, but it does not correctly specify the intended destination for that actor.",
+    "status": "Incomplete",
+    "abstraction": "Base"
+  },
+  "CWE-942": {
+    "name": "Permissive Cross-domain Security Policy with Untrusted Domains",
+    "description": "The product uses a web-client protection mechanism such as a Content Security Policy (CSP) or cross-domain policy file, but the policy includes untrusted domains with which the web client is allowed to communicate.",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-943": {
+    "name": "Improper Neutralization of Special Elements in Data Query Logic",
+    "description": "The product generates a query intended to access or manipulate data in a data store such as a database, but it does not neutralize or incorrectly neutralizes special elements that can modify the intended logic of the query.",
+    "status": "Incomplete",
+    "abstraction": "Class"
+  },
+  "CWE-95": {
+    "name": "Improper Neutralization of Directives in Dynamically Evaluated Code ('Eval Injection')",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes code syntax before using the input in a dynamic evaluation call (e.g. \"eval\").",
+    "status": "Incomplete",
+    "abstraction": "Variant"
+  },
+  "CWE-96": {
+    "name": "Improper Neutralization of Directives in Statically Saved Code ('Static Code Injection')",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes code syntax before inserting the input into an executable resource, such as a library, configuration file, or template.",
+    "status": "Draft",
+    "abstraction": "Base"
+  },
+  "CWE-97": {
+    "name": "Improper Neutralization of Server-Side Includes (SSI) Within a Web Page",
+    "description": "The product generates a web page, but does not neutralize or incorrectly neutralizes user-controllable input that could be interpreted as a server-side include (SSI) directive.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-98": {
+    "name": "Improper Control of Filename for Include/Require Statement in PHP Program ('PHP Remote File Inclusion')",
+    "description": "The PHP application receives input from an upstream component, but it does not restrict or incorrectly restricts the input before its usage in \"require,\" \"include,\" or similar functions.",
+    "status": "Draft",
+    "abstraction": "Variant"
+  },
+  "CWE-99": {
+    "name": "Improper Control of Resource Identifiers ('Resource Injection')",
+    "description": "The product receives input from an upstream component, but it does not restrict or incorrectly restricts the input before it is used as an identifier for a resource that may be outside the intended sphere of control.",
+    "status": "Draft",
+    "abstraction": "Class"
+  }
+} as const
+
+export function normalizeCWEId(value: string) {
+  const normalized = value.trim().toUpperCase()
+  if (!normalized) return ''
+  return normalized.startsWith('CWE-') ? normalized : `CWE-${normalized}`
+}
+
+export function getCWEEntry(value: string): CWEEntry | null {
+  const normalized = normalizeCWEId(value)
+  if (!normalized) return null
+  return CWE_MAP[normalized] ?? null
+}
+
+export function getCWEDescription(value: string) {
+  const entry = getCWEEntry(value)
+  if (!entry) return '暂无内置说明'
+  return entry.description || entry.name || '暂无内置说明'
+}
+
+export const CWE_ZH_NAME_MAP: Record<string, string> = {
+  'CWE-20': '输入校验不当',
+  'CWE-22': '对受限目录路径名限制不当（路径遍历）',
+  'CWE-23': '相对路径遍历',
+  'CWE-24': '路径遍历：`../filedir`',
+  'CWE-36': '绝对路径遍历',
+  'CWE-73': '文件名或路径的外部可控',
+  'CWE-74': '向下游组件输出中对特殊元素处理不当（注入）',
+  'CWE-77': '命令中对特殊元素处理不当（命令注入）',
+  'CWE-78': '操作系统命令中对特殊元素处理不当（操作系统命令注入）',
+  'CWE-79': 'Web 页面生成时对输入处理不当（跨站脚本）',
+  'CWE-80': 'Web 页面中与脚本相关的 HTML 标签处理不当（基础型 XSS）',
+  'CWE-83': 'Web 页面属性中的脚本处理不当',
+  'CWE-87': '替代型 XSS 语法处理不当',
+  'CWE-89': 'SQL 命令中对特殊元素处理不当（SQL 注入）',
+  'CWE-90': 'LDAP 查询中对特殊元素处理不当（LDAP 注入）',
+  'CWE-91': 'XML 注入（又称盲 XPath 注入）',
+  'CWE-94': '代码生成控制不当（代码注入）',
+  'CWE-95': '动态求值代码中的指令处理不当（Eval 注入）',
+  'CWE-98': 'PHP 程序 Include/Require 文件名控制不当（PHP 远程文件包含）',
+  'CWE-113': 'HTTP 头中的 CRLF 序列处理不当（HTTP 请求/响应拆分）',
+  'CWE-117': '日志输出净化不当',
+  'CWE-119': '未正确限制内存缓冲区边界内的操作',
+  'CWE-120': '未检查输入大小的缓冲区复制（经典缓冲区溢出）',
+  'CWE-121': '基于栈的缓冲区溢出',
+  'CWE-122': '基于堆的缓冲区溢出',
+  'CWE-125': '越界读取',
+  'CWE-129': '数组索引校验不当',
+  'CWE-131': '缓冲区大小计算错误',
+  'CWE-134': '使用外部可控的格式化字符串',
+  'CWE-190': '整数溢出或回绕',
+  'CWE-191': '整数下溢（回绕）',
+  'CWE-200': '向未授权对象暴露敏感信息',
+  'CWE-201': '向发送数据中插入敏感信息',
+  'CWE-203': '可观察差异',
+  'CWE-208': '可观察时间差异',
+  'CWE-209': '生成包含敏感信息的错误消息',
+  'CWE-212': '存储或传输前未正确移除敏感信息',
+  'CWE-213': '因策略不兼容导致敏感信息暴露',
+  'CWE-250': '以不必要的权限执行',
+  'CWE-255': '凭据管理错误',
+  'CWE-256': '明文存储密码',
+  'CWE-257': '以可恢复格式存储密码',
+  'CWE-259': '使用硬编码密码',
+  'CWE-264': '权限、特权与访问控制问题',
+  'CWE-266': '特权分配错误',
+  'CWE-269': '特权管理不当',
+  'CWE-276': '默认权限配置错误',
+  'CWE-277': '不安全的继承权限',
+  'CWE-279': '执行时分配权限错误',
+  'CWE-284': '访问控制不当',
+  'CWE-285': '授权不当',
+  'CWE-287': '身份认证不当',
+  'CWE-288': '通过替代路径或通道绕过认证',
+  'CWE-290': '通过伪造绕过认证',
+  'CWE-294': '通过捕获重放绕过认证',
+  'CWE-295': '证书校验不当',
+  'CWE-297': '主机不匹配时证书校验不当',
+  'CWE-300': '非端点可访问的通信通道',
+  'CWE-301': '认证协议中的反射攻击',
+  'CWE-306': '关键功能缺少身份认证',
+  'CWE-307': '对过量认证尝试限制不当',
+  'CWE-311': '敏感数据缺少加密',
+  'CWE-312': '明文存储敏感信息',
+  'CWE-319': '明文传输敏感信息',
+  'CWE-321': '使用硬编码加密密钥',
+  'CWE-326': '加密强度不足',
+  'CWE-327': '使用存在缺陷或高风险的加密算法',
+  'CWE-329': 'CBC 模式未使用随机 IV',
+  'CWE-330': '使用随机性不足的数值',
+  'CWE-331': '熵不足',
+  'CWE-334': '随机值空间过小',
+  'CWE-345': '对数据真实性验证不足',
+  'CWE-346': '来源校验错误',
+  'CWE-347': '加密签名校验不当',
+  'CWE-352': '跨站请求伪造',
+  'CWE-359': '向未授权对象暴露个人隐私信息',
+  'CWE-367': '检查时与使用时不一致竞争条件',
+  'CWE-384': '会话固定',
+  'CWE-400': '资源消耗未受控制',
+  'CWE-401': '有效生命周期结束后未释放内存',
+  'CWE-415': '重复释放',
+  'CWE-416': '释放后使用',
+  'CWE-426': '不可信搜索路径',
+  'CWE-434': '不受限制的危险类型文件上传',
+  'CWE-441': '非预期代理或中介（混淆代理）',
+  'CWE-470': '使用外部可控输入选择类或代码（不安全反射）',
+  'CWE-472': '假定不可变 Web 参数受外部控制',
+  'CWE-494': '下载代码时未做完整性校验',
+  'CWE-502': '反序列化不可信数据',
+  'CWE-521': '弱密码要求',
+  'CWE-522': '凭据保护不足',
+  'CWE-532': '将敏感信息写入日志文件',
+  'CWE-548': '通过目录列表暴露信息',
+  'CWE-552': '文件或目录可被外部访问',
+  'CWE-598': '在敏感查询字符串中使用 GET 请求方法',
+  'CWE-601': 'URL 重定向到不可信站点（开放重定向）',
+  'CWE-611': '对 XML 外部实体引用限制不当',
+  'CWE-613': '会话过期控制不足',
+  'CWE-614': 'HTTPS 会话中的敏感 Cookie 未设置 `Secure` 属性',
+  'CWE-639': '通过用户可控键绕过授权',
+  'CWE-640': '找回密码机制薄弱',
+  'CWE-732': '关键资源权限分配错误',
+  'CWE-749': '暴露危险方法或函数',
+  'CWE-798': '使用硬编码凭据',
+  'CWE-827': '文档类型定义控制不当',
+  'CWE-829': '从不可信控制域引入功能',
+  'CWE-862': '缺失授权',
+  'CWE-863': '授权校验错误',
+  'CWE-865': '授权不正确',
+  'CWE-872': '调用潜在危险函数时未限制参数',
+  'CWE-879': '信号处理程序使用不可重入函数',
+  'CWE-915': '对动态确定对象属性的修改控制不当',
+  'CWE-916': '使用计算强度不足的密码哈希',
+  'CWE-918': '服务端请求伪造',
+  'CWE-922': '敏感信息存储不安全',
+  'CWE-923': '通信通道未正确限制到预期端点',
+  'CWE-927': '对敏感通信使用隐式 Intent',
+  'CWE-943': '数据查询逻辑中特殊元素处理不当',
+  'CWE-1004': '敏感 Cookie 未设置 `HttpOnly` 标志',
+  'CWE-1104': '使用已无人维护的第三方组件',
+  'CWE-1173': '校验框架使用不当',
+  'CWE-1236': 'CSV 文件中的公式元素处理不当',
+  'CWE-1295': '调试消息泄露不必要信息',
+  'CWE-1333': '正则表达式复杂度低效',
+  'CWE-1344': '未授权对象可从容器中读取敏感信息',
+  'CWE-1395': '依赖存在漏洞的第三方组件',
+}
+
+export function getCWEName(value: string, language: 'zh' | 'en' = 'en') {
+  const entry = getCWEEntry(value)
+  if (!entry) {
+    return value.trim().toUpperCase()
+  }
+  if (language === 'zh') {
+    return CWE_ZH_NAME_MAP[normalizeCWEId(value)] || entry.name
+  }
+  return entry.name
+}

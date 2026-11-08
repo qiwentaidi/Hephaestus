@@ -1,0 +1,333 @@
+name: desktop-build
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'desktop-v*'
+
+permissions:
+  contents: write
+
+env:
+  GO_VERSION: '1.25.0'
+  NODE_VERSION: '22'
+  WAILS_VERSION: 'v3.0.0-alpha.78'
+  APP_NAME: 'Hephaestus'
+  DESKTOP_DIR: 'backend/cmd/desktop'
+  APPLE_NOTARY_KEYCHAIN_PROFILE: 'hephaestus-notary'
+
+jobs:
+  build-macos:
+    name: Build macOS DMG
+    runs-on: macos-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ env.DESKTOP_DIR }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: backend/go.sum
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@${WAILS_VERSION}
+        working-directory: backend
+
+      - name: Configure Apple signing
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGN_IDENTITY: ${{ secrets.APPLE_SIGN_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          KEYCHAIN_PASSWORD: ${{ secrets.APPLE_KEYCHAIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${APPLE_CERTIFICATE_BASE64}" ]; then
+            echo "::warning::APPLE_CERTIFICATE_BASE64 is not configured; macOS artifacts will be ad-hoc signed and Gatekeeper will reject them by default."
+            exit 0
+          fi
+
+          CERTIFICATE_PATH="${RUNNER_TEMP}/developer-id.p12"
+          KEYCHAIN_PATH="${RUNNER_TEMP}/app-signing.keychain-db"
+          KEYCHAIN_PASSWORD="${KEYCHAIN_PASSWORD:-$(uuidgen)}"
+
+          echo "${APPLE_CERTIFICATE_BASE64}" | base64 -d > "${CERTIFICATE_PATH}"
+          security create-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          security set-keychain-settings -lut 21600 "${KEYCHAIN_PATH}"
+          security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          security import "${CERTIFICATE_PATH}" -P "${APPLE_CERTIFICATE_PASSWORD}" -A -t cert -f pkcs12 -k "${KEYCHAIN_PATH}"
+          security list-keychain -d user -s "${KEYCHAIN_PATH}" $(security list-keychains -d user | sed 's/[ "]//g')
+          security set-key-partition-list -S apple-tool:,apple: -s -k "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+
+          if [ -z "${APPLE_SIGN_IDENTITY}" ]; then
+            APPLE_SIGN_IDENTITY="$(security find-identity -v -p codesigning "${KEYCHAIN_PATH}" | awk -F '"' '/Developer ID Application/ { print $2; exit }')"
+          fi
+          if [ -z "${APPLE_SIGN_IDENTITY}" ]; then
+            echo "No Developer ID Application identity found in imported certificate." >&2
+            exit 1
+          fi
+
+          if [ -z "${APPLE_ID}" ] || [ -z "${APPLE_APP_SPECIFIC_PASSWORD}" ] || [ -z "${APPLE_TEAM_ID}" ]; then
+            echo "Notarization credentials are required when Apple signing is configured." >&2
+            exit 1
+          fi
+
+          xcrun notarytool store-credentials "${APPLE_NOTARY_KEYCHAIN_PROFILE}" \
+            --apple-id "${APPLE_ID}" \
+            --team-id "${APPLE_TEAM_ID}" \
+            --password "${APPLE_APP_SPECIFIC_PASSWORD}"
+
+          echo "MACOS_SIGN_IDENTITY=${APPLE_SIGN_IDENTITY}" >> "${GITHUB_ENV}"
+          echo "MACOS_NOTARY_KEYCHAIN_PROFILE=${APPLE_NOTARY_KEYCHAIN_PROFILE}" >> "${GITHUB_ENV}"
+
+      - name: Install frontend dependencies
+        run: wails3 task common:install:frontend:deps
+
+      - name: Build frontend assets
+        run: wails3 task common:build:frontend
+
+      - name: Build darwin amd64
+        run: wails3 task darwin:build ARCH=amd64 OUTPUT=bin/${APP_NAME}-amd64
+
+      - name: Build darwin arm64
+        run: wails3 task darwin:build ARCH=arm64 OUTPUT=bin/${APP_NAME}-arm64
+
+      - name: Create universal binary
+        run: |
+          wails3 tool lipo \
+            -output bin/${APP_NAME} \
+            -input bin/${APP_NAME}-amd64 \
+            -input bin/${APP_NAME}-arm64
+
+      - name: Package .app bundle
+        run: |
+          mkdir -p "bin/${APP_NAME}.app/Contents/MacOS"
+          mkdir -p "bin/${APP_NAME}.app/Contents/Resources"
+          cp build/darwin/icons.icns "bin/${APP_NAME}.app/Contents/Resources"
+          if [ -f build/darwin/Assets.car ]; then
+            cp build/darwin/Assets.car "bin/${APP_NAME}.app/Contents/Resources"
+          fi
+          cp "bin/${APP_NAME}" "bin/${APP_NAME}.app/Contents/MacOS"
+          node build/desktop-version.mjs plist build/darwin/Info.plist "bin/${APP_NAME}.app/Contents/Info.plist"
+          if [ -n "${MACOS_SIGN_IDENTITY:-}" ]; then
+            codesign --force --deep --options runtime --timestamp --sign "${MACOS_SIGN_IDENTITY}" "bin/${APP_NAME}.app"
+          else
+            echo "::warning::Apple Developer ID signing is not configured; creating an ad-hoc signed macOS app."
+            codesign --force --deep --sign - "bin/${APP_NAME}.app"
+          fi
+
+      - name: Notarize .app bundle
+        run: |
+          set -euo pipefail
+          if [ -z "${MACOS_NOTARY_KEYCHAIN_PROFILE:-}" ]; then
+            echo "Skipping .app notarization because Apple notarization is not configured."
+            exit 0
+          fi
+          ditto -c -k --keepParent "bin/${APP_NAME}.app" "bin/${APP_NAME}-notary.zip"
+          xcrun notarytool submit "bin/${APP_NAME}-notary.zip" \
+            --keychain-profile "${MACOS_NOTARY_KEYCHAIN_PROFILE}" \
+            --wait
+          xcrun stapler staple "bin/${APP_NAME}.app"
+          rm -f "bin/${APP_NAME}-notary.zip"
+
+      - name: Archive .app
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            "bin/${APP_NAME}.app" \
+            "bin/${APP_NAME}-macos-universal.app.zip"
+
+      - name: Create DMG
+        run: |
+          brew install create-dmg
+          rm -rf "bin/dmg-staging" "bin/${APP_NAME}-macos-universal.dmg"
+          mkdir -p "bin/dmg-staging"
+          cp -R "bin/${APP_NAME}.app" "bin/dmg-staging/"
+          create-dmg \
+            --volname "${APP_NAME}" \
+            --window-pos 200 120 \
+            --window-size 900 560 \
+            --icon-size 140 \
+            --icon "${APP_NAME}.app" 220 260 \
+            --hide-extension "${APP_NAME}.app" \
+            --app-drop-link 680 260 \
+            --add-file "If app is damaged.txt" "build/darwin/dmg-readme.txt" 450 460 \
+            "bin/${APP_NAME}-macos-universal.dmg" \
+            "bin/dmg-staging"
+          if [ -n "${MACOS_SIGN_IDENTITY:-}" ]; then
+            codesign --force --timestamp --sign "${MACOS_SIGN_IDENTITY}" "bin/${APP_NAME}-macos-universal.dmg"
+          fi
+          if [ -n "${MACOS_NOTARY_KEYCHAIN_PROFILE:-}" ]; then
+            xcrun notarytool submit "bin/${APP_NAME}-macos-universal.dmg" \
+              --keychain-profile "${MACOS_NOTARY_KEYCHAIN_PROFILE}" \
+              --wait
+            xcrun stapler staple "bin/${APP_NAME}-macos-universal.dmg"
+          fi
+          rm -rf "bin/dmg-staging"
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-universal
+          path: |
+            backend/cmd/desktop/bin/Hephaestus
+            backend/cmd/desktop/bin/Hephaestus.app
+            backend/cmd/desktop/bin/Hephaestus-macos-universal.app.zip
+            backend/cmd/desktop/bin/Hephaestus-macos-universal.dmg
+          if-no-files-found: error
+
+  build-windows:
+    name: Build Windows EXE
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ env.DESKTOP_DIR }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: backend/go.sum
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@${WAILS_VERSION}
+        working-directory: backend
+
+      - name: Install frontend dependencies
+        run: wails3 task common:install:frontend:deps
+
+      - name: Build Windows executable
+        run: wails3 task windows:build ARCH=amd64
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-amd64
+          path: backend/cmd/desktop/bin/Hephaestus.exe
+          if-no-files-found: error
+
+  build-linux:
+    name: Build Linux Desktop Binary
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ env.DESKTOP_DIR }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: backend/go.sum
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libglib2.0-dev \
+            pkg-config \
+            patchelf \
+            fakeroot \
+            rpm
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@${WAILS_VERSION}
+        working-directory: backend
+
+      - name: Install frontend dependencies
+        run: wails3 task common:install:frontend:deps
+
+      - name: Build Linux binary
+        run: wails3 task linux:build ARCH=amd64
+
+      - name: Package Linux artifacts
+        run: |
+          wails3 task linux:create:appimage
+          wails3 task linux:create:deb
+          wails3 task linux:create:rpm
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-amd64
+          path: |
+            backend/cmd/desktop/bin/Hephaestus
+            backend/cmd/desktop/bin/*.AppImage
+            backend/cmd/desktop/bin/*.deb
+            backend/cmd/desktop/bin/*.rpm
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/desktop-v')
+    runs-on: ubuntu-latest
+    needs:
+      - build-macos
+      - build-windows
+      - build-linux
+    steps:
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-universal
+          path: release-assets/macos
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-amd64
+          path: release-assets/windows
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-amd64
+          path: release-assets/linux
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release-assets/macos/**
+            release-assets/windows/**
+            release-assets/linux/**
+          generate_release_notes: true

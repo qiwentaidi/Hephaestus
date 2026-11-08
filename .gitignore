@@ -1,0 +1,83 @@
+# macOS
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.*
+!.env.example
+.dev-config/
+.jwt-secret
+.pg-password
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Next.js / frontend builds
+.next/
+out/
+frontend/.next/
+frontend/out/
+frontend/public/monaco-editor/
+frontend/public/maplibre-gl/
+
+# Vite/webpack/etc
+.cache/
+
+# Go
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Build outputs
+dist/
+backend/dist/
+backend/webassets/dist/
+backend/lib/nuclei-bak
+backend/cmd/desktop/build/android/.gradle/
+backend/cmd/desktop/build/android/build/
+# config
+backend/config/
+
+# screenshots
+backend/data/
+
+# Coverage
+coverage/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS/Editor temp
+*.swp
+*.swo
+*~
+
+# Ignore website folder
+website/
+
+*.zip
+
+# agent
+agent-standalone/
+# Ignore virtual environments
+backend/lib/pentest/venv
+backend/outputs
+
+# Go build artifacts
+/backend/scan-agent
+/backend/hephaestus-backend

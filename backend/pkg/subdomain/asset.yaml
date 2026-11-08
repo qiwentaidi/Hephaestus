@@ -1,0 +1,580 @@
+cdn:
+  - name: 网宿 CDN
+    cname:
+      - wswebcdn.com
+      - lxdns.com
+      - wswebpic.com
+      - chinanetcenter.com
+      - customcdn.com.cn
+      - customcdn.cn
+      - 51cdn.com
+      - wscdns.com
+      - cdn20.com
+      - wsdvs.com
+      - wsglb0.com
+      - speedcdns.com
+      - wtxcdn.com
+      - wsssec.com
+      - cdn30.com
+      - ourplat.net
+      - wscloudcdn.com
+      - mwcloudcdn.com
+      - mwcname.com
+  - name: 360panyun
+    cname:
+      - 360panyun.com
+  - name: baiduyunjiasue
+    cname:
+      - ns.yunjiasu.com
+  - name: edns
+    cname:
+      - iidns.com
+  - name: ksyun
+    cname:
+      - ksyunwaf.com
+  - name: jdcloud-star-shield
+    cname:
+      - cloud-scdn.com
+  - name: 华为云 CDN
+    cname:
+      - cdnhwc1.com
+      - cdnhwc2.com
+      - cdnhwc3.com
+  - name: 腾讯云 CDN
+    cname:
+      - cdntip.com
+      - dnsv1.com
+      - tencdns.net
+      - tdnsv5.com
+  - name: Google Web 业务
+    cname:
+      - google.com
+      - 1e100.net
+  - name: CloudXNS
+    cname:
+      - ffdns.net
+  - name: Heroku SaaS
+    cname:
+      - herokuapp.com
+  - name: Relected Networks
+    cname:
+      - rncdn1.com
+      - simplecdn.net
+  - name: 动力在线CDN
+    cname:
+      - powercdn.cn
+  - name: Verizon CDN (Edgecast)
+    cname:
+      - mucdn.net
+      - nucdn.net
+      - alphacdn.net
+      - systemcdn.net
+      - edgecastcdn.net
+      - zetacdn.net
+  - name: Tata communications CDN
+    cname:
+      - bitgravity.com
+  - name: 美橙互联CDN
+    cname:
+      - cdncenter.cn
+  - name: 360 云 CDN (由奇虎 360 运营)
+    cname:
+      - qh-cdn.com
+      - qihucdn.com
+      - 360cdn.com
+  - name: AWS CloudFront
+    cname:
+      - cloudfront.net
+  - name: 百度云 CDN
+    cname:
+      - bdydns.com
+  - name: 西部数码
+    cname:
+      - 800cdn.com
+  - name: Stackpath (原 MaxCDN)
+    cname:
+      - netdna.com
+      - netdna-cdn.com
+      - netdna-ssl.com
+  - name: 七牛云
+    cname:
+      - qbox.me
+      - qiniu.com
+      - qiniudns.com
+  - name: Zenlayer CDN
+    cname:
+      - zenlogic.net
+      - ogslb.com
+      - uxengine.net
+  - name: SpeedyCloud CDN
+    cname:
+      - xundayun.cn
+      - xundayun.com
+      - speedycloud.cc
+  - name: Akamai CDN
+    cname:
+      - akamai.net
+      - akamaiedge.net
+      - ytcdn.net
+      - edgesuite.net
+      - akamaitech.net
+      - akamaitechnologies.com
+      - edgekey.net
+      - akamaized.net
+      - akadns.net
+  - name: CDN77
+    cname:
+      - cdn77.org
+      - cdn77.net
+  - name: Incapsula CDN
+    cname:
+      - incapdns.net
+  - name: AT&T Content Delivery Network
+    cname:
+      - att-dsa.net
+  - name: 北京同兴万点网络技术
+    cname:
+      - cdnetworks.net
+      - txnetworks.cn
+      - cdnnetworks.com
+      - txcdn.cn
+  - name: Cedexis GSLB
+    cname:
+      - cedexis.net
+  - name: CDNSUN
+    cname:
+      - cdnsun.net
+  - name: 帝联科技
+    cname:
+      - dnion.com
+      - ewcache.com
+      - globalcdn.cn
+      - tlgslb.com
+      - fastcdn.com
+      - flxdns.com
+      - dlgslb.cn
+  - name: 猫云融合 CDN
+    cname:
+      - maoyun.tv
+      - maoyundns.com
+  - name: FlexBalancer - Smart Traffic Routing
+    cname:
+      - flexbalancer.net
+  - name: Limelight Network
+    cname:
+      - llnwi.net
+      - llnwd.net
+      - unud.net
+      - lldns.net
+  - name: Oracle Dyn Web Application Security suite (原 Zenedge CDN)
+    cname:
+      - zenedge.net
+  - name: 宝腾互联旗下上海万根网络（CDN 联盟）
+    cname:
+      - cdnunion.net
+      - cdnunion.com
+  - name: 易通锐进（Akamai 中国）由网宿承接
+    cname:
+      - tl88.net
+  - name: Microsoft Azure Traffic Manager
+    cname:
+      - trafficmanager.net
+  - name: 可靠云 CDN (贴图库)
+    cname:
+      - aocdn.com
+  - name: 腾讯云视频 CDN
+    cname:
+      - tcdnvod.com
+  - name: mmTrix性能魔方（高升控股旗下）
+    cname:
+      - mmtrixopt.com
+  - name: 星域云P2P CDN
+    cname:
+      - p2cdn.com
+      - 00cdn.com
+  - name: 白山云 CDN
+    cname:
+      - bsgslb.cn
+      - qingcdn.com
+      - bsclink.cn
+      - trpcdn.net
+  - name: 新浪云 CDN
+    cname:
+      - sinacdn.com
+      - sinasws.com
+  - name: 新流云（新流万联）
+    cname:
+      - ngaagslb.cn
+  - name: Microsoft Azure
+    cname:
+      - cloudapp.net
+  - name: BelugaCDN
+    cname:
+      - belugacdn.com
+  - name: 中联数据（中联利信）
+    cname:
+      - cnispgroup.com
+  - name: Bilibili 高可用地域负载均衡
+    cname:
+      - hdslb.com
+  - name: 360 云 CDN (由奇安信运营)
+    cname:
+      - qhcdn.com
+  - name: CDN.NET / CDNSUN / ONAPP
+    cname:
+      - worldssl.net
+  - name: G - Core Labs
+    cname:
+      - gcdn.co
+  - name: Azion Tech | Edge Computing PLatform
+    cname:
+      - azioncdn.net
+  - name: VeryCloud 云分发
+    cname:
+      - verycloud.cn
+      - verycdn.net
+      - verygslb.com
+  - name: ZEIT Now Smart CDN
+    cname:
+      - zeit.co
+      - zeit-cdn.net
+  - name: Medianova
+    cname:
+      - mncdn.com
+  - name: 世纪互联云快线业务
+    cname:
+      - 21vokglb.cn
+      - 21vianet.com.cn
+      - 21okglb.cn
+      - 21speedcdn.com
+      - 21cvcdn.com
+      - okcdn.com
+      - okglb.com
+  - name: CDNetworks
+    cname:
+      - panthercdn.com
+      - cdnga.net
+      - cdngc.net
+      - gccdn.net
+      - gccdn.cn
+  - name: 世纪互联旗下上海蓝云（承载 Azure 中国）
+    cname:
+      - chinacloudsites.cn
+  - name: 魔门云 CDN
+    cname:
+      - momentcdn.com
+  - name: 京东云 CDN
+    cname:
+      - jcloudcs.com
+      - jdcdn.com
+      - qianxun.com
+      - jcloudlb.com
+      - jcloud-cdn.com
+  - name: 快网 CDN
+    cname:
+      - cloudglb.com
+      - fastweb.com
+      - fastwebcdn.com
+      - cloudcdn.net
+      - fwcdn.com
+      - fwdns.net
+      - hadns.net
+      - hacdn.net
+      - cachecn.com
+  - name: QUIC.Cloud
+    cname:
+      - quic.cloud
+  - name: Stackpath CDN
+    cname:
+      - stackpathdns.com
+      - stackpathcdn.com
+  - name: 西部数码虚拟主机
+    cname:
+      - vhostgo.com
+  - name: 中国电信天翼云CDN
+    cname:
+      - ctxcdn.cn
+  - name: 高升控股CDN技术
+    cname:
+      - gosuncdn.com
+  - name: CDNIFY
+    cname:
+      - cdnify.io
+  - name: 蓝视云 CDN
+    cname:
+      - lsycdn.com
+  - name: 逸云科技云加速 CDN
+    cname:
+      - scsdns.com
+  - name: CenturyLink CDN (原 Level 3)
+    cname:
+      - footprint.net
+  - name: KeyCDN
+    cname:
+      - kxcdn.com.
+  - name: 深信服CDN
+    cname:
+      - sangfordns.com
+  - name: 饿了么静态域名与地域负载均衡
+    cname:
+      - elemecdn.com
+  - name: 新浪云 SAE 云引擎
+    cname:
+      - saebbs.com
+  - name: 云帆加速CDN
+    cname:
+      - yfcdn.net
+  - name: 网易云 CDN
+    cname:
+      - 126.net
+      - 163jiasu.com
+  - name: Stackpath (原 Highwinds)
+    cname:
+      - hwcdn.net
+  - name: 又拍云
+    cname:
+      - aicdn.com
+  - name: 新浪静态域名
+    cname:
+      - sinajs.cn
+  - name: TAN14 CDN
+    cname:
+      - tan14.net
+  - name: Google Cloud Storage
+    cname:
+      - googleapis.com
+  - name: 蚂蚁金服旗下业务地域负载均衡系统
+    cname:
+      - alipaydns.com
+  - name: Coding Pages
+    cname:
+      - coding.io
+      - coding.me
+  - name: StatusPage.io
+    cname:
+      - stspg-customer.com
+  - name: Bilibili 高可用负载均衡
+    cname:
+      - hdslb.net
+  - name: Instart CDN
+    cname:
+      - inscname.net
+      - insnw.net
+  - name: 百度旗下业务地域负载均衡系统
+    cname:
+      - shifen.com
+  - name: Cloudflare
+    cname:
+      - cloudflare.net
+      - ns.cloudflare.com
+  - name: 美团云 CDN
+    cname:
+      - msscdn.com
+  - name: WebLuker (蓝汛)
+    cname:
+      - xgslb.net
+  - name: NodeCache
+    cname:
+      - ncname.com
+  - name: Microsoft Azure CDN
+    cname:
+      - azureedge.net
+      - msecnd.net
+      - mschcdn.com
+      - v0cdn.net
+  - name: Netlify
+    cname:
+      - netlify.com
+  - name: Bunny CDN
+    cname:
+      - b-cdn.net
+  - name: 新浪科技融合CDN负载均衡
+    cname:
+      - sinaedge.com
+      - sina.com.cn
+  - name: 青云 CDN
+    cname:
+      - qingcache.com
+      - qingcloud.com
+      - frontwize.com
+  - name: UCloud 罗马 Rome 全球网络加速
+    cname:
+      - ucloudgda.com
+  - name: UCloud CDN
+    cname:
+      - ucloud.cn
+      - ucloud.com.cn
+      - cdndo.com
+  - name: 领智云 CDN（杭州领智云画）
+    cname:
+      - lccdn.org
+  - name: Fastly
+    cname:
+      - fastly.net
+      - fastlylb.net
+  - name: Microsoft Azure App Service
+    cname:
+      - azurewebsites.net
+      - azurewebsites.windows.net
+  - name: Bilibili 业务 GSLB
+    cname:
+      - biliapi.com
+  - name: 美橙互联旗下建站之星
+    cname:
+      - websitecname.cn
+  - name: 蓝汛 CDN
+    cname:
+      - ccgslb.com.cn
+      - ccgslb.net
+      - ccgslb.com
+      - ccgslb.cn
+      - c3cache.net
+      - c3dns.net
+      - chinacache.net
+      - chinacache.com
+  - name: GitLab Pages
+    cname:
+      - gitlab.io
+  - name: Conversant - SwiftServe CDN
+    cname:
+      - swiftserve.com
+  - name: 美团云（三快科技）负载均衡
+    cname:
+      - sankuai.com
+  - name: AWS Cloud
+    cname:
+      - amazonaws.com
+  - name: 阿里云 CDN
+    cname:
+      - tbcache.com
+      - aliyun-inc.com
+      - aliyuncs.com
+      - alikunlun.net
+      - alikunlun.com
+      - alicdn.com
+      - kunlun(.*).com
+      - cdngslb.com
+  - name: CacheFly CDN
+    cname:
+      - cachefly.net
+  - name: Internap CDN
+    cname:
+      - internapcdn.net
+  - name: TurboBytes Multi-CDN
+    cname:
+      - turbobytes.net
+      - turbobytes-cdn.com
+  - name: LeaseWeb CDN
+    cname:
+      - lswcdn.net
+  - name: 云端智度融合 CDN
+    cname:
+      - spdydns.com
+  - name: GitHub Pages
+    cname:
+      - github.io
+  - name: 金山云 CDN
+    cname:
+      - ksyuncdn.com
+      - ks-cdn.com
+      - ksyuncdn-k1.com
+  - name: 新乐视云联（原乐视云）CDN
+    cname:
+      - cdnle.com
+  - name: CDN.NET
+    cname:
+      - worldcdn.net
+  - name: 腾讯旗下业务地域负载均衡系统
+    cname:
+      - tencent-cloud.net
+  - name: 创世云融合 CDN
+    cname:
+      - chuangcdn.com
+      - aocde.com
+  - name: 蛮蛮云 CDN（中联利信）
+    cname:
+      - mmycdn.cn
+      - chinamaincloud.com
+  - name: Cedexis GSLB (For China)
+    cname:
+      - cdxcn.cn
+  - name: 百度云加速
+    cname:
+      - yunjiasu-cdn.net
+  - name: 宝腾互联旗下上海万根网络（YaoCDN）
+    cname:
+      - mygslb.com
+      - cdnudns.com
+      - sprycdn.com
+  - name: 知道创宇云安全加速乐CDN
+    cname:
+      - jiashule.com
+      - jiasule.org
+      - jiasule.net
+waf:
+  - name: 知道创宇云安全创宇盾
+    cname:
+      - 365cyd.cn
+      - cyudun.net
+      - 365cyd.net
+  - name: 华为云 WAF
+    cname:
+      - huaweicloudwaf.com
+  - name: 安全宝
+    cname:
+      - anquanbao.net
+      - anquanbao.com
+  - name: 安恒玄武盾
+    cname:
+      - saaswaf.com
+      - dbappwaf.cn
+  - name: 阿里云盾
+    cname:
+      - hwwsdns.cn
+      - yunduncname.com
+      - kunlun
+      - aliyunddos
+      - aliyunwaf
+      - aligaofang
+      - yundunwaf
+  - name: 阿里云盾高防
+    cname:
+      - aligaofang.com
+      - yundunddos.com
+  - name: 蓝盾云CDN
+    cname:
+      - cloudfence.cn
+  - name: 腾讯云大禹 BGP 高防
+    cname:
+      - dayugslb.com
+  - name: 华为云WAF高防云盾
+    cname:
+      - huaweicloud.com
+  - name: 极御云安全（浙江壹云云计算有限公司）
+    cname:
+      - xwaf.cn
+  - name: 奇安信网站卫士
+    cname:
+      - 360cloudwaf.com
+      - 360anyu.com
+      - 360safedns.com
+      - 360wzws.com
+      - 360wzb.com
+      - qaxcloudwaf.com
+  - name: 腾正安全加速（原 15CDN）
+    cname:
+      - 15cdn.com
+      - tzcdn.cn
+  - name: 网堤安全
+    cname:
+      - 2cname.com
+  - name: 绿盟云 WAF
+    cname:
+      - nscloudwaf.com
+  - name: 牛盾云安全
+    cname:
+      - newdefend.cn
+      - anquan.io
+  - name: 上海云盾YUNDUN
+    cname:
+      - jsd.cc

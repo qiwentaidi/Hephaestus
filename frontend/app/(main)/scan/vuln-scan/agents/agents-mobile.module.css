@@ -1,0 +1,103 @@
+.command {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.sheet {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 767px) {
+  :is(.page, .dialog, .sheet) :is(input, textarea) {
+    font-size: 16px;
+  }
+
+  :is(.page, .dialog, .sheet) :is([data-slot='input'], [data-slot='select-trigger'], [data-slot='button'], button:not([role='switch']):not([role='checkbox'])) {
+    min-height: 44px;
+  }
+
+  :is(.page, .dialog, .sheet) button[data-size^='icon'] {
+    min-width: 44px;
+  }
+
+  .toolbar > button {
+    width: 100%;
+    padding-inline: 8px;
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  .toolbar > button > svg {
+    display: none;
+  }
+
+  .metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .metric {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 0;
+    border: 0;
+  }
+
+  .metric > * {
+    margin: 0;
+  }
+
+  .metricValue {
+    grid-column: 3;
+    grid-row: 1;
+    font-size: 16px;
+  }
+
+  .metricBar {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .metricDetail {
+    grid-column: 2 / -1;
+  }
+
+  .dialog {
+    max-height: calc(100dvh - 24px);
+    min-width: 0;
+    overflow-y: auto;
+    padding: 16px;
+    overflow-wrap: anywhere;
+  }
+
+  .dialog :global([data-slot='dialog-header']) {
+    padding-inline: 24px;
+  }
+
+  .dialog > :global([data-slot='dialog-close']),
+  .sheet > button {
+    top: 4px;
+    right: 4px;
+    display: flex;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .command {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .command textarea {
+    min-height: 112px;
+  }
+
+  .command > button {
+    align-self: flex-end;
+  }
+}

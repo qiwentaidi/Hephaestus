@@ -1,0 +1,23 @@
+.page { height: 100%; min-height: 640px; display: flex; flex-direction: column; background: var(--background); }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 24px 16px; }
+.navigation { padding: 0 24px 14px; border-bottom: 1px solid var(--border); }
+.content { min-height: 0; flex: 1; overflow: auto; padding: 24px; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 28px; }
+.stat { border: 1px solid var(--border); background: var(--card); border-radius: 10px; padding: 16px; text-align: left; }
+.stat strong { display: block; font-size: 26px; margin-top: 6px; }
+.columns { display: grid; grid-template-columns: 1.25fr 1fr; gap: 28px; }
+.section { margin-bottom: 24px; }
+.section h2 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+.row { display: block; width: 100%; padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); text-align: left; margin-bottom: 10px; }
+.row:hover { background: var(--muted); }
+.row[data-selected=true] { border-color: #d69b35; box-shadow: inset 3px 0 #d69b35; }
+.evidence { flex: 1; min-height: 0; display: grid; grid-template-columns: 320px minmax(0, 1fr); }
+.index { overflow: auto; padding: 20px; border-right: 1px solid var(--border); }
+.report { min-width: 0; overflow: auto; padding: 28px 32px; }
+.report > article { max-width: 1000px; margin: auto; }
+.report h2 { font-size: 22px; font-weight: 600; line-height: 1.6; margin: 10px 0 20px; overflow-wrap: anywhere; }
+.report section { margin-top: 28px; }
+.report h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+.empty { padding: 24px; border: 1px dashed var(--border); border-radius: 10px; color: var(--muted-foreground); font-size: 13px; }
+@media(max-width: 900px) { .columns { grid-template-columns: 1fr; } .evidence { grid-template-columns: 240px minmax(0, 1fr); } .report { padding: 20px; } }
+@media(max-width: 640px) { .header { flex-wrap: wrap; padding: 16px; } .content { padding: 16px; } .stats { grid-template-columns: repeat(2, minmax(0,1fr)); } .evidence { display: block; overflow: auto; } .index { max-height: 280px; border-right: 0; border-bottom: 1px solid var(--border); } .report { overflow: visible; } }

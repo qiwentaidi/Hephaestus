@@ -1,0 +1,36 @@
+@media (max-width: 767px) {
+  .workspace {
+    display: block !important;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .workspace > [data-panel] {
+    height: 320px;
+    flex: none !important;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .workspace > [data-panel]:last-child {
+    height: 640px;
+  }
+
+  .workspace > [data-panel-resize-handle-id] {
+    display: none;
+  }
+
+  .workspace button:not([role='switch']),
+  .workspace input {
+    min-height: 44px;
+  }
+
+  .workspace button[data-size^='icon'] {
+    min-width: 44px;
+  }
+
+  .workspace input,
+  .workspace textarea {
+    font-size: 16px;
+  }
+}

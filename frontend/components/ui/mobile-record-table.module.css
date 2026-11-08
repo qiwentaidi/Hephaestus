@@ -1,0 +1,39 @@
+@media (max-width: 767px) {
+  .table {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+  }
+  .table > thead { display: none; }
+  .table > colgroup { display: none; }
+  .table > tbody { display: block; }
+  .table > tbody > tr {
+    display: block;
+    padding: 12px;
+  }
+  .table > tbody > tr > :is(td, th) {
+    position: static;
+    display: block;
+    width: 100%;
+    max-width: none;
+    padding: 6px 0;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .table > tbody > tr > [data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    color: var(--muted-foreground);
+    font-size: 12px;
+    font-weight: 400;
+  }
+  .table button:not([role='checkbox']):not([role='switch']) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

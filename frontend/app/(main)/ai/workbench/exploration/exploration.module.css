@@ -1,0 +1,134 @@
+.page { height: 100%; min-height: 640px; display: flex; flex-direction: column; background: var(--background); color: var(--foreground); }
+.header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 24px; border-bottom: 1px solid var(--border); }
+.toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 14px 24px; }
+.search { position: relative; min-width: 180px; flex: 1; max-width: 320px; }
+.workspace { position: relative; display: flex; flex: 1; min-height: 460px; margin: 0 20px; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; }
+.canvas { position: relative; flex: 1; min-width: 0; background: color-mix(in srgb, var(--muted) 45%, var(--background)); }
+.legend { position: absolute; top: 14px; left: 14px; max-width: calc(100% - 28px); padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); box-shadow: 0 2px 8px #00000008; font-size: 11px; pointer-events: none; }
+.node { width: 236px; min-height: 128px; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px 8px; background: var(--card); box-shadow: 0 2px 4px #00000006; }
+.node[data-direction=live] { border-color: color-mix(in srgb, #3b82f6 55%, var(--border)); box-shadow: 0 0 0 2px color-mix(in srgb, #3b82f6 16%, transparent); }
+.node[data-direction=recent] { border-style: dashed; border-color: color-mix(in srgb, #b7791f 48%, var(--border)); box-shadow: 0 0 0 2px color-mix(in srgb, #b7791f 12%, transparent); }
+.node[data-selected=true] { border-color: #d69b35; box-shadow: 0 0 0 2px #d69b3526; }
+/* Canvas control pill: pointer/hand modes, zoom, fit. */
+.controls { position: absolute; left: 12px; bottom: 12px; z-index: 6; display: flex; align-items: center; gap: 2px; padding: 4px; border: 1px solid var(--border); border-radius: 999px; background: color-mix(in srgb, var(--card) 92%, transparent); box-shadow: 0 6px 18px #0000001f; backdrop-filter: blur(8px); }
+.controlButton { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 999px; color: var(--muted-foreground); transition: background .12s ease, color .12s ease; }
+.controlButton:hover { background: var(--muted); color: var(--foreground); }
+.controlActive { background: var(--muted); color: var(--foreground); }
+.controlDivider { width: 1px; height: 16px; margin: 0 3px; background: var(--border); }
+.zoomValue { min-width: 40px; text-align: center; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--muted-foreground); }
+.canvas[data-pan='hand'] :global(.react-flow__pane) { cursor: grab; }
+.canvas[data-pan='hand'] :global(.react-flow__pane):active { cursor: grabbing; }
+.canvas[data-pan='hand'] :global(.react-flow__node) { pointer-events: none; }
+
+.node[data-dimmed=true] { opacity: .32; transition: opacity .16s ease; }
+.node { transition: opacity .16s ease; }
+.node[data-missing=true] { border-style: dashed; }
+.node[data-unlinked=true] { border-style: dashed; border-color: color-mix(in srgb, var(--border) 72%, #94a3b8); }
+.directionDot { flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: #b7791f; box-shadow: 0 0 0 2px color-mix(in srgb, #b7791f 15%, transparent); }
+.nodeHeader > .directionDot { margin-left: auto; }
+.directionDot[data-live=true] { background: #3b82f6; box-shadow: 0 0 0 2px color-mix(in srgb, #3b82f6 18%, transparent); animation: exploration-live 1.8s ease-out infinite; }
+@keyframes exploration-live {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, #3b82f6 55%, transparent); }
+  70% { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.nodeHeader { display: flex; align-items: center; gap: 7px; font-size: 12px; }
+.nodeHeader strong { font-weight: 550; }
+.nodeHeader > span:last-child:not(.nodeIcon):not(.severity) { margin-left: auto; color: var(--muted-foreground); font-size: 10px; }
+.nodeIcon { display: flex; align-items: center; justify-content: center; border-radius: 5px; width: 23px; height: 23px; color: white; }
+.nodeTitle { margin: 8px 0; font-size: 12px; line-height: 1.65; height: 59px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.nodeTarget { margin: -3px 0 8px; color: var(--muted-foreground); font-size: 10px; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nodeFooter { display: flex; justify-content: space-between; gap: 8px; color: var(--muted-foreground); font-size: 10px; }
+.nodeFooter > span:first-child:not(:empty) { padding: 1px 5px; background: var(--muted); border-radius: 4px; }
+.handle { opacity: 0; }
+.details { width: 440px; flex-shrink: 0; padding: 18px; border-left: 1px solid var(--border); background: var(--card); overflow-y: auto; overflow-wrap: anywhere; }
+.footer { padding: 10px 24px; font-size: 11px; line-height: 1.6; color: var(--muted-foreground); }
+.empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 13px; color: var(--muted-foreground); pointer-events: none; }
+.canvas :global(.react-flow__minimap) { background: var(--card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+/* The active exploration chain keeps its relation colour and animates the dashes
+   towards the target so the current direction reads at a glance. */
+.flowing { stroke-linecap: round; }
+.canvas .flowing :global(.react-flow__edge-path) { animation: exploration-flow 1.4s linear infinite; }
+@keyframes exploration-flow { to { stroke-dashoffset: -24; } }
+.flowLegend { display: inline-flex; align-items: center; gap: 5px; }
+.flowLegendLine { width: 18px; height: 4px; overflow: visible; color: var(--tone-amber, #b7791f); }
+.flowLegendLine line { stroke: currentColor; stroke-width: 1.5; stroke-dasharray: 5 4; animation: exploration-flow 1.4s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .canvas .flowing :global(.react-flow__edge-path),
+  .flowLegendLine line,
+  .directionDot[data-live=true] { animation: none; }
+}
+@media(max-width: 900px) {
+  .details { position: absolute; z-index: 10; right: 0; top: 0; bottom: 0; width: min(440px, 100%); box-shadow: -8px 0 20px #00000012; }
+}
+@media(max-width: 640px) {
+  .header, .toolbar { padding: 12px; }
+  .header { flex-wrap: wrap; }
+  .search { flex-basis: 100%; max-width: none; }
+  .workspace { margin: 0 8px; }
+  .legend { font-size: 10px; padding: 8px; }
+  .canvas :global(.react-flow__minimap) { display: none; }
+  .footer { padding: 10px 12px; }
+}
+/* React Flow adds a local .light class; keep the application's theme tokens inside the canvas. */
+.page {
+  --exploration-card: var(--card);
+  --exploration-background: var(--background);
+  --exploration-foreground: var(--foreground);
+  --exploration-muted: var(--muted);
+  --exploration-muted-foreground: var(--muted-foreground);
+  --exploration-border: var(--border);
+}
+.canvas :global(.react-flow) {
+  --card: var(--exploration-card);
+  --background: var(--exploration-background);
+  --foreground: var(--exploration-foreground);
+  --muted: var(--exploration-muted);
+  --muted-foreground: var(--exploration-muted-foreground);
+  --border: var(--exploration-border);
+}
+
+.graphView { flex: 1; display: flex; flex-direction: column; min-height: 560px; --exploration-card: var(--card); --exploration-background: var(--background); --exploration-foreground: var(--foreground); --exploration-muted: var(--muted); --exploration-muted-foreground: var(--muted-foreground); --exploration-border: var(--border); }
+
+.priority { padding: 1px 5px; border-radius: 4px; background: color-mix(in srgb, #d97706 10%, var(--card)); color: #b7791f !important; }
+.node[data-status=met] .nodeFooter > span:first-child,
+.node[data-status=confirmed] .nodeFooter > span:first-child { background: color-mix(in srgb, #10b981 12%, var(--card)); color: #15815c; }
+.node[data-status=in_progress] .nodeFooter > span:first-child,
+.node[data-status=blocked] .nodeFooter > span:first-child { background: color-mix(in srgb, #d97706 10%, var(--card)); color: #b7791f; }
+/* Cancelled/stopped work is terminal, not a destructive error. Keep it neutral
+   and distinguish it from an unverified fact, which uses the amber dashed edge. */
+.node[data-status=stopped],
+.node[data-status=cancelled],
+.node[data-status=cancelling],
+.node[data-status=not_executed] { border-style: dashed; border-color: color-mix(in srgb, #64748b 38%, var(--border)); }
+.node[data-status=stopped] .nodeFooter > span:first-child,
+.node[data-status=cancelled] .nodeFooter > span:first-child,
+.node[data-status=cancelling] .nodeFooter > span:first-child,
+.node[data-status=not_executed] .nodeFooter > span:first-child {
+  background: color-mix(in srgb, #64748b 10%, var(--card));
+  color: color-mix(in srgb, #64748b 72%, var(--foreground));
+}
+
+/* Findings are risk conclusions, not raw evidence. A dedicated risk surface,
+   a left rail and a severity badge keep them from reading as amber fact cards. */
+.severity { flex-shrink: 0; border-width: 1px; border-style: solid; border-radius: 4px; padding: 0 4px; font-size: 9.5px; font-weight: 600; line-height: 15px; letter-spacing: .02em; white-space: nowrap; }
+.node[data-kind=finding] {
+  border-color: color-mix(in srgb, var(--destructive) 42%, var(--border));
+  background: color-mix(in srgb, var(--destructive) 9%, var(--card));
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--destructive) 12%, transparent);
+}
+.node[data-kind=finding] .nodeHeader strong { color: color-mix(in srgb, var(--destructive) 68%, var(--foreground)); }
+.node[data-kind=finding] .nodeTitle { font-weight: 600; }
+.node[data-kind=finding][data-severity=critical],
+.node[data-kind=finding][data-severity=high] {
+  border-color: color-mix(in srgb, var(--destructive) 62%, var(--border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--destructive) 20%, transparent), 0 4px 16px color-mix(in srgb, var(--destructive) 16%, transparent);
+}
+.node[data-kind=finding][data-selected=true] {
+  border-color: #d69b35;
+  box-shadow: 0 0 0 2px #d69b3526;
+}
+.node[data-kind=finding] .findingStatus[data-finding-status=open] { background: color-mix(in srgb, #f59e0b 14%, var(--card)); color: color-mix(in srgb, #f59e0b 45%, var(--foreground)); }
+.node[data-kind=finding] .findingStatus[data-finding-status=confirmed],
+.node[data-kind=finding] .findingStatus[data-finding-status=in_progress] { background: color-mix(in srgb, #3b82f6 14%, var(--card)); color: color-mix(in srgb, #3b82f6 45%, var(--foreground)); }
+.node[data-kind=finding] .findingStatus[data-finding-status=fixed] { background: color-mix(in srgb, #10b981 14%, var(--card)); color: color-mix(in srgb, #10b981 40%, var(--foreground)); }

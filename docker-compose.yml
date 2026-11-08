@@ -1,0 +1,40 @@
+services:
+  hephaestus:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VERSION: "${HEPHAESTUS_VERSION:-dev}"
+        BUILD_TIME: "${HEPHAESTUS_BUILD_TIME:-unknown}"
+    image: hephaestus:local
+    container_name: hephaestus
+    ports:
+      - "${HEPHAESTUS_PORT:-18181}:18181"
+    environment:
+      # 以下变量仅在数据卷中还没有 config.yaml 时用于生成初始配置。
+      HEPHAESTUS_DB_TYPE: "${HEPHAESTUS_DB_TYPE:-postgres}"
+      HEPHAESTUS_DB_HOST: "${HEPHAESTUS_DB_HOST:-local}"
+      HEPHAESTUS_DB_PORT: "${HEPHAESTUS_DB_PORT:-5432}"
+      HEPHAESTUS_DB_USER: "${HEPHAESTUS_DB_USER:-postgres}"
+      # 内置 PostgreSQL 首次启动时自动生成密码并保存到 .pg-password；外部 PostgreSQL 请填写实际密码。
+      HEPHAESTUS_DB_PASSWORD: "${HEPHAESTUS_DB_PASSWORD:-}"
+      HEPHAESTUS_DB_NAME: "${HEPHAESTUS_DB_NAME:-hephaestus}"
+      HEPHAESTUS_DB_SSLMODE: "${HEPHAESTUS_DB_SSLMODE:-disable}"
+      # 使用外部 PostgreSQL 时设为 0；host 为 local/127.0.0.1 时默认启动内置 PG。
+      HEPHAESTUS_EMBEDDED_POSTGRES: "${HEPHAESTUS_EMBEDDED_POSTGRES:-1}"
+      # 留空时首次启动自动生成并保存在数据卷的 .jwt-secret。
+      HEPHAESTUS_JWT_SECRET: "${HEPHAESTUS_JWT_SECRET:-}"
+    volumes:
+      - hephaestus-data:/var/lib/hephaestus
+    shm_size: "256mb"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:18181/healthz >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+
+volumes:
+  hephaestus-data:
