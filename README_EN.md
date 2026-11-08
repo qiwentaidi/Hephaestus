@@ -116,12 +116,50 @@ flowchart TB
 
 | Mode | Best for | Data storage | Default entry point |
 | --- | --- | --- | --- |
-| **Docker Compose** (recommended) | Team sharing, server deployment, quick evaluation | Built-in PostgreSQL 17, switchable to SQLite or external PostgreSQL | `http://localhost:18181` |
-| **Single Binary** | Production, offline deployment, no Node/Go runtime | PostgreSQL or SQLite | `http://localhost:18181` |
+| **Single Binary** (recommended) | General deployment, production, offline use | PostgreSQL or SQLite | `http://localhost:18181` |
+| **Docker Compose** | Team sharing, server deployment, quick evaluation | Built-in PostgreSQL 17, switchable to SQLite or external PostgreSQL | `http://localhost:18181` |
 | **Desktop Client** | Single-machine use, local tool integration | SQLite, switchable to PostgreSQL | Desktop window |
 | **Scanning Agent** | Distributed scanning, remote network execution | Shared PostgreSQL with the main service | No web entry point |
 
-### 1. Docker Compose (Recommended)
+### 1. Single Binary (Recommended)
+
+For most deployments, build and run a single binary from source. It embeds the statically exported frontend, so the deployment host does not need Node.js or Go.
+
+Build and run from the repository root:
+
+```bash
+./scripts/build.sh current
+./dist/hephaestus-darwin-arm64   # macOS ARM64 example
+```
+
+Prebuilt archives for supported platforms are available in [Releases](https://github.com/qiwentaidi/Hephaestus/releases).
+
+On first run, a default configuration is generated at `~/.config/hephaestus/config.yaml`. If the default PostgreSQL is not ready, the program reports a database connection failure; configure the database and restart.
+
+By default, it listens on `http://localhost:18181`. For production, set an explicit configuration directory and a fixed JWT secret:
+
+```bash
+HEPHAESTUS_CONFIG_DIR=/opt/hephaestus \
+HEPHAESTUS_JWT_SECRET='replace-with-a-long-random-secret' \
+./dist/hephaestus-darwin-arm64
+```
+
+<details>
+<summary><b>Build all platforms / frontend or backend only</b></summary>
+
+```bash
+./scripts/build.sh all        # Windows, macOS, and Linux artifacts
+./scripts/build.sh frontend   # Build only the frontend and copy it to backend/webassets/dist
+./scripts/build.sh backend    # Build the backend using existing frontend artifacts
+```
+
+Linux targets are built through Docker Buildx and require a local Docker service.
+
+</details>
+
+### 2. Docker Compose
+
+The container does not currently support in-page self-updates. To upgrade, rebuild the image and recreate the container.
 
 The image ships with PostgreSQL 17 and starts a single `hephaestus` container. Requirements: Docker 24+ with Compose V2; 2 GB+ of memory recommended; the image is approximately 430 MB.
 
@@ -139,7 +177,7 @@ Open `http://localhost:18181`; the first visit guides you through creating an ad
 <details>
 <summary><b>Data persistence and common operations</b></summary>
 
-Data is stored in the Compose volume `hephaestus-data` (usually named `hephaestus_hephaestus-data`) and mounted at `/var/lib/hephaestus` inside the container:
+Data is stored in the Compose volume `hephaestus-data` (named `<project-name>_hephaestus-data` by default) and mounted at `/var/lib/hephaestus` inside the container:
 
 ```text
 config.yaml     Application configuration
@@ -150,11 +188,13 @@ data/           Uploaded files, screenshots, etc.
 logs/           Application and PostgreSQL logs
 ```
 
+When the container continues to mount the same volume, `docker compose up -d --build` preserves the embedded PostgreSQL data. Changing the Compose project name can cause Compose to mount a new volume.
+
 ```bash
 docker compose ps
 docker compose logs -f hephaestus
 docker compose down       # Stop and keep data
-docker compose down -v    # Stop and delete data (use with care)
+docker compose down -v    # Stop and delete the data volume (use with care)
 ```
 
 </details>
@@ -208,40 +248,6 @@ The container also includes PostgreSQL; no separate database container is needed
 docker ps
 docker logs -f hephaestus
 ```
-
-</details>
-
-### 2. Single Binary
-
-Suitable for production environments or machines without Node.js/Go runtimes. The frontend is statically exported and embedded in the backend binary.
-
-Download the archive for your platform from [Releases](https://github.com/qiwentaidi/Hephaestus/releases), or build it from the repository root:
-
-```bash
-./scripts/build.sh current
-./dist/hephaestus-darwin-arm64   # macOS ARM64 example
-```
-
-On first run, a default configuration is generated at `~/.config/hephaestus/config.yaml`. If the default PostgreSQL is not ready, the program reports a database connection failure; configure the database and restart.
-
-By default, it listens on `http://localhost:18181`. For production, set an explicit configuration directory and a fixed JWT secret:
-
-```bash
-HEPHAESTUS_CONFIG_DIR=/opt/hephaestus \
-HEPHAESTUS_JWT_SECRET='replace-with-a-long-random-secret' \
-./dist/hephaestus-darwin-arm64
-```
-
-<details>
-<summary><b>Build all platforms / frontend or backend only</b></summary>
-
-```bash
-./scripts/build.sh all        # Windows, macOS, and Linux artifacts
-./scripts/build.sh frontend   # Build only the frontend and copy it to backend/webassets/dist
-./scripts/build.sh backend    # Build the backend using existing frontend artifacts
-```
-
-Linux targets are built through Docker Buildx and require a local Docker service.
 
 </details>
 

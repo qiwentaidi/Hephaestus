@@ -116,12 +116,50 @@ flowchart TB
 
 | 方式 | 适合场景 | 数据存储 | 默认入口 |
 | --- | --- | --- | --- |
-| **Docker Compose**（推荐） | 团队共享、服务器部署、快速体验 | 内置 PostgreSQL 17，可切 SQLite 或外部 PostgreSQL | `http://localhost:18181` |
-| **单二进制** | 生产环境、离线部署、无 Node/Go 运行时 | PostgreSQL 或 SQLite | `http://localhost:18181` |
+| **单二进制**（推荐） | 常规部署、生产环境、离线运行 | PostgreSQL 或 SQLite | `http://localhost:18181` |
+| **Docker Compose** | 团队共享、服务器部署、快速体验 | 内置 PostgreSQL 17，可切 SQLite 或外部 PostgreSQL | `http://localhost:18181` |
 | **桌面客户端** | 单机使用、本地工具整合 | SQLite，可切换 PostgreSQL | 桌面窗口 |
 | **扫描 Agent** | 分布式扫描、远程网络执行 | 与主服务共享 PostgreSQL | 无 Web 入口 |
 
-### 1. Docker Compose（推荐）
+### 1. 单二进制（推荐）
+
+常规部署推荐从源码编译单二进制。前端会静态导出并嵌入后端二进制，部署机器无需安装 Node.js 或 Go。
+
+在仓库根目录构建并运行：
+
+```bash
+./scripts/build.sh current
+./dist/hephaestus-darwin-arm64   # 以 macOS ARM64 为例
+```
+
+也可以从 [Releases](https://github.com/qiwentaidi/Hephaestus/releases) 下载对应平台的预编译压缩包。
+
+首次运行会在 `~/.config/hephaestus/config.yaml` 生成默认配置；如果默认 PostgreSQL 尚未准备好，程序会提示数据库连接失败，完成数据库配置后重启即可。
+
+默认监听 `http://localhost:18181`。生产环境建议显式指定配置目录和固定的 JWT 密钥：
+
+```bash
+HEPHAESTUS_CONFIG_DIR=/opt/hephaestus \
+HEPHAESTUS_JWT_SECRET='固定的随机长字符串' \
+./dist/hephaestus-darwin-arm64
+```
+
+<details>
+<summary><b>构建全部平台 / 只构建前端或后端</b></summary>
+
+```bash
+./scripts/build.sh all        # Windows、macOS、Linux 多平台产物
+./scripts/build.sh frontend   # 只构建前端并复制到 backend/webassets/dist
+./scripts/build.sh backend    # 复用已有前端产物构建后端
+```
+
+Linux 目标通过 Docker Buildx 构建，需要本机 Docker 服务。
+
+</details>
+
+### 2. Docker Compose
+
+容器版暂不支持页面内的在线自更新。升级时需要重新构建镜像并重建容器。
 
 镜像默认内置 PostgreSQL 17，启动后只有一个 `hephaestus` 容器。环境要求：Docker 24+（含 Compose V2），建议预留 2 GB 以上内存；镜像约 430 MB。
 
@@ -139,7 +177,7 @@ curl -fsS http://localhost:18181/healthz
 <details>
 <summary><b>数据持久化与常用操作</b></summary>
 
-数据保存在 Compose 卷 `hephaestus-data`（完整名称通常为 `hephaestus_hephaestus-data`），挂载到容器内 `/var/lib/hephaestus`：
+数据保存在 Compose 卷 `hephaestus-data`（默认完整名称为 `<项目名>_hephaestus-data`），挂载到容器内 `/var/lib/hephaestus`：
 
 ```text
 config.yaml     应用配置
@@ -150,11 +188,13 @@ data/           上传文件、截图等
 logs/           应用与 PostgreSQL 日志
 ```
 
+只要继续挂载同一个数据卷，`docker compose up -d --build` 重建容器时就会保留内置 PostgreSQL 数据。更改 Compose 项目名可能会挂载一个新卷。
+
 ```bash
 docker compose ps
 docker compose logs -f hephaestus
 docker compose down       # 停止并保留数据
-docker compose down -v    # 停止并删除数据（谨慎）
+docker compose down -v    # 停止并删除数据卷（谨慎）
 ```
 
 </details>
@@ -208,40 +248,6 @@ docker run -d --name hephaestus \
 docker ps
 docker logs -f hephaestus
 ```
-
-</details>
-
-### 2. 单二进制
-
-适合生产环境或没有 Node.js/Go 运行时的机器。前端会静态导出并嵌入后端二进制。
-
-从 [Releases](https://github.com/qiwentaidi/Hephaestus/releases) 下载对应平台的压缩包，或在仓库根目录构建：
-
-```bash
-./scripts/build.sh current
-./dist/hephaestus-darwin-arm64   # 以 macOS ARM64 为例
-```
-
-首次运行会在 `~/.config/hephaestus/config.yaml` 生成默认配置；如果默认 PostgreSQL 尚未准备好，程序会提示数据库连接失败，完成数据库配置后重启即可。
-
-默认监听 `http://localhost:18181`。生产环境建议显式指定配置目录和固定的 JWT 密钥：
-
-```bash
-HEPHAESTUS_CONFIG_DIR=/opt/hephaestus \
-HEPHAESTUS_JWT_SECRET='固定的随机长字符串' \
-./dist/hephaestus-darwin-arm64
-```
-
-<details>
-<summary><b>构建全部平台 / 只构建前端或后端</b></summary>
-
-```bash
-./scripts/build.sh all        # Windows、macOS、Linux 多平台产物
-./scripts/build.sh frontend   # 只构建前端并复制到 backend/webassets/dist
-./scripts/build.sh backend    # 复用已有前端产物构建后端
-```
-
-Linux 目标通过 Docker Buildx 构建，需要本机 Docker 服务。
 
 </details>
 
