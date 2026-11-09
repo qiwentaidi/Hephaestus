@@ -589,14 +589,6 @@ export const en: Locale = {
         "title": "Python dependencies",
         "summary": "Install script dependencies in the selected environment."
       },
-      "arjun": {
-        "title": "HTTP parameter discovery",
-        "summary": "Discover parameters accepted by HTTP endpoints."
-      },
-      "dalfox": {
-        "title": "XSS testing",
-        "summary": "Scan for and validate cross-site scripting vulnerabilities."
-      },
       "dnslog": {
         "title": "DNS callbacks",
         "summary": "Get a callback domain and query DNS records."
@@ -1322,8 +1314,7 @@ export const en: Locale = {
         foundVersion: "New version found: {version}",
         currentLatest: "You are already on the latest version",
         checkFailed: "Failed to check updates",
-        containerUpdateDisabled:
-          "Online updates are disabled in containers. Pull the new image and recreate the container.",
+        containerUpdateDisabled: "This deployment has no Docker updater configured.",
         downloadPackage: "Downloading update package...",
         downloadFrom: "Downloading from {source}...",
         downloadComplete:

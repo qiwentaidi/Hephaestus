@@ -12,6 +12,7 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import DOMPurify from 'dompurify'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import {
@@ -27,6 +28,7 @@ import {
 import { fetchWithAuth, getApiBaseURL, getToken } from '@/lib/api'
 import { isDesktopRuntime } from '@/lib/desktop'
 import {
+  downloadDockerUpdate,
   fetchRunningUpdateTasks,
   formatRunningUpdateTasks,
   installDesktopUpdatePackage,
@@ -37,6 +39,8 @@ import {
   reloadAfterServiceRestart,
   requestSystemUpdateRestart,
   subscribeStagedUpdateVersion,
+  syncStagedDockerUpdate,
+  SYSTEM_UPDATE_SNAPSHOT_KEY,
   type RunningUpdateTaskSummary,
 } from '@/lib/system-update'
 import { useI18n } from '@/lib/i18n'
@@ -50,6 +54,7 @@ interface SystemInfo {
 }
 
 interface UpdateInfo {
+  delivery?: 'docker'
   version: string
   releaseDate: string
   changelog: string
@@ -84,6 +89,7 @@ const getCurrentTimestamp = () => Date.now()
 
 interface UpdateCardProps {
   id: 'client' | 'config'
+  docker?: boolean
   name: string
   currentVersion: string
   latestVersion: string
@@ -111,6 +117,7 @@ interface UpdateCardProps {
 
 function UpdateCard({
   id,
+  docker,
   name,
   currentVersion,
   latestVersion,
@@ -166,6 +173,7 @@ function UpdateCard({
 
             {hasUpdate ? (
               <div className="flex flex-wrap items-center gap-2 text-sm">
+                {docker && <Badge variant="secondary">Docker</Badge>}
                 <span className="font-mono text-muted-foreground">{currentVersion}</span>
                 <span className="text-muted-foreground">→</span>
                 <span className="font-mono text-primary">{latestVersion}</span>
@@ -183,9 +191,10 @@ function UpdateCard({
                 )}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                {currentVersion} · {isUpToDate ? upToDateLabel : statusLabel}
-              </p>
+              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                {docker && <Badge variant="secondary">Docker</Badge>}
+                <span>{currentVersion} · {isUpToDate ? upToDateLabel : statusLabel}</span>
+              </div>
             )}
 
             {extra}
@@ -244,7 +253,6 @@ function UpdateCard({
 export function SystemUpdateTab() {
   const { t } = useI18n()
   const i18n = t.settings.systemUpdate
-  const SYSTEM_UPDATE_SNAPSHOT_KEY = 'hephaestus:system-update-snapshot'
   const CONFIG_UPDATE_SNAPSHOT_KEY = 'hephaestus:config-update-snapshot'
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null)
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
@@ -257,6 +265,7 @@ export function SystemUpdateTab() {
   const [totalSize, setTotalSize] = useState(0)
   const [status, setStatus] = useState<UpdateStatus>('idle')
   const [restartDialogOpen, setRestartDialogOpen] = useState(false)
+  const [dockerRestarting, setDockerRestarting] = useState(false)
   const [pendingRestartAction, setPendingRestartAction] = useState<'restart' | 'install'>(
     () => readStagedUpdateAction() ?? 'restart'
   )
@@ -297,8 +306,9 @@ export function SystemUpdateTab() {
   }
 
   const applySnapshot = useCallback((snapshot: SystemUpdateSnapshot) => {
-    if (snapshot.currentVersion) {
-      setSystemInfo({ version: snapshot.currentVersion })
+    const { currentVersion } = snapshot
+    if (currentVersion) {
+      setSystemInfo((previous) => ({ ...previous, version: currentVersion }))
     }
 
     setHasUpdate(Boolean(snapshot.hasUpdate))
@@ -391,6 +401,14 @@ export function SystemUpdateTab() {
       console.error(i18n.messages.fetchSystemFailed + ':', error)
     }
   }, [i18n])
+
+  useEffect(() => {
+    if (updateInfo?.delivery !== 'docker' || updateInfo.version !== systemInfo?.version) return
+    setHasUpdate(false)
+    setUpdateInfo(null)
+    setNoUpdate(true)
+    setStatus('up-to-date')
+  }, [systemInfo?.version, updateInfo])
 
   const fetchConfigInfo = useCallback(async () => {
     try {
@@ -491,7 +509,9 @@ export function SystemUpdateTab() {
       if (data.success) {
         if (data.hasUpdate) {
           // 暂存的更新包只对同一版本有效。
-          if (readStagedUpdateVersion() !== data.updateInfo.version) {
+          if (data.updateInfo.delivery === 'docker') {
+            syncStagedDockerUpdate(data.updateInfo.version, data.stagedVersion)
+          } else if (readStagedUpdateVersion() !== data.updateInfo.version) {
             persistStagedUpdateVersion(null)
           }
           setHasUpdate(true)
@@ -552,6 +572,21 @@ export function SystemUpdateTab() {
     downloadStartTimeRef.current = getCurrentTimestamp()
     setEstimatedTimeLeft(0)
     const toastId = toast.loading(i18n.messages.downloadPackage)
+
+    if (updateInfo.delivery === 'docker') {
+      try {
+        await downloadDockerUpdate(updateInfo.version, i18n.messages.downloadFailed)
+        toast.dismiss(toastId)
+        setDownloading(false)
+        await finishClientUpdate('restart')
+      } catch (error) {
+        setStatus('error')
+        toast.error(error instanceof Error ? error.message : i18n.messages.downloadFailed, { id: toastId })
+      } finally {
+        setDownloading(false)
+      }
+      return
+    }
 
     const downloadSources = [
       { name: i18n.sourceGitee, url: updateInfo.mirrorUrl },
@@ -797,7 +832,36 @@ export function SystemUpdateTab() {
     })
   }
 
+  const restartDocker = async (version: string) => {
+    if (dockerRestarting) return
+    setDockerRestarting(true)
+    const toastId = toast.loading(i18n.autoRestarting)
+    try {
+      await requestSystemUpdateRestart(version)
+      setRestartDialogOpen(false)
+      if (await reloadAfterServiceRestart({
+        expectedVersion: version,
+        waitingMessage: i18n.waitingRestart,
+        readyMessage: i18n.messages.reloadReady,
+        timeoutMessage: i18n.messages.restartTimeout,
+        timeoutMs: 360_000,
+        docker: true,
+        toastId,
+      })) return
+    } catch (error) {
+      toast.error(`${i18n.messages.restartFailed}: ${error instanceof Error ? error.message : i18n.unknown}`, { id: toastId })
+    } finally {
+      setDockerRestarting(false)
+    }
+    persistStagedUpdateVersion(null)
+    setStatus('error')
+  }
+
   const handleRestart = async () => {
+    if (updateInfo?.delivery === 'docker') {
+      await restartDocker(updateInfo.version)
+      return
+    }
     const toastId = toast.loading(i18n.autoRestarting)
     const action = pendingRestartAction
     try {
@@ -841,6 +905,11 @@ export function SystemUpdateTab() {
 
     if (!summary.known || summary.total > 0) {
       setRestartDialogOpen(true)
+      return
+    }
+
+    if (updateInfo?.delivery === 'docker') {
+      await restartDocker(updateInfo.version)
       return
     }
 
@@ -1127,6 +1196,7 @@ export function SystemUpdateTab() {
         <div className="space-y-3">
           <UpdateCard
             id="client"
+            docker={systemInfo?.deployment === 'docker'}
             name={i18n.clientName}
             currentVersion={currentVersion}
             latestVersion={hasUpdate ? latestVersion : currentVersion}
@@ -1158,7 +1228,12 @@ export function SystemUpdateTab() {
             icon={<Package className={cn('size-5', hasUpdate ? 'text-primary' : 'text-muted-foreground')} />}
             iconWrap={hasUpdate ? 'bg-primary/10' : 'bg-muted'}
             extra={
-              status === 'downloading' || status === 'installing' ? (
+              updateInfo?.delivery === 'docker' && downloading ? (
+                <div className="mt-3 space-y-2 text-xs text-muted-foreground">
+                  <span>{i18n.progress.downloading}</span>
+                  <div className="h-1 animate-pulse rounded-full bg-primary/40" />
+                </div>
+              ) : updateInfo?.delivery !== 'docker' && (status === 'downloading' || status === 'installing') ? (
                 <div className="mt-3 space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">
@@ -1176,7 +1251,7 @@ export function SystemUpdateTab() {
               ) : null
             }
             statusLabel={clientPackageReady ? i18n.downloaded : statusMeta[status].label}
-            actionDisabled={checking || downloading}
+            actionDisabled={checking || downloading || dockerRestarting}
             isExpanded={expandedItems.includes('client')}
             newTag={i18n.newTag}
             upToDateLabel={i18n.upToDate}
@@ -1336,7 +1411,7 @@ export function SystemUpdateTab() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{i18n.restartDialog.later}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRestart}>
+            <AlertDialogAction onClick={handleRestart} disabled={dockerRestarting}>
               {i18n.restartDialog.now}
             </AlertDialogAction>
           </AlertDialogFooter>

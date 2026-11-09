@@ -273,11 +273,13 @@ func SetupRoutes(r *gin.Engine) {
 			system.GET("/agent-config", agent.GetAgentConfigHandler)
 			system.PUT("/agent-config", agent.UpdateAgentConfigHandler)
 			// 系统更新
-			system.GET("/update/check", admin.CheckUpdate)                   // 检查更新
-			system.GET("/update/history", admin.GetUpdateHistory)            // 获取更新历史
-			system.POST("/update/download", admin.DownloadAndUpdate)         // 下载并更新
-			system.POST("/update/restart", admin.RestartService)             // 重启服务
-			system.GET("/update/info", admin.GetSystemInfo)                  // 获取系统信息
+			system.GET("/update/check", admin.CheckUpdate)           // 检查更新
+			system.GET("/update/history", admin.GetUpdateHistory)    // 获取更新历史
+			system.POST("/update/download", admin.DownloadAndUpdate) // 下载并更新
+			system.POST("/update/restart", admin.RestartService)     // 重启服务
+			system.GET("/update/info", admin.GetSystemInfo)          // 获取系统信息
+			system.POST("/update/docker/download", admin.DownloadDockerUpdate)
+			system.GET("/update/docker/status", admin.GetDockerUpdateStatus)
 			system.GET("/update/running-tasks", admin.GetUpdateRunningTasks) // 重启前的运行中任务概况
 			// 配置文件更新
 			system.GET("/update/config/info", admin.GetConfigUpdateInfo) // 获取配置更新信息

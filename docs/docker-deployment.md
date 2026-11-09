@@ -73,7 +73,7 @@ cat hephaestus.sql | docker exec -i -e PGPASSWORD="$(docker exec hephaestus cat 
 | `HEPHAESTUS_DB_NAME` | `hephaestus` | 数据库名，不存在时应用会自动创建 |
 | `HEPHAESTUS_DB_SSLMODE` | `disable` | 外部 PostgreSQL 的 SSL 模式 |
 | `HEPHAESTUS_EMBEDDED_POSTGRES` | `1` | 设为 `0` 时即使 host 为 local 也不启动内置 PostgreSQL |
-| `HEPHAESTUS_DEPLOYMENT` | `docker` | 容器标识；设置为 `docker` 时禁用页面内在线自更新 |
+| `HEPHAESTUS_DEPLOYMENT` | `docker` | 容器标识；Docker 在线升级由宿主机更新器执行 |
 | `HEPHAESTUS_PORT` | `18181` | 仅 Compose 使用的主机映射端口 |
 
 已有 `config.yaml` 时不会覆盖，配置以该文件为准。要切换数据库，请先编辑或删除数据卷中的
@@ -114,8 +114,7 @@ SQLite 文件位于 `/var/lib/hephaestus/data/hephaestus.db`。适合单机轻�
 镜像已经安装 AI 工作台需要的本地命令：
 
 - Python 3、`pip`、`requests`
-- `sqlmap 1.10.10`、`arjun 2.2.7`
-- `dalfox 2.13.0`
+- `sqlmap 1.10.10`
 - `nmap`、`curl`、`wget`、`git`、`jq`、`unzip`、`bash`
 - `bubblewrap`（`bwrap`），用于 AI 本地命令的文件写入隔离
 
@@ -144,22 +143,37 @@ Dockerfile 和 Compose 都配置了健康检查，`docker ps` 中会显示 `heal
 
 ## 升级
 
-容器部署不支持页面内的“在线更新/自更新”。相关接口会返回：
+管理员可以在更新弹窗或「系统设置 → 系统更新」升级已接入宿主机更新器的 Docker 部署。
+点击「更新」会先下载镜像。空闲时自动重启，有运行中任务时沿用 Web 版的重启确认。
+升级沿用原 Compose 项目和数据卷，服务恢复并确认目标版本后页面会自动刷新。
 
-```text
-容器部署不支持在线自更新，请拉取新镜像并重建容器
-```
+在 Docker 宿主机上一次性接入更新器。需要 Linux 或 macOS、Go 1.26.3，以及支持
+`!reset` 和 `up --wait` 的 Docker Compose V2。发布镜像位于
+`ghcr.io/qiwentaidi/hephaestus`，使用版本号 tag 和 `latest`。宿主机需要有该镜像的拉取权限。
 
-升级流程：
+在原部署目录执行以下命令。已有部署请将 `项目名` 替换为原项目名，可用
+`docker compose ls` 查看。新部署可以自行指定项目名。首次激活会切换到已发布的镜像。
 
 ```bash
-git pull
-docker compose build --pull
-docker compose up -d
+(cd backend && go build -o ../.hephaestus-updater-bin ./cmd/docker-updater)
+./.hephaestus-updater-bin -project-name 项目名 -activate
 ```
 
-数据卷保持不变。不要用页面内的更新按钮替换容器内二进制，否则更新会在容器重建后丢失，
-并且可能让容器 PID 1 退出。
+激活后让更新器随宿主机常驻。使用 systemd 或 launchd 托管时，启动命令去掉
+`-activate`，工作目录设为原部署目录，并使用同一个能访问 Docker 的账号。
+macOS 默认使用本机端口 18182，端口冲突时可以通过 `-desktop-port` 指定，
+激活和后续启动需使用相同端口。运行状态和镜像引用保存在部署目录的
+`.hephaestus-updater/` 中。
+
+如需手动管理已接入更新器的容器，使用同一个项目和发布版 Compose 配置：
+
+```bash
+docker compose -p 项目名 --env-file .env --env-file .hephaestus-updater/image.env \
+  -f docker-compose.yml -f docker-compose.release.yml ps
+```
+
+没有 `.env` 时省略对应参数。有额外 Compose 覆盖文件时，应继续使用原覆盖文件。
+源码构建部署仍可用 `git pull --ff-only && docker compose build --pull && docker compose up -d` 升级。
 
 ## 安全说明
 

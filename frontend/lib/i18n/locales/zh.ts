@@ -587,14 +587,6 @@ export const zh = {
         "title": "Python 依赖安装",
         "summary": "为指定虚拟环境安装脚本所需依赖。"
       },
-      "arjun": {
-        "title": "HTTP 参数发现",
-        "summary": "探测 HTTP 接口可能接受的参数。"
-      },
-      "dalfox": {
-        "title": "XSS 检测",
-        "summary": "扫描并验证跨站脚本漏洞。"
-      },
       "dnslog": {
         "title": "DNS 回连验证",
         "summary": "获取回连域名并查询 DNS 记录。"
@@ -1315,7 +1307,7 @@ export const zh = {
         foundVersion: "发现新版本 {version}",
         currentLatest: "当前已是最新版本",
         checkFailed: "检查更新失败",
-        containerUpdateDisabled: "容器部署不支持在线更新，请拉取新镜像并重建容器",
+        containerUpdateDisabled: "此部署尚未接入 Docker 更新器",
         downloadPackage: "正在下载更新包...",
         downloadFrom: "正在从 {source} 下载...",
         downloadComplete: "更新包下载完成（来源：{source}）",

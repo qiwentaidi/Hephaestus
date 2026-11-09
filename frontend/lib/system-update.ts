@@ -1,6 +1,8 @@
 import toast from 'react-hot-toast'
 import { fetchWithAuth } from '@/lib/api'
 
+export const SYSTEM_UPDATE_SNAPSHOT_KEY = 'hephaestus:system-update-snapshot'
+
 export interface RunningUpdateTaskGroup {
   key: string
   count: number
@@ -47,11 +49,62 @@ export async function fetchRunningUpdateTasks(): Promise<RunningUpdateTaskSummar
 }
 
 /** 调用后端重启接口，由后端完成二进制替换并拉起新进程。 */
-export async function requestSystemUpdateRestart(): Promise<void> {
-  const response = await fetchWithAuth('/api/v1/system/update/restart', { method: 'POST' })
+export async function requestSystemUpdateRestart(dockerVersion?: string): Promise<void> {
+  const response = await fetchWithAuth('/api/v1/system/update/restart', {
+    method: 'POST',
+    ...(dockerVersion ? {
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ version: dockerVersion }),
+    } : {}),
+  })
   const payload = await response.json()
   if (!payload?.success) {
     throw new Error(payload?.error || '重启失败')
+  }
+}
+
+interface DockerUpdateStatus {
+  version?: string
+  phase?: 'pulling' | 'staged' | 'restarting' | 'ready' | 'failed'
+  error?: string
+}
+
+async function dockerUpdateRequest(path: string, options?: RequestInit): Promise<DockerUpdateStatus> {
+  const response = await fetchWithAuth(`/api/v1/system/update/docker/${path}`, {
+    cache: 'no-store',
+    signal: AbortSignal.timeout(10_000),
+    ...options,
+  })
+  const payload = await response.json()
+  if (!response.ok || !payload.success) {
+    throw new Error(payload.error || `Docker update request failed (${response.status})`)
+  }
+  return payload.data
+}
+
+export async function downloadDockerUpdate(version: string, timeoutMessage: string): Promise<void> {
+  let status = await dockerUpdateRequest('download', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ version }),
+  })
+  const deadline = Date.now() + 30 * 60_000
+  while (status.version === version && status.phase === 'pulling' && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+    status = await dockerUpdateRequest('status')
+  }
+  if (status.version !== version || status.phase !== 'staged') {
+    throw new Error(status.error || timeoutMessage)
+  }
+}
+
+/** The host updater is the source of truth for staged Docker images. */
+export function syncStagedDockerUpdate(version: string, stagedVersion?: string): void {
+  if (stagedVersion === version) {
+    persistStagedUpdateAction('restart')
+    persistStagedUpdateVersion(version)
+  } else {
+    persistStagedUpdateVersion(null)
   }
 }
 
@@ -182,14 +235,27 @@ export async function waitForRestartedService(options: {
   timeoutMs?: number
   intervalMs?: number
   signal?: AbortSignal
+  docker?: boolean
 } = {}): Promise<ServiceRestartWaitResult> {
-  const { expectedVersion, timeoutMs = 120_000, intervalMs = 1500, signal } = options
+  const { expectedVersion, timeoutMs = 120_000, intervalMs = 1500, signal, docker } = options
   const expected = expectedVersion ? normalizeVersion(expectedVersion) : ''
   const deadline = Date.now() + timeoutMs
   let sawDowntime = false
 
   while (Date.now() < deadline) {
     if (signal?.aborted) return 'aborted'
+    if (docker) {
+      // The API is temporarily unreachable while Compose replaces its container.
+      const status = await dockerUpdateRequest('status').catch(() => null)
+      if (status?.version && normalizeVersion(status.version) === expected) {
+        if (status.phase === 'failed') throw new Error(status.error)
+        if (status.phase === 'ready' && normalizeVersion(await fetchServiceVersion() ?? '') === expected) {
+          return 'ready'
+        }
+      }
+      await new Promise((resolve) => setTimeout(resolve, intervalMs))
+      continue
+    }
     const version = await fetchServiceVersion()
     if (!version) {
       sawDowntime = true
@@ -213,6 +279,7 @@ export async function reloadAfterServiceRestart(options: {
   timeoutMessage: string
   toastId?: string
   timeoutMs?: number
+  docker?: boolean
 }): Promise<boolean> {
   const id = options.toastId ?? toast.loading(options.waitingMessage)
   toast.loading(options.waitingMessage, { id })
@@ -220,6 +287,7 @@ export async function reloadAfterServiceRestart(options: {
   const result = await waitForRestartedService({
     expectedVersion: options.expectedVersion,
     timeoutMs: options.timeoutMs,
+    docker: options.docker,
   })
 
   if (result !== 'ready') {
@@ -228,6 +296,13 @@ export async function reloadAfterServiceRestart(options: {
   }
 
   toast.success(options.readyMessage, { id })
+  if (options.docker) {
+    try {
+      window.localStorage.removeItem(SYSTEM_UPDATE_SNAPSHOT_KEY)
+    } catch {
+      // The new version will be read from the service after reload.
+    }
+  }
   // 新版本已在运行，暂存的更新包标记不再有意义。
   persistStagedUpdateVersion(null)
   // 留出一点时间让提示渲染完，再整页刷新。

@@ -25,3 +25,7 @@ dist
 tmp
 .tmp
 *.log
+
+.hephaestus-updater
+
+.hephaestus-updater-bin

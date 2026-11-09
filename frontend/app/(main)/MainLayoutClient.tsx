@@ -90,7 +90,12 @@ import { UpdateDialog } from "@/components/UpdateDialog";
 import { DesktopTitlebar } from "@/components/DesktopTitlebar";
 import { useI18n } from "@/lib/i18n";
 import { isDesktopRuntime } from "@/lib/desktop";
-import { persistStagedUpdateVersion, readStagedUpdateVersion } from "@/lib/system-update";
+import {
+	persistStagedUpdateVersion,
+	readStagedUpdateVersion,
+	syncStagedDockerUpdate,
+	SYSTEM_UPDATE_SNAPSHOT_KEY,
+} from "@/lib/system-update";
 import { subscribeContentTabsEnabled, subscribeSidebarVariant, type SidebarVariant } from "@/lib/appearance";
 import { emptySidebarPinsSnapshot, parseSidebarPins, readSidebarPinsSnapshot, subscribeSidebarPins, toggleSidebarPin } from "@/lib/sidebar-pins";
 import { getLayoutRoutePath, mergeLayoutTab, type LayoutTab } from "@/lib/layout-tabs";
@@ -203,7 +208,6 @@ const getNavItems = (t: ReturnType<typeof useI18n>["t"], desktopMode: boolean): 
 	},
 ];
 
-const SYSTEM_UPDATE_SNAPSHOT_KEY = "hephaestus:system-update-snapshot";
 const CONFIG_UPDATE_SNAPSHOT_KEY = "hephaestus:config-update-snapshot";
 
 type UpdateSnapshotPayload = {
@@ -690,30 +694,28 @@ export default function MainLayout({
 	};
 
 	// 检查更新
-	const checkForUpdates = useCallback(async (_silent = true) => {
+	const checkForUpdates = useCallback(async (silent = true) => {
+		let latestVersion = "";
 		try {
 			const target = await getClientUpdateTarget();
 			const infoRes = await fetchWithAuth(`/api/v1/system/update/info?target=${target}`);
 			const infoData = await infoRes.json().catch(() => null);
-			let latestVersion = "";
 			if (infoRes.ok && infoData?.success) {
 				latestVersion = infoData.data.version;
 				setCurrentVersion(latestVersion);
 			}
 
 			const res = await fetchWithAuth(`/api/v1/system/update/check?target=${target}`);
-			if (!res.ok) {
-				throw new Error('检查更新请求失败');
-			}
 			const data = await res.json().catch(() => null);
-
-			if (!data?.success) {
+			if (!res.ok || !data?.success) {
 				throw new Error(data?.error || '检查更新失败');
 			}
 
 			if (data.hasUpdate) {
 				// 暂存的更新包只对同一版本有效，检测到新版本时丢弃旧的“已下载完成”状态。
-				if (readStagedUpdateVersion() !== data.updateInfo.version) {
+				if (data.updateInfo.delivery === "docker") {
+					syncStagedDockerUpdate(data.updateInfo.version, data.stagedVersion);
+				} else if (readStagedUpdateVersion() !== data.updateInfo.version) {
 					persistStagedUpdateVersion(null);
 				}
 				persistSystemUpdateSnapshot({
@@ -741,7 +743,8 @@ export default function MainLayout({
 			});
 			return { hasUpdate: false, ignored: false, updateInfo: null, currentVersion: latestVersion };
 		} catch (error) {
-			throw error;
+			if (!silent) throw error;
+			return { hasUpdate: false, ignored: false, updateInfo: null, currentVersion: latestVersion };
 		}
 	}, []);
 

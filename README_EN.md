@@ -159,7 +159,7 @@ Linux targets are built through Docker Buildx and require a local Docker service
 
 ### 2. Docker Compose
 
-The container does not currently support in-page self-updates. To upgrade, rebuild the image and recreate the container.
+Release-image deployments can upgrade from the UI after you enable the host updater. See [Docker upgrades](docs/docker-deployment.md#升级).
 
 The image ships with PostgreSQL 17 and starts a single `hephaestus` container. Requirements: Docker 24+ with Compose V2; 2 GB+ of memory recommended; the image is approximately 430 MB.
 
@@ -513,13 +513,7 @@ Make sure libpcap / Npcap is installed in the build environment and that the bui
 <details>
 <summary><b>The in-page update button is unavailable in Docker</b></summary>
 
-Container deployments do not support in-place self-updates. Rebuild the image to upgrade:
-
-```bash
-git pull
-docker compose build --pull
-docker compose up -d
-```
+For source-built deployments, rebuild the image on the host. To enable updates from the UI, set up the host updater in [Docker upgrades](docs/docker-deployment.md#升级).
 
 </details>
 

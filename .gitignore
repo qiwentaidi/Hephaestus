@@ -81,3 +81,8 @@ backend/outputs
 # Go build artifacts
 /backend/scan-agent
 /backend/hephaestus-backend
+
+# Host Docker updater state
+/.hephaestus-updater/
+
+/.hephaestus-updater-bin

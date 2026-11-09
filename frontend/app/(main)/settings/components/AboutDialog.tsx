@@ -19,6 +19,7 @@ interface AboutInfo {
 	app: {
 		name: string
 		version: string
+		deployment?: string
 	}
 	copyright: {
 		year: string
@@ -108,7 +109,8 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
 							<div className="flex items-center justify-between">
 								<div className="flex items-center gap-3">
 									<h3 className="text-xl font-bold">{aboutInfo.app.name}</h3>
-									<Badge variant="secondary" className="text-sm">
+									{aboutInfo.app.deployment === 'docker' && <Badge variant="secondary">Docker</Badge>}
+										<Badge variant="secondary" className="text-sm">
 										{aboutInfo.app.version}
 									</Badge>
 								</div>

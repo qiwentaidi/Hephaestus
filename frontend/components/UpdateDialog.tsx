@@ -17,6 +17,7 @@ import { AlertTriangle, Calendar, Check, Download, FileCode, Loader2, Package, S
 import { getApiBaseURL, getToken } from '@/lib/api'
 import { isDesktopRuntime } from '@/lib/desktop'
 import {
+  downloadDockerUpdate,
   fetchRunningUpdateTasks,
   formatRunningUpdateTasks,
   installDesktopUpdatePackage,
@@ -34,6 +35,7 @@ import { useI18n } from '@/lib/i18n'
 import toast from 'react-hot-toast'
 
 interface UpdateInfo {
+  delivery?: 'docker'
   version: string
   releaseDate: string
   changelog: string
@@ -351,12 +353,16 @@ export function UpdateDialog({
         return
       }
 
-      await requestSystemUpdateRestart()
-      onOpenChange(false)
+      const expectedVersion = downloadedVersionsRef.current.client ?? clientUpdateInfo?.version
+      const docker = clientUpdateInfo?.delivery === 'docker'
+      await requestSystemUpdateRestart(docker ? expectedVersion : undefined)
+      if (!docker) onOpenChange(false)
       // 前端产物随后端二进制一起替换：等新进程真正接管服务后再整页刷新，
       // 否则刷到的仍是旧进程里的旧页面。
       await reloadAfterServiceRestart({
-        expectedVersion: downloadedVersionsRef.current.client ?? clientUpdateInfo?.version,
+        expectedVersion,
+        docker,
+        timeoutMs: docker ? 360_000 : undefined,
         waitingMessage: i18n.waitingRestart,
         readyMessage: i18n.messages.reloadReady,
         timeoutMessage: i18n.messages.restartTimeout,
@@ -415,6 +421,20 @@ export function UpdateDialog({
     })
     downloadStartTimeRef.current = Date.now()
     resetProgress()
+
+    if (section.target === 'client' && section.updateInfo.delivery === 'docker') {
+      try {
+        await downloadDockerUpdate(section.updateInfo.version, i18n.messages.downloadFailed)
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : i18n.messages.downloadFailed)
+        return
+      } finally {
+        activeTargetRef.current = null
+        setActiveTarget(null)
+      }
+      await finishClientUpdate('restart', section.updateInfo.version)
+      return
+    }
 
     const clientDownloadTarget =
       section.target === 'client' && (await isDesktopRuntime()) ? 'desktop' : 'client'
@@ -608,6 +628,9 @@ export function UpdateDialog({
                       {isDone && <Badge variant="outline">{i18n.downloaded}</Badge>}
                     </div>
                     <div className="text-sm text-muted-foreground">
+                      {section.updateInfo.delivery === 'docker' && (
+                        <Badge variant="secondary" className="mr-2">Docker</Badge>
+                      )}
                       {ensureVersionPrefix(section.currentVersion)} →{' '}
                       <span className="font-medium text-primary">{ensureVersionPrefix(section.updateInfo.version)}</span>
                     </div>
@@ -642,14 +665,16 @@ export function UpdateDialog({
                   </div>
                 </div>
 
-                <ScrollArea className="h-[160px] rounded-md border p-3">
-                  <div
-                    className={`${markdownClassName} text-sm text-muted-foreground`}
-                    dangerouslySetInnerHTML={{
-                      __html: renderMarkdownHTML(section.updateInfo.changelog),
-                    }}
-                  />
-                </ScrollArea>
+                {(section.updateInfo.delivery !== 'docker' || section.updateInfo.changelog) && (
+                  <ScrollArea className="h-[160px] rounded-md border p-3">
+                    <div
+                      className={`${markdownClassName} text-sm text-muted-foreground`}
+                      dangerouslySetInnerHTML={{
+                        __html: renderMarkdownHTML(section.updateInfo.changelog),
+                      }}
+                    />
+                  </ScrollArea>
+                )}
 
                 {isActive && (
                   <div className="mt-3 space-y-2 border-t pt-3">
@@ -657,7 +682,9 @@ export function UpdateDialog({
                       <span className="text-muted-foreground">
                         {section.target === 'config' ? i18n.progress.applying : i18n.progress.downloading}
                       </span>
-                      <span className="font-semibold text-primary">{downloadProgress}%</span>
+                      {section.updateInfo.delivery !== 'docker' && (
+                        <span className="font-semibold text-primary">{downloadProgress}%</span>
+                      )}
                     </div>
                     {totalSize > 0 && (
                       <div className="text-xs text-muted-foreground space-y-1">
@@ -667,8 +694,10 @@ export function UpdateDialog({
                     )}
                     <div className="h-2 w-full rounded-full bg-secondary">
                       <div
-                        className="h-2 rounded-full bg-primary transition-all duration-300"
-                        style={{ width: `${downloadProgress}%` }}
+                        className={section.updateInfo.delivery === 'docker'
+                          ? 'h-2 w-full animate-pulse rounded-full bg-primary/40'
+                          : 'h-2 rounded-full bg-primary transition-all duration-300'}
+                        style={section.updateInfo.delivery === 'docker' ? undefined : { width: `${downloadProgress}%` }}
                       />
                     </div>
                   </div>

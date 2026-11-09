@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"hephaestus-backend/pkg/config"
 	"hephaestus-backend/pkg/runtimeenv"
 	"net/http"
 	"os"
@@ -19,8 +20,9 @@ type AboutInfo struct {
 
 // AppInfo 应用信息
 type AppInfo struct {
-	Name    string `json:"name"`
-	Version string `json:"version"`
+	Name       string `json:"name"`
+	Version    string `json:"version"`
+	Deployment string `json:"deployment"`
 }
 
 // CopyrightInfo 版权信息
@@ -34,8 +36,9 @@ type CopyrightInfo struct {
 func GetSystemInfoHandler(c *gin.Context) {
 	info := AboutInfo{
 		App: AppInfo{
-			Name:    "Hephaestus",
-			Version: resolveCurrentVersionForTarget(resolveUpdateTarget(c)),
+			Name:       "Hephaestus",
+			Version:    resolveCurrentVersionForTarget(resolveUpdateTarget(c)),
+			Deployment: config.GetDeploymentMode(),
 		},
 		Copyright: CopyrightInfo{
 			Year:    "2026",

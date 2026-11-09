@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"hephaestus-backend/middleware"
 	"hephaestus-backend/pkg/config"
+	"hephaestus-backend/pkg/dockerupdate"
 	"hephaestus-backend/pkg/fsutil"
 	"hephaestus-backend/pkg/version"
 	"io"
@@ -116,6 +117,7 @@ func selectPublishedDownload(info UpdateInfo, requestedURL, requestedVersion str
 
 // UpdateInfo 更新信息
 type UpdateInfo struct {
+	Delivery    string `json:"delivery,omitempty"`
 	Version     string `json:"version"`
 	ReleaseDate string `json:"releaseDate"`
 	Changelog   string `json:"changelog"`
@@ -292,7 +294,13 @@ func rejectContainerSelfUpdateSSE(c *gin.Context) bool {
 
 // CheckUpdate 检查更新
 func CheckUpdate(c *gin.Context) {
-	if rejectContainerSelfUpdate(c) {
+	if config.IsContainerDeployment() {
+		updater := dockerupdate.ConfiguredClient()
+		if updater == nil {
+			dockerUpdateError(c, http.StatusConflict, "此部署尚未接入 Docker 更新器")
+			return
+		}
+		checkDockerUpdate(c, updater)
 		return
 	}
 
@@ -617,6 +625,10 @@ func DownloadWithProgress(c *gin.Context) {
 
 // RestartService 重启服务
 func RestartService(c *gin.Context) {
+	if config.IsContainerDeployment() && dockerupdate.ConfiguredClient() != nil {
+		startDockerUpdate(c, "restart")
+		return
+	}
 	if rejectContainerSelfUpdate(c) {
 		return
 	}
@@ -692,7 +704,7 @@ func GetSystemInfo(c *gin.Context) {
 			"execPath":           execPath,
 			"lastModified":       lastModified,
 			"deployment":         config.GetDeploymentMode(),
-			"selfUpdateDisabled": config.IsContainerDeployment(),
+			"selfUpdateDisabled": config.IsContainerDeployment() && dockerupdate.ConfiguredClient() == nil,
 		},
 	})
 }

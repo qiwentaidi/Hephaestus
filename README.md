@@ -159,7 +159,7 @@ Linux 目标通过 Docker Buildx 构建，需要本机 Docker 服务。
 
 ### 2. Docker Compose
 
-容器版暂不支持页面内的在线自更新。升级时需要重新构建镜像并重建容器。
+发布版 Compose 部署接入宿主机更新器后，可在页面内升级。详见 [Docker 升级](docs/docker-deployment.md#升级)。
 
 镜像默认内置 PostgreSQL 17，启动后只有一个 `hephaestus` 容器。环境要求：Docker 24+（含 Compose V2），建议预留 2 GB 以上内存；镜像约 430 MB。
 
@@ -513,13 +513,7 @@ docker exec hephaestus tail -n 100 /var/lib/hephaestus/logs/postgresql.log
 <details>
 <summary><b>Docker 内页面更新按钮不可用</b></summary>
 
-容器部署不支持在线自更新，升级需要重新构建镜像：
-
-```bash
-git pull
-docker compose build --pull
-docker compose up -d
-```
+源码构建部署可在宿主机重建镜像。需要从页面升级时，请按 [Docker 升级](docs/docker-deployment.md#升级) 接入宿主机更新器。
 
 </details>
 

@@ -1,0 +1,14 @@
+services:
+  hephaestus:
+    build: !reset null
+    image: "${HEPHAESTUS_IMAGE:-ghcr.io/qiwentaidi/hephaestus:latest}"
+    environment:
+      HEPHAESTUS_DOCKER_UPDATER_ADDRESS: "${HEPHAESTUS_DOCKER_UPDATER_ADDRESS:-}"
+      HEPHAESTUS_DOCKER_UPDATER_SOCKET: /run/hephaestus-updater/control.sock
+    volumes:
+      - type: bind
+        source: ./.hephaestus-updater/ipc
+        target: /run/hephaestus-updater
+        read_only: true
+        bind:
+          create_host_path: false

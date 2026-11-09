@@ -23,23 +23,6 @@ COPY --from=frontend-dist / /src/frontend/out/
 
 FROM ${FRONTEND_SOURCE} AS frontend-assets
 
-# AI workbench tools that are not packaged by Alpine. Keep this in a separate
-# stage so the main Go build cache is not invalidated by a tool upgrade.
-FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS tool-builder
-
-ARG TARGETARCH
-# Pipe separators allow fallback on transport failures and proxy server errors.
-ARG GOPROXY=https://goproxy.cn|https://proxy.golang.org|direct
-
-ENV CGO_ENABLED=0 \
-    GOARCH=${TARGETARCH} \
-    GOBIN=/out \
-    GOPROXY=${GOPROXY}
-
-RUN --mount=type=cache,id=hephaestus-tool-mod,target=/go/pkg/mod,sharing=locked \
-    --mount=type=cache,id=hephaestus-tool-build,target=/root/.cache/go-build,sharing=locked \
-    go install github.com/hahwul/dalfox/v2@v2.13.0
-
 FROM golang:1.26-alpine AS backend-builder
 
 ARG TARGETARCH
@@ -96,16 +79,14 @@ RUN apk add --no-cache \
         whois \
     && python3 -m pip install --no-cache-dir --break-system-packages --root-user-action=ignore \
         "sqlmap==1.10.10" \
-        "arjun==2.2.7" \
     && rm -rf /root/.cache/pip
 
 WORKDIR /opt/hephaestus
 
 COPY --from=backend-builder /out/hephaestus-web /opt/hephaestus/hephaestus-web
-COPY --from=tool-builder /out/dalfox /usr/local/bin/dalfox
 COPY docker/entrypoint.sh /usr/local/bin/hephaestus-entrypoint.sh
 
-RUN chmod +x /usr/local/bin/hephaestus-entrypoint.sh /usr/local/bin/dalfox && \
+RUN chmod +x /usr/local/bin/hephaestus-entrypoint.sh && \
     mkdir -p /var/lib/hephaestus && \
     chmod 755 /var/lib/hephaestus
 
