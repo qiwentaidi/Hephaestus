@@ -53,7 +53,7 @@ COPY --from=backend-builder /out/hephaestus-web /hephaestus-web
 # Single runtime image: PostgreSQL is embedded by default, so `docker run` needs
 # no external database. Set HEPHAESTUS_DB_TYPE=sqlite or an external
 # HEPHAESTUS_DB_HOST to opt out.
-FROM alpine:3.22
+FROM alpine:3.24
 
 RUN apk add --no-cache \
         ca-certificates \

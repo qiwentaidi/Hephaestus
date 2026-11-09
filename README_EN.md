@@ -161,7 +161,7 @@ Linux targets are built through Docker Buildx and require a local Docker service
 
 Release-image deployments can upgrade from the UI after you enable the host updater. See [Docker upgrades](docs/docker-deployment.md#升级).
 
-The image ships with PostgreSQL 17 and starts a single `hephaestus` container. Requirements: Docker 24+ with Compose V2; 2 GB+ of memory recommended; the image is approximately 430 MB.
+The image ships with PostgreSQL 17 and starts a single `hephaestus` container. It requires Docker 24+ with Compose V2. We recommend at least 2 GB of memory. For screenshots or headless browser interaction, [install Chromium on demand](docs/docker-deployment.md#按需安装-chromium).
 
 Run from the repository root:
 

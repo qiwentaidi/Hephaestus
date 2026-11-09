@@ -161,7 +161,7 @@ Linux 目标通过 Docker Buildx 构建，需要本机 Docker 服务。
 
 发布版 Compose 部署接入宿主机更新器后，可在页面内升级。详见 [Docker 升级](docs/docker-deployment.md#升级)。
 
-镜像默认内置 PostgreSQL 17，启动后只有一个 `hephaestus` 容器。环境要求：Docker 24+（含 Compose V2），建议预留 2 GB 以上内存；镜像约 430 MB。
+镜像默认内置 PostgreSQL 17，启动后只有一个 `hephaestus` 容器。需要 Docker 24+（含 Compose V2），建议预留 2 GB 以上内存。截图和无头浏览器交互可[按需安装 Chromium](docs/docker-deployment.md#按需安装-chromium)。
 
 在仓库根目录执行：
 

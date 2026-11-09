@@ -125,6 +125,18 @@ AI 会话创建的 `exec`/Python 命令会被限制在会话目录内，写入�
 > 漏洞扫描的 SYN/原始套接字能力依赖 Docker 默认的 `NET_RAW` 权限；如果需要更完整的
 > 网络能力，可自行增加 `cap_add: ["NET_RAW", "NET_ADMIN"]`。
 
+### 按需安装 Chromium
+
+需要网页截图或无头浏览器交互时，可在 Docker 宿主机上为运行中的 Hephaestus 容器安装 Chromium。
+
+```bash
+docker exec --user root hephaestus apk add --no-cache chromium
+```
+
+此命令适用于基于 Alpine 3.24 的镜像。若容器使用自定义名称，请替换 `hephaestus`。
+安装后可用 `docker exec hephaestus chromium --version` 确认。普通重启会保留安装；在线升级
+或其他操作重建容器后，请重新执行安装命令。
+
 ## PoC 与字典资源
 
 镜像不内置厂商的 PoC/字典更新包。首次部署后登录 Web，在“系统设置 → 系统更新 →
