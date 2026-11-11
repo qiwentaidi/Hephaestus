@@ -91,10 +91,12 @@ type Tool struct {
 }
 
 // Native tools that the engine may use. The list is deliberately curated:
-// platform scan/discovery tools only, without the standalone shell tools
+// platform scan/discovery and finding retest tools, without the standalone shell tools
 // (Bash already covers execution in the engine) and without platform
 // shell_open/shell_send (removed).
 var engineNativeTools = map[string]bool{
+	"retest_vulnerability":                         true,
+	"record_vulnerability_retest":                  true,
 	"subdomain_create_task":                        true,
 	"subdomain_get_task":                           true,
 	"subdomain_list_results":                       true,
@@ -123,6 +125,7 @@ var engineNativeTools = map[string]bool{
 // plannerNativeTools are read/discovery capabilities the Planner may use. The
 // Planner must not launch scans itself; that stays with Workers.
 var plannerNativeTools = map[string]bool{
+	"retest_vulnerability":                         true,
 	"subdomain_create_task":                        true,
 	"subdomain_get_task":                           true,
 	"subdomain_list_results":                       true,
@@ -185,7 +188,7 @@ func nativeTools(agentKey string, disabled map[string]bool) []Tool {
 
 func nativeReadOnly(name string) bool {
 	switch name {
-	case "subdomain_get_task", "subdomain_list_results", "attack_surface_get_scan_task",
+	case "retest_vulnerability", "subdomain_get_task", "subdomain_list_results", "attack_surface_get_scan_task",
 		"attack_surface_read_reference",
 		"attack_surface_list_scan_results", "attack_surface_get_jsscan_overview",
 		"attack_surface_search_jsscan_operations", "attack_surface_search_jsscan_resources",

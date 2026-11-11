@@ -48,6 +48,7 @@ func TestToolsFiltersNativeByRuntimeAndRole(t *testing.T) {
 		toolSchema("subdomain_create_task"), toolSchema("attack_surface_create_webscan_task"),
 		toolSchema("nuclei"),
 		toolSchema("attack_surface_read_reference"),
+		toolSchema("retest_vulnerability"), toolSchema("record_vulnerability_retest"),
 	}}
 	provider := &fakeProvider{}
 	mcptools.RegisterPentestBridge(bridge)
@@ -58,7 +59,7 @@ func TestToolsFiltersNativeByRuntimeAndRole(t *testing.T) {
 	})
 
 	worker := toolNames(Tools(context.Background(), RuntimeEngine, "worker"))
-	for _, want := range []string{"subdomain_create_task", "attack_surface_create_webscan_task", "nuclei"} {
+	for _, want := range []string{"subdomain_create_task", "attack_surface_create_webscan_task", "nuclei", "retest_vulnerability", "record_vulnerability_retest"} {
 		if !worker[want] {
 			t.Fatalf("worker is missing %s: %v", want, worker)
 		}
@@ -67,6 +68,11 @@ func TestToolsFiltersNativeByRuntimeAndRole(t *testing.T) {
 		t.Fatalf("engine must not receive the standalone shell tools: %v", worker)
 	}
 	mainTools := Tools(context.Background(), RuntimeEngine, "mainagent")
+	for _, name := range []string{"retest_vulnerability", "record_vulnerability_retest"} {
+		if !toolNames(mainTools)[name] {
+			t.Fatalf("main agent is missing %s", name)
+		}
+	}
 	foundReference := false
 	for _, tool := range mainTools {
 		if tool.Name == "attack_surface_read_reference" {
@@ -84,7 +90,10 @@ func TestToolsFiltersNativeByRuntimeAndRole(t *testing.T) {
 	if !planner["subdomain_create_task"] {
 		t.Fatalf("planner is missing discovery: %v", planner)
 	}
-	if planner["attack_surface_create_webscan_task"] || planner["nuclei"] {
+	if !planner["retest_vulnerability"] {
+		t.Fatal("planner cannot read retest context")
+	}
+	if planner["attack_surface_create_webscan_task"] || planner["nuclei"] || planner["record_vulnerability_retest"] {
 		t.Fatalf("planner must not launch scans: %v", planner)
 	}
 }

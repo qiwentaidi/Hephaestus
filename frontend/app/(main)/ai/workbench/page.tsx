@@ -70,6 +70,8 @@ import {
   saveAIWorkbenchSideChatHistory,
   updateAIWorkbenchPenTestProject,
   updateAIWorkbenchPenTestSession,
+  type AIWorkbenchFindingReport,
+  type AIWorkbenchFindingRetestTarget,
   type AIWorkbenchAgentRun,
   type AIWorkbenchBlockedMatch,
   type AIWorkbenchChatItem,
@@ -84,6 +86,7 @@ import {
 } from '@/lib/api/ai-workbench'
 import { listAIBatchQueues } from '@/lib/api/ai-batch'
 import { ensureAIPlanRunController, isOrchestrationRunId, listAIPlanRunSummaries } from '@/lib/api/ai-plan'
+import { buildFindingRetestPrompt, findingRetestDestination } from '@/lib/finding-retest'
 import { turnPreviewText, turnResultPreview } from '@/lib/ai-turn-preview'
 import { ConversationRail } from './components/ConversationRail'
 import { mergeConversationTurns, readingTurnId } from './conversation-history'
@@ -1814,7 +1817,8 @@ function AIWorkbenchContent() {
   const requestedSessionId = searchParams.get('session')
   const requestedFindingId = searchParams.get('findingId')
   const requestedRetest = searchParams.get('retest') === '1'
-  const requestedToolName = searchParams.get('tool') || 'retest_vulnerability'
+  const independentRetest = searchParams.get('retestMode') === 'independent'
+  const retestKey = requestedRetest && requestedFindingId ? `${requestedFindingId}:${independentRetest}` : ''
   const [bootstrap, setBootstrap] = useState<AIWorkbenchPenTestSessionBootstrapResponse | null>(() => aiWorkbenchRouteCache?.bootstrap || null)
   const [projects, setProjects] = useState<AIWorkbenchProject[]>(() => aiWorkbenchRouteCache?.projects || [])
   const [sessions, setSessions] = useState<AIWorkbenchConversationSummary[]>(() => aiWorkbenchRouteCache?.sessions || [])
@@ -1835,6 +1839,9 @@ function AIWorkbenchContent() {
   const [assetReferences, setAssetReferences] = useState<AssetReferenceSelection[]>([])
   const [mcpTools, setMCPTools] = useState<CallableMCPTool[]>([])
   const retestPrefillRef = useRef<string | null>(null)
+  const [retestPreparation, setRetestPreparation] = useState<{ key: string; finding: AIWorkbenchFindingReport; target: AIWorkbenchFindingRetestTarget } | null>(null)
+  const [retestError, setRetestError] = useState('')
+  const [retestAttempt, setRetestAttempt] = useState(0)
   const [goalOverride, setGoalOverride] = useState<{ sessionId: string | null; action: GoalModeAction } | null>(null)
   const goalMode: GoalModeAction = goalOverride?.sessionId === activeSessionId && !(goalOverride.action === 'continue' && session?.goalRun?.status === 'completed') ? goalOverride.action : session?.goalRun?.mode === 'goal' && session.goalRun.status !== 'completed' ? 'continue' : 'chat'
   const changeGoalMode = (action: GoalModeAction) => setGoalOverride({ sessionId: activeSessionId, action })
@@ -2245,6 +2252,10 @@ function AIWorkbenchContent() {
       if (!url.searchParams.has('session')) return
       url.searchParams.delete('session')
     }
+    // An explicit session selection cancels a pending retest preparation. The
+    // retest's own redirect already has the destination in the URL and returns
+    // above, so it retains the request until the new composer is ready.
+    for (const key of ['findingId', 'retest', 'retestMode', 'tool']) url.searchParams.delete(key)
     router.push(`${url.pathname}${url.search}${url.hash}`, { scroll: false })
   }, [router])
   const loadSession = useCallback(async (sessionId: string, options: { background?: boolean } = {}) => {
@@ -2284,8 +2295,9 @@ function AIWorkbenchContent() {
   }, [syncSessionSnapshotToSidebar, receiveSnapshot, showWorkbenchError, l.loadSessionFailed, replaceSessionRoute])
   const clearSessionRoute = useCallback(() => {
     const url = new URL(window.location.href)
-    if (!url.searchParams.has('session')) return
+    if (!url.searchParams.has('session') && !url.searchParams.has('retest')) return
     url.searchParams.delete('session')
+    for (const key of ['findingId', 'retest', 'retestMode', 'tool']) url.searchParams.delete(key)
     router.push(`${url.pathname}${url.search}${url.hash}`, { scroll: false })
   }, [router])
   useEffect(() => {
@@ -2307,37 +2319,64 @@ function AIWorkbenchContent() {
     void loadSession(requestedSessionId, { background: false })
   }, [requestedSessionId, loadSession])
   useEffect(() => {
-    if (!requestedRetest || !requestedFindingId || retestPrefillRef.current === requestedFindingId) return
-    let cancelled = false
-    void (async () => {
-      try {
-        const [finding, tools] = await Promise.all([getAIWorkbenchFinding(requestedFindingId), listCallableMCPTools()])
-        if (cancelled) return
-        retestPrefillRef.current = requestedFindingId
-        const title = finding.view.name || requestedFindingId
-        const target = finding.view.rawTarget || finding.view.url || finding.conversation?.target || ''
-        const prompt = language === 'zh'
-          ? `请复测漏洞 #${requestedFindingId}：${title}。${target ? `目标：${target}。` : ''}读取原始复现证据，在授权范围内使用最小化请求完成复测；完成后记录 still_vulnerable、fixed 或 inconclusive 结论，并附上真实证据。`
-          : `Retest finding #${requestedFindingId}: ${title}.${target ? ` Target: ${target}.` : ''} Read the original reproduction evidence, stay within the authorized scope, use the smallest necessary request, then record a still_vulnerable, fixed, or inconclusive result with real evidence.`
-        setDraft((previous) => previous.trim() ? previous : prompt)
-        if (!requestedSessionId && finding.project?.id) setSelectedProjectId(finding.project.id)
-        const selected = tools.find((tool) => tool.name === requestedToolName)
-        if (selected) setMCPTools((previous) => previous.some((tool) => tool.name === selected.name) ? previous : [...previous, selected])
-        const url = new URL(window.location.href)
-        url.searchParams.delete('findingId')
-        url.searchParams.delete('retest')
-        url.searchParams.delete('tool')
-        router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false })
-      } catch (error) {
-        if (!cancelled) showWorkbenchError(error, 'loadSessionFailed')
-        retestPrefillRef.current = null
-      }
-    })()
-    return () => {
-      cancelled = true
-      if (retestPrefillRef.current === requestedFindingId) retestPrefillRef.current = null
+    if (!retestKey || !requestedFindingId) {
+      retestPrefillRef.current = null
+      return
     }
-  }, [language, requestedFindingId, requestedRetest, requestedSessionId, requestedToolName, router, showWorkbenchError])
+    let cancelled = false
+    setRetestPreparation(null)
+    setRetestError('')
+    void getAIWorkbenchFinding(requestedFindingId).then(finding => {
+      if (cancelled) return
+      const target = findingRetestDestination(finding, independentRetest)
+      setRetestPreparation({ key: retestKey, finding, target })
+      setSelectedProjectId(finding.project.id)
+    }).catch(error => {
+      if (!cancelled) setRetestError(workbenchErrorMessage(error, workbenchMessagesRef.current, workbenchMessagesRef.current.loadSessionFailed))
+    })
+    return () => { cancelled = true }
+  }, [independentRetest, requestedFindingId, retestKey, retestAttempt])
+  useEffect(() => {
+    if (!retestKey || retestPreparation?.key !== retestKey || retestPrefillRef.current === retestKey) return
+    const { finding, target } = retestPreparation
+    const destination = target.conversationId || null
+    const url = new URL(window.location.href)
+    if (requestedSessionId !== destination) {
+      if (destination) url.searchParams.set('session', destination)
+      else url.searchParams.delete('session')
+      router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false })
+      return
+    }
+    // Wait for the destination and its per-session draft restoration. Prefilling
+    // before this point would put the request into the source Worker's composer.
+    if (activeSessionId !== destination || sessionLoading) return
+    if (destination) {
+      if (sessionLoadError || (session?.task.id === destination && (session.task.readOnly || session.task.agentRole === 'worker' || session.task.agentRole === 'planner' || (session.project?.id || session.task.projectId) !== finding.project.id))) {
+        setRetestPreparation({ ...retestPreparation, target: { mode: 'independent' } })
+        return
+      }
+      if (session?.task.id !== destination) return
+    }
+    if (loading || !bootstrap) return
+    if (!projects.some(project => project.id === finding.project.id)) {
+      setRetestError(language === 'zh' ? '漏洞所属项目不可用，无法准备复测。' : 'The finding project is unavailable; the retest cannot be prepared.')
+      return
+    }
+    retestPrefillRef.current = retestKey
+    setSelectedProjectId(finding.project.id)
+    setOpenProjects(previous => ({ ...previous, [finding.project.id]: true }))
+    const prompt = buildFindingRetestPrompt(finding, target.mode, language)
+    setDraft(previous => previous.trim() ? `${previous}\n\n${prompt}` : prompt)
+    setGoalOverride({ sessionId: destination, action: 'chat' })
+    if (target.mode === 'independent' && !independentRetest) {
+      toast.success(language === 'zh' ? '原会话不适合复测，已在同项目准备独立复测。' : 'An independent retest is ready in the same project because the source session is unavailable for retesting.')
+    }
+    url.searchParams.delete('findingId')
+    url.searchParams.delete('retest')
+    url.searchParams.delete('retestMode')
+    url.searchParams.delete('tool')
+    router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false })
+  }, [activeSessionId, bootstrap, independentRetest, language, loading, projects, requestedSessionId, retestKey, retestPreparation, router, session, sessionLoadError, sessionLoading])
   const loadBootstrap = useCallback(async () => {
     const requestSeq = ++bootstrapRequestSeqRef.current
     const hasCachedState = hasAIWorkbenchRouteCache(aiWorkbenchRouteCache)
@@ -3131,7 +3170,7 @@ function AIWorkbenchContent() {
       showWorkbenchError(error, 'loadSessionFailed')
     }
   }, [session?.task.planRunId, loadSession, showWorkbenchError, l.controllerUnavailable])
-  const composerDisabled = Boolean(session?.task.readOnly || (session?.task.planRunId && !isOrchestrationRunId(session.task.planRunId))) || loading || sessionLoading || creating || session?.task.agentRole === 'worker' || session?.task.agentRole === 'planner' || Boolean(movingSessionId && movingSessionId === activeSessionId) || (!activeSessionId && !selectedProjectId) || Boolean(activeSessionId && (!session || session.task.id !== activeSessionId)) || Boolean(sessionLoadError) || (!bootstrap?.modelOptions.options.length && !selectedModel)
+  const composerDisabled = Boolean(retestKey) || Boolean(session?.task.readOnly || (session?.task.planRunId && !isOrchestrationRunId(session.task.planRunId))) || loading || sessionLoading || creating || session?.task.agentRole === 'worker' || session?.task.agentRole === 'planner' || Boolean(movingSessionId && movingSessionId === activeSessionId) || (!activeSessionId && !selectedProjectId) || Boolean(activeSessionId && (!session || session.task.id !== activeSessionId)) || Boolean(sessionLoadError) || (!bootstrap?.modelOptions.options.length && !selectedModel)
   // requestedSessionId covers the first paint of a deep link, before the
   // effect below moves it into activeSessionId.
   const pendingSessionId = activeSessionId || requestedSessionId
@@ -3155,6 +3194,15 @@ function AIWorkbenchContent() {
         {session.task.projectId ? <Button type="button" variant="ghost" size="sm" className="h-7 rounded-md px-2 text-xs" onClick={() => router.push(`/ai/workbench/project?project=${encodeURIComponent(session.task.projectId!)}&tab=plan`)}>{l.viewPlan}</Button> : null}
       </div>
     ) : null}
+    {retestKey ? <div role={retestError ? 'alert' : 'status'} className="mx-3 mb-2 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/35 px-3 py-2 text-xs text-muted-foreground">
+      <span className="min-w-0 flex-1">{retestError || (language === 'zh' ? '正在准备复测会话与原始证据…' : 'Preparing the retest conversation and original evidence…')}</span>
+      {retestError ? <Button variant="outline" size="sm" className="h-7" onClick={() => setRetestAttempt(value => value + 1)}>{l.retry}</Button> : null}
+      <Button variant="ghost" size="sm" className="h-7" onClick={() => {
+        const url = new URL(window.location.href)
+        for (const key of ['findingId', 'retest', 'retestMode', 'tool']) url.searchParams.delete(key)
+        router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false })
+      }}>{language === 'zh' ? '取消' : 'Cancel'}</Button>
+    </div> : null}
     <CompoundComposer composerRef={composerRef} bootstrap={bootstrap} projects={projects} selectedProjectId={selectedProjectId} value={draft} attachments={attachments} assetReferences={assetReferences} onAssetReferencesChange={setAssetReferences} mcpTools={mcpTools} onMCPToolsChange={setMCPTools} goalMode={goalMode} goalRun={session?.goalRun} onGoalModeChange={changeGoalMode} quote={messageQuote} selectedModel={effectiveSelectedModel} queuedMessages={queuedMessages.filter((message) => message.sessionId === activeSessionId)} hasSession={Boolean(activeSessionId)} disabled={composerDisabled} working={working} sending={sendingCurrentSession || stoppingCurrentSession} stopping={stoppingCurrentSession} creating={creating} onChange={setDraft} onQuoteChange={setMessageQuote} onQuoteRemove={() => setMessageQuote(null)} onAttachmentsChange={setAttachments} onProjectChange={setSelectedProjectId} onModelChange={handleModelChange} onQueuedMessageEdit={editQueuedMessage} onQueuedMessageRemove={removeQueuedMessage} onQueuedMessageRetry={retryQueuedMessage} onSubmit={() => void (activeSessionId ? handleSend() : handleCreate())} onStop={() => void handleStop()} />
   </>
   const sideChatVisible = sideChatStateSessionId === activeSessionId

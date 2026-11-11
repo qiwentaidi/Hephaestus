@@ -2,7 +2,9 @@ package ai
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -19,7 +21,7 @@ func pentestFindingRetestToolSchemas() []pentest.AgentToolSchema {
 			Type: "function",
 			Function: pentest.AgentToolFunction{
 				Name:        "retest_vulnerability",
-				Description: "读取指定漏洞的原始复现步骤、证据和目标，准备一次修复后的回归复测。仅在需要判断修复状态或用户明确要求复测时使用；补充同一漏洞的新证明请使用 update_vulnerability。该工具不会替代实际验证请求；完成后使用 record_vulnerability_retest 保存结论。",
+				Description: "读取指定漏洞的原始复现步骤、证据、来源会话和目标，准备一次修复后的回归复测。仅在需要判断修复状态或用户明确要求复测时使用；补充同一漏洞的新证明请使用 update_vulnerability。该工具不会替代实际验证请求；由执行复测的会话使用 record_vulnerability_retest 写回原漏洞。",
 				Parameters:  pentestNativeObjectSchema(map[string]any{"findingId": map[string]any{"type": "string", "description": "漏洞 ID。必须来自当前项目或当前会话的真实漏洞记录。"}}, "findingId"),
 			},
 		},
@@ -33,7 +35,7 @@ func pentestFindingRetestToolSchemas() []pentest.AgentToolSchema {
 					"result":        map[string]any{"type": "string", "enum": []string{"still_vulnerable", "fixed", "inconclusive"}, "description": "复测结论。"},
 					"summary":       map[string]any{"type": "string", "description": "简明复测结论，说明实际观察和边界。"},
 					"evidence":      map[string]any{"type": "string", "description": "复测请求/响应、命令输出或其他原始证据；缺少证据时明确说明。"},
-					"executionRefs": map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "支撑本次复测的真实工具执行 ID 列表；只能引用当前会话 status=completed 的执行。Bash 即使产生了有用输出，只要最终退出码非 0 也不能引用，请重新运行一个退出码为 0 的证据命令。"},
+					"executionRefs": map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "支撑本次复测的真实工具执行 ID 列表；只能引用当前会话 status=completed 的执行。编排 Worker 也可传本次工具调用的 tool_use_id，系统会解析为当前会话的执行 ID。Bash 即使产生了有用输出，只要最终退出码非 0 也不能引用，请重新运行一个退出码为 0 的证据命令。"},
 				}, "findingId", "result", "summary"),
 			},
 		},
@@ -168,6 +170,10 @@ func DownloadAIPentestReportHandler(c *gin.Context) {
 	c.String(http.StatusOK, content)
 }
 
+// Refresh native executions before validating references, independently of
+// whether anyone currently has the Workbench open. Replaced by offline tests.
+var syncFindingRetestConversation = syncARTEXConversation
+
 func runPentestFindingRetestTool(ctx context.Context, cfg pentest.AgentLoopConfig, call pentest.AgentToolCall) (any, bool, error) {
 	if cfg.Store == nil {
 		return nil, true, fmt.Errorf("pentest store is not configured")
@@ -201,33 +207,67 @@ func runPentestFindingRetestTool(ctx context.Context, cfg pentest.AgentLoopConfi
 	if finding.ProjectID != cfg.Project.ID {
 		return nil, true, fmt.Errorf("finding 不属于当前项目")
 	}
+	role, err := cfg.Store.GetAgentRole(ctx, cfg.Conversation.ID)
+	if err != nil {
+		return nil, true, err
+	}
+	orchestrated := pentest.IsOrchestrationRun(role.PlanRunID)
+	if orchestrated {
+		if err := syncFindingRetestConversation(ctx, cfg.Store, cfg.Conversation.ID); err != nil {
+			return nil, true, fmt.Errorf("同步复测执行记录失败: %w", err)
+		}
+	}
 	switch call.Function.Name {
 	case "retest_vulnerability":
 		retests, err := cfg.Store.ListFindingRetests(ctx, finding.ID)
 		if err != nil {
 			return nil, true, err
 		}
+		instruction := "仅在授权范围内对该 findingId 做一次最小化复测；不要把一次请求失败解释为漏洞已修复。由实际执行复测的会话调用 record_vulnerability_retest，关联原 findingId，保留原始证据和人工处置状态，不重复创建漏洞。executionRefs 只能引用当前会话 status=completed 的新执行；exit_nonzero、blocked、cancelled 或 timeout 即使有部分输出也不能引用。"
+		if orchestrated {
+			instruction += "编排会话可传当前工具调用的 tool_use_id，系统自动解析为本会话执行 ID。"
+			if role.Role == pentest.AgentRoleController {
+				instruction += "主 Agent 使用 add_intent 派发一条专门的复测意图，把 findingId、目标、来源和原始证据及写回要求交给新的 Worker；不新增全局目标、不扩展扫描。由该 Worker 保存复测结果，主 Agent 不得将其他会话的执行引用当成本会话证据。"
+			}
+		}
+		var sourceScope []string
+		if finding.ConversationID != "" {
+			source, sourceErr := cfg.Store.GetConversation(ctx, finding.ConversationID)
+			if sourceErr != nil && !errors.Is(sourceErr, sql.ErrNoRows) {
+				return nil, true, sourceErr
+			}
+			if sourceErr == nil && source.ProjectID == finding.ProjectID {
+				_ = json.Unmarshal([]byte(source.ScopeJSON), &sourceScope)
+			}
+		}
 		return gin.H{
-			"findingId":          finding.ID,
-			"title":              finding.Title,
-			"severity":           finding.Severity,
-			"target":             finding.Target,
-			"vulnerabilityType":  finding.VulnerabilityType,
-			"preconditions":      finding.Preconditions,
-			"reproductionSteps":  finding.ReproductionSteps,
-			"originalEvidence":   finding.Evidence,
-			"impact":             finding.Impact,
-			"recommendation":     finding.Recommendation,
-			"existingRetestNote": finding.RetestNotes,
-			"retests":            retests,
-			"instruction":        "仅在授权范围内执行最小化复测；不要把一次请求失败解释为漏洞已修复。executionRefs 只能使用当前会话 status=completed 的执行；exit_nonzero、blocked、cancelled 或 timeout 即使有部分输出也不能引用。完成后调用 record_vulnerability_retest。",
+			"findingId":            finding.ID,
+			"sourceConversationId": finding.ConversationID,
+			"sourceFactKey":        finding.SourceFactKey,
+			"sourceScope":          sourceScope,
+			"title":                finding.Title,
+			"severity":             finding.Severity,
+			"target":               finding.Target,
+			"vulnerabilityType":    finding.VulnerabilityType,
+			"preconditions":        finding.Preconditions,
+			"reproductionSteps":    finding.ReproductionSteps,
+			"originalEvidence":     finding.Evidence,
+			"impact":               finding.Impact,
+			"recommendation":       finding.Recommendation,
+			"existingRetestNote":   finding.RetestNotes,
+			"retests":              retests,
+			"instruction":          instruction,
 		}, true, nil
 	case "record_vulnerability_retest":
 		if strings.TrimSpace(args.Result) == "" || strings.TrimSpace(args.Summary) == "" {
 			return nil, true, fmt.Errorf("result 和 summary 不能为空")
 		}
-		for _, ref := range args.ExecutionRefs {
-			execution, executionErr := cfg.Store.GetToolExecution(ctx, strings.TrimSpace(ref))
+		for i, ref := range args.ExecutionRefs {
+			ref = strings.TrimSpace(ref)
+			execution, executionErr := cfg.Store.GetToolExecution(ctx, ref)
+			if orchestrated && errors.Is(executionErr, sql.ErrNoRows) {
+				execution, executionErr = cfg.Store.GetToolExecution(ctx, cfg.Conversation.ID+":tool:"+ref)
+			}
 			if executionErr != nil {
 				return nil, true, fmt.Errorf("executionRef %q 不存在", ref)
 			}
@@ -244,6 +284,7 @@ func runPentestFindingRetestTool(ctx context.Context, cfg pentest.AgentLoopConfi
 				}
 				return nil, true, fmt.Errorf("executionRef %q 不是当前会话已完成的执行（%s）；请重新运行一个退出码为 0 的证据命令后再引用", ref, strings.Join(detail, "; "))
 			}
+			args.ExecutionRefs[i] = execution.ID
 		}
 		stored, err := cfg.Store.RecordFindingRetest(ctx, pentest.FindingRetest{
 			FindingID: args.FindingID, ConversationID: cfg.Conversation.ID, Result: args.Result,

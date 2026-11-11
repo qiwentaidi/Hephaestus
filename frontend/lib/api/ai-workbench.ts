@@ -626,13 +626,20 @@ export interface AIWorkbenchFindingReport {
   dispositions?: { id: string; previousStatus: string; status: string; note: string; actor: string; createdAt: string }[]
   view: AIWorkbenchVulnerabilityFinding
   project: AIWorkbenchProject
-  conversation?: { id: string; title: string; target: string } | null
+  conversation?: { id: string; title: string; target: string; agentRole?: string; planRunId?: string } | null
+  retestTarget?: AIWorkbenchFindingRetestTarget
   facts: AIWorkbenchBlackboardFact[]
   edges: AIWorkbenchBlackboardEdge[]
   executionRefs: Pick<AIWorkbenchExecutionEvidence, 'id' | 'conversationId' | 'toolName' | 'status' | 'startedAt' | 'completedAt'>[]
   retests?: AIWorkbenchFindingRetest[]
   missingEvidenceRefs: string[]
   chainTruncated: boolean
+}
+
+export interface AIWorkbenchFindingRetestTarget {
+  mode: 'orchestration' | 'conversation' | 'independent'
+  conversationId?: string
+  planRunId?: string
 }
 
 export interface AIWorkbenchFindingRetest {

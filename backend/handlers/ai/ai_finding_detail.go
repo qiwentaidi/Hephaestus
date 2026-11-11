@@ -97,6 +97,10 @@ func buildPentestFindingDetail(ctx context.Context, store *pentest.SQLStore, id 
 		return nil, err
 	}
 	view := pentestFindingView(finding)
+	retestTarget, err := resolveFindingRetestTarget(ctx, store, finding)
+	if err != nil {
+		return nil, err
+	}
 	var conversation any
 	if finding.ConversationID != "" {
 		conv, e := store.GetConversation(ctx, finding.ConversationID)
@@ -217,5 +221,5 @@ func buildPentestFindingDetail(ctx context.Context, store *pentest.SQLStore, id 
 		return nil, err
 	}
 	sort.Strings(missing)
-	return gin.H{"dispositions": dispositions, "retests": retests, "view": view, "project": projectViewBase(project), "conversation": conversation, "facts": factViews, "edges": edgeViews, "executionRefs": executionViews, "missingEvidenceRefs": missing, "chainTruncated": len(queue) > 0}, nil
+	return gin.H{"dispositions": dispositions, "retests": retests, "retestTarget": retestTarget, "view": view, "project": projectViewBase(project), "conversation": conversation, "facts": factViews, "edges": edgeViews, "executionRefs": executionViews, "missingEvidenceRefs": missing, "chainTruncated": len(queue) > 0}, nil
 }

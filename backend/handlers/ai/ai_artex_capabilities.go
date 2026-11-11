@@ -33,9 +33,18 @@ func artexCapabilityHost(ctx context.Context, taskID, intentID int64, agentKey s
 		conversationID = nativeConversation(run.ID, pentest.AgentRoleController)
 	} else if intentID > 0 {
 		candidate := run.ID + ":intent:" + strconv.FormatInt(intentID, 10)
-		if _, err := store.GetConversation(ctx, candidate); err == nil {
-			conversationID = candidate
+		if _, err := store.GetConversation(ctx, candidate); err != nil {
+			// Tools may be assembled before the UI's next projection pass. Never
+			// attribute a new Worker's writes to the Planner in that window.
+			rt, runtimeErr := taskengine.Get(ctx)
+			if runtimeErr != nil || syncARTEXRun(ctx, store, rt, run) != nil {
+				return capabilities.Host{}, false
+			}
+			if _, err := store.GetConversation(ctx, candidate); err != nil {
+				return capabilities.Host{}, false
+			}
 		}
+		conversationID = candidate
 	}
 	return capabilities.Host{
 		TaskID:         taskID,
