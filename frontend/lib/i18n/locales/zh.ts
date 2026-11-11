@@ -485,6 +485,7 @@ export const zh = {
       "dns_lookup": {"title": "DNS 解析", "summary": "核对指定域名的 A、AAAA 或 CNAME 记录。"},
       "attack_surface_get_scan_task": {"title": "扫描状态查询", "summary": "读取网站、端口或目录扫描的固定版本与进度。"},
       "attack_surface_list_scan_results": {"title": "扫描结果读取", "summary": "分页读取指纹、漏洞、端口或目录结果。"},
+      "attack_surface_read_reference": {"title": "读取资产引用", "summary": "分页读取用户在会话中通过 @ 引用的资产结果。"},
       "subdomain_get_task": {"title": "子域名任务状态", "summary": "查询子域名收集进度和任务状态。"},
       "subdomain_list_results": {"title": "子域名结果读取", "summary": "分页读取已收集的域名与解析结果。"},
       "retest_vulnerability": {"title": "漏洞复测", "summary": "读取漏洞原始复现证据并准备最小化复测。"},
@@ -547,9 +548,41 @@ export const zh = {
         "title": "目录扫描",
         "summary": "发现目标网站的目录与文件。"
       },
+      "attack_surface_create_crack_task": {
+        "title": "弱口令检测",
+        "summary": "为已授权的网络服务创建弱口令检测任务。"
+      },
+      "jwt_list_dictionaries": {
+        "title": "JWT 字典列表",
+        "summary": "查看平台可用的 JWT 检测字典。"
+      },
       "jwt_bruteforce": {
         "title": "JWT 弱密钥检测",
         "summary": "使用字典验证 JWT 的 HMAC 密钥强度。"
+      },
+      "add_intent": {
+        "title": "新增探索方向",
+        "summary": "记录待探索的问题及其依据。"
+      },
+      "update_intent": {
+        "title": "更新探索方向",
+        "summary": "更新已有探索方向的状态和说明。"
+      },
+      "get_exploration_graph": {
+        "title": "读取探索图",
+        "summary": "查看探索方向、依据和产出之间已记录的关系。"
+      },
+      "expand_digest": {
+        "title": "展开探索摘要",
+        "summary": "查看探索摘要关联的问题、记录和上游关系。"
+      },
+      "update_exploration_goal": {
+        "title": "更新探索目标",
+        "summary": "保存探索目标、达成状态及其依据。"
+      },
+      "update_todo_plan": {
+        "title": "更新待办清单",
+        "summary": "保存当前会话的待办事项及其进度。"
       },
       "get_project_fact": {
         "title": "读取项目事实",
@@ -647,6 +680,10 @@ export const zh = {
         "title": "等待",
         "summary": "等待指定时间，可随任务取消。"
       },
+      "read_tool_output": {
+        "title": "读取工具输出",
+        "summary": "分页读取或检索当前会话保存的工具输出。"
+      },
       "execute-python-script": {
         "title": "Python 脚本执行",
         "summary": "在指定虚拟环境中运行 Python 脚本。"
@@ -662,6 +699,14 @@ export const zh = {
       "nuclei": {
         "title": "Nuclei 模板扫描",
         "summary": "使用安全检测模板检查目标。"
+      },
+      "nuclei_list_templates": {
+        "title": "Nuclei 模板检索",
+        "summary": "检索平台已加载的 Nuclei 模板及其元数据。"
+      },
+      "nuclei_read_template": {
+        "title": "Nuclei 模板读取",
+        "summary": "查看指定 Nuclei 模板的 YAML 内容和元数据。"
       },
       "sqlmap": {
         "title": "SQL 注入检测",

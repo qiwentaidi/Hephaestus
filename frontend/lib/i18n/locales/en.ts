@@ -487,6 +487,7 @@ export const en: Locale = {
       "dns_lookup": {"title": "DNS lookup", "summary": "Check A, AAAA or CNAME records for a specified hostname."},
       "attack_surface_get_scan_task": {"title": "Scan status", "summary": "Read the version and progress of website, port or directory scans."},
       "attack_surface_list_scan_results": {"title": "Scan results", "summary": "Read paginated fingerprints, findings, ports or directories."},
+      "attack_surface_read_reference": {"title": "Read asset reference", "summary": "Read paginated results from assets the user referenced with @ in the conversation."},
       "subdomain_get_task": {"title": "Subdomain task status", "summary": "Check discovery progress and task state."},
       "subdomain_list_results": {"title": "Subdomain results", "summary": "Read collected domains and DNS results by page."},
       "retest_vulnerability": {"title": "Vulnerability retest", "summary": "Read original reproduction evidence and prepare a minimal retest."},
@@ -549,9 +550,41 @@ export const en: Locale = {
         "title": "Directory scanning",
         "summary": "Discover website directories and files."
       },
+      "attack_surface_create_crack_task": {
+        "title": "Weak password testing",
+        "summary": "Create a weak password check for authorized network services."
+      },
+      "jwt_list_dictionaries": {
+        "title": "List JWT dictionaries",
+        "summary": "View the JWT testing dictionaries available on the platform."
+      },
       "jwt_bruteforce": {
         "title": "JWT weak-key testing",
         "summary": "Check JWT HMAC secrets against a dictionary."
+      },
+      "add_intent": {
+        "title": "Add exploration direction",
+        "summary": "Record a question to investigate and why it matters."
+      },
+      "update_intent": {
+        "title": "Update exploration direction",
+        "summary": "Update the status and notes for an existing exploration direction."
+      },
+      "get_exploration_graph": {
+        "title": "Read exploration graph",
+        "summary": "View recorded relationships between exploration directions, evidence and results."
+      },
+      "expand_digest": {
+        "title": "Expand exploration summary",
+        "summary": "View the questions, records and upstream relationships behind an exploration summary."
+      },
+      "update_exploration_goal": {
+        "title": "Update exploration goal",
+        "summary": "Save an exploration goal, its status and the supporting evidence."
+      },
+      "update_todo_plan": {
+        "title": "Update to-do list",
+        "summary": "Save the current conversation's to-do items and progress."
       },
       "get_project_fact": {
         "title": "Read project fact",
@@ -649,6 +682,10 @@ export const en: Locale = {
         "title": "Wait",
         "summary": "Wait for a duration, respecting task cancellation."
       },
+      "read_tool_output": {
+        "title": "Read tool output",
+        "summary": "Page through or search tool output saved in the current conversation."
+      },
       "execute-python-script": {
         "title": "Python scripts",
         "summary": "Run Python scripts in the selected virtual environment."
@@ -664,6 +701,14 @@ export const en: Locale = {
       "nuclei": {
         "title": "Nuclei scanning",
         "summary": "Check targets with security templates."
+      },
+      "nuclei_list_templates": {
+        "title": "Search Nuclei templates",
+        "summary": "Search the Nuclei templates loaded by the platform and view their metadata."
+      },
+      "nuclei_read_template": {
+        "title": "Read Nuclei template",
+        "summary": "View the YAML and metadata for a selected Nuclei template."
       },
       "sqlmap": {
         "title": "SQL injection testing",
