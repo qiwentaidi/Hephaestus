@@ -78,7 +78,7 @@ func TestBashInstallerInteractiveUTF8(t *testing.T) {
 	if installed.Database.Host != "10.211.55.2" || installed.Database.User != "postgres" || installed.Database.Password != "测试'fixture" || installed.Database.SSLMode != "disable" || installed.Database.Port != "5432" || strings.Join(installed.Agent.Roles, ",") != "ai,scan" {
 		t.Fatal("interactive configuration values changed")
 	}
-	if installed.Agent.AIConcurrency != 2 || installed.Agent.ScanConcurrency != 3 {
+	if installed.Agent.AIConcurrency != 4 || installed.Agent.ScanConcurrency != 3 {
 		t.Fatalf("installed Worker quotas: %+v", installed.Agent)
 	}
 }
