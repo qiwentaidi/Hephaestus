@@ -4,4 +4,4 @@ package version
 const Version = "v0.5.7"
 
 // DesktopVersion 桌面客户端版本号
-const DesktopVersion = "v3.3.2"
+const DesktopVersion = "v3.3.3"
