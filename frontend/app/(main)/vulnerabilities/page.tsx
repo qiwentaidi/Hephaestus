@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
+  Bot,
   CheckCircle2,
   ChevronDown,
   ClipboardCheck,
@@ -986,8 +987,22 @@ function VulnerabilityManagementContent() {
                           />
                         </TableCell>
                         <TableCell className="max-w-[380px] px-4 py-4 align-top whitespace-normal">
-                          <div className="line-clamp-2 font-medium leading-5">
+                          <div
+                            className={cn(
+                              'font-medium leading-5',
+                              f.source === 'ai' ? 'wrap-anywhere' : 'line-clamp-2',
+                            )}
+                          >
                             {f.name || l.unnamed}
+                            {f.source === 'ai' && (
+                              <>
+                                {'\u00a0'}
+                                <Bot
+                                  className="inline-block size-3.5 align-middle text-muted-foreground/70"
+                                  aria-hidden="true"
+                                />
+                              </>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="px-4 py-4 align-top">
