@@ -13,6 +13,7 @@ import (
 	"hephaestus-backend/pkg/agentruntime"
 	"hephaestus-backend/pkg/database"
 	"hephaestus-backend/pkg/scanexec"
+	"hephaestus-backend/pkg/subdomain"
 	"hephaestus-backend/pkg/taskstate"
 )
 
@@ -41,6 +42,24 @@ func CreateAndEnqueueWithDB(db *gorm.DB, scanType, taskName, scanMode, assignedA
 		maps.Copy(configCopy, config)
 	}
 	configCopy["targets"] = targets
+	if scanType == "subdomain" {
+		// Resolve defaults before persistence so task details and dispatched work
+		// use the same configuration, including for AI-created tasks.
+		options, err := subdomain.BuildScanOption(targets, configCopy)
+		if err != nil {
+			return "", fmt.Errorf("解析子域名配置失败: %w", err)
+		}
+		configCopy["domains"] = options.Domains
+		configCopy["thread"] = options.Thread
+		configCopy["timeout"] = options.Timeout
+		configCopy["mode"] = options.Mode
+		configCopy["appendEngines"] = options.AppendEngines
+		if len(options.DnsServers) == 0 {
+			options.DnsServers = append([]string(nil), subdomain.DefaultDnsServers...)
+		}
+		configCopy["dnsServers"] = options.DnsServers
+		// Deliberately persist only public scan options, never resolved API keys.
+	}
 	if scanType == "portscan" {
 		if err := ApplyPortScanPortGroupDefaultsWithDB(db, configCopy); err != nil {
 			return "", fmt.Errorf("解析端口组失败: %w", err)

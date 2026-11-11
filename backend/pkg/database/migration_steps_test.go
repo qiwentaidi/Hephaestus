@@ -3,7 +3,9 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"hephaestus-backend/pkg/config"
@@ -31,15 +33,14 @@ func openMigrationTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-// A fresh database is created; only schema synchronization is recorded.
-// Repeated historical upgrades remain idempotent within the version window.
+// Fresh databases record completed upgrades and skip them on later startups.
 func TestAutoMigrateIsVersionedAndIdempotent(t *testing.T) {
 	db := openMigrationTestDB(t)
 
 	if err := AutoMigrate(db); err != nil {
 		t.Fatalf("first AutoMigrate: %v", err)
 	}
-	for _, table := range []string{"user", "vul_scan_task", "db_collect_result", "schema_migrations"} {
+	for _, table := range []string{"user", "vul_scan_task", "db_collect_result", "schema_migrations", "subdomain_scan_result"} {
 		if !db.Migrator().HasTable(table) {
 			t.Fatalf("table %s was not created", table)
 		}
@@ -57,8 +58,8 @@ func TestAutoMigrateIsVersionedAndIdempotent(t *testing.T) {
 	if err := db.Table("schema_migrations").Where("version = ?", "0011_collect_data").Count(&collectRows).Error; err != nil {
 		t.Fatalf("read collect step: %v", err)
 	}
-	if collectRows != 0 {
-		t.Fatalf("historical collect step recorded %d times, want 0", collectRows)
+	if collectRows != 1 {
+		t.Fatalf("historical collect step recorded %d times, want 1", collectRows)
 	}
 
 	var before int64
@@ -88,30 +89,17 @@ func TestSchemaSyncStepIDIsDeterministic(t *testing.T) {
 	}
 }
 
-func TestRuntimeVersionMigrationBoundary(t *testing.T) {
-	cases := []struct {
-		name, mode, web, desktop string
-		want                     bool
-	}{
-		{"web_older", config.RuntimeModeServer, "v0.5.5", "v9.0.0", true},
-		{"web_equal", config.RuntimeModeServer, "v0.5.6", "v9.0.0", true},
-		{"web_prerelease", config.RuntimeModeServer, "v0.5.6-rc.1", "v9.0.0", true},
-		{"desktop_build_metadata", config.RuntimeModeDesktop, "v9.0.0", "v3.3.2+build.1", true},
-		{"web_newer", config.RuntimeModeServer, "v0.5.7", "v3.3.2", false},
-		{"web_numeric_order", config.RuntimeModeServer, "v0.5.10", "v3.3.2", false},
-		{"desktop_older", config.RuntimeModeDesktop, "v9.0.0", "v3.3.1", true},
-		{"desktop_equal", config.RuntimeModeDesktop, "v9.0.0", "v3.3.2", true},
-		{"desktop_newer", config.RuntimeModeDesktop, "v0.5.6", "v3.3.3", false},
-		{"desktop_numeric_order", config.RuntimeModeDesktop, "v0.5.6", "v3.3.10", false},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+// Current releases exceed the former version ceilings in both runtime modes.
+// Upgrades must follow database history even when users skip older releases.
+func TestAutoMigrateUpgradesUnrecordedHistoryInEveryMode(t *testing.T) {
+	originalMode := config.GetRuntimeMode()
+	t.Cleanup(func() { config.SetRuntimeMode(originalMode) })
+	for _, mode := range []string{config.RuntimeModeServer, config.RuntimeModeDesktop} {
+		t.Run(mode, func(t *testing.T) {
+			config.SetRuntimeMode(mode)
 			db := collectStartupTestDB(t, "sqlite")
 			insertStartupCollectRecord(t, db, "historical", startupLegacyCollectTable)
-			// Neither an applied step nor a newer diagnostic marker determines eligibility.
-			if err := migrations.Run(context.Background(), db, []migrations.Step{{ID: "0011_collect_data", Up: func(context.Context, *gorm.DB) (bool, error) { return true, nil }}}); err != nil {
-				t.Fatal(err)
-			}
+			// A diagnostic application version is not a migration completion record.
 			value, _ := json.Marshal(collectDataMigrationState{Version: "v9.0.0"})
 			if err := db.Create(&Setting{Key: collectDataMigrationSettingKey, Value: string(value)}).Error; err != nil {
 				t.Fatal(err)
@@ -120,33 +108,92 @@ func TestRuntimeVersionMigrationBoundary(t *testing.T) {
 			oldHook := BeforeAutoMigrate
 			BeforeAutoMigrate = func(*gorm.DB) error { hookRuns++; return nil }
 			t.Cleanup(func() { BeforeAutoMigrate = oldHook })
+			var first string
 			for attempt := 0; attempt < 2; attempt++ {
-				if err := autoMigrateForVersion(db, tc.mode, tc.web, tc.desktop); err != nil {
+				if err := AutoMigrate(db); err != nil {
 					t.Fatal(err)
-				}
-				if !db.Migrator().HasTable("user") {
-					t.Fatal("normal schema creation was skipped")
 				}
 				var record DBCollectResult
 				if err := db.First(&record, "id = ?", "historical").Error; err != nil {
 					t.Fatal(err)
 				}
-				if migrated := record.Content != startupLegacyCollectTable; migrated != tc.want {
-					t.Fatalf("migrated=%v, want %v", migrated, tc.want)
+				if record.Content == startupLegacyCollectTable {
+					t.Fatal("historical data was not upgraded")
 				}
-				if tc.want && hookRuns != attempt+1 {
+				if attempt == 0 {
+					first = record.Content
+				} else if record.Content != first {
+					t.Fatal("second startup rewrote migrated data")
+				}
+				if hookRuns != 1 {
 					t.Fatalf("legacy hook ran %d times", hookRuns)
-				}
-				if !tc.want && hookRuns != 0 {
-					t.Fatal("legacy hook ran above version ceiling")
 				}
 			}
 		})
 	}
 }
 
-func TestRuntimeVersionMigrationRejectsInvalidVersion(t *testing.T) {
-	if err := autoMigrateForVersion(nil, config.RuntimeModeServer, "invalid", "v3.3.2"); err == nil {
-		t.Fatal("invalid running version accepted")
+func TestAutoMigratePreservesCompletedStepsAndRepairsSchema(t *testing.T) {
+	db := openMigrationTestDB(t)
+	// Model an installation that recorded completed history but whose previous
+	// schema snapshot omitted the subdomain result model.
+	var completed []migrations.Step
+	for _, step := range migrationSteps() {
+		if step.ID == schemaSyncStepID() {
+			step.ID = "schema_sync:previous"
+		}
+		step.Up = func(context.Context, *gorm.DB) (bool, error) { return true, nil }
+		completed = append(completed, step)
+	}
+	if err := migrations.Run(context.Background(), db, completed); err != nil {
+		t.Fatal(err)
+	}
+	type row struct {
+		Version   string
+		AppliedAt string
+	}
+	var before, after []row
+	if err := db.Table(migrations.TableName).Select("version, applied_at").Where("version NOT LIKE ?", "schema_sync:%").Order("version").Scan(&before).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := AutoMigrate(db); err != nil {
+		t.Fatal(err)
+	}
+	if !db.Migrator().HasTable(&SubdomainScanResult{}) || !db.Migrator().HasColumn(&SubdomainScanResult{}, "ResolutionError") {
+		t.Fatal("schema sync did not repair subdomain storage")
+	}
+	if err := db.Table(migrations.TableName).Select("version, applied_at").Where("version NOT LIKE ?", "schema_sync:%").Order("version").Scan(&after).Error; err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(before, after) {
+		t.Fatal("completed historical migrations were rerun")
+	}
+}
+
+func TestAutoMigrateRetriesFailedPreSchemaUpgrade(t *testing.T) {
+	db := openMigrationTestDB(t)
+	oldHook := BeforeAutoMigrate
+	t.Cleanup(func() { BeforeAutoMigrate = oldHook })
+	boom := errors.New("upgrade interrupted")
+	BeforeAutoMigrate = func(*gorm.DB) error { return boom }
+	if err := AutoMigrate(db); !errors.Is(err, boom) {
+		t.Fatalf("got %v, want migration error", err)
+	}
+	var count int64
+	if err := db.Table(migrations.TableName).Where("version = ?", "0013_legacy_pre_schema").Count(&count).Error; err != nil {
+		t.Fatal(err)
+	}
+	if count != 0 || db.Migrator().HasTable(&VulnScanTask{}) {
+		t.Fatal("failed upgrade was recorded or schema sync ran ahead")
+	}
+	calls := 0
+	BeforeAutoMigrate = func(*gorm.DB) error { calls++; return nil }
+	for range 2 {
+		if err := AutoMigrate(db); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if calls != 1 {
+		t.Fatalf("retry calls=%d, want 1", calls)
 	}
 }

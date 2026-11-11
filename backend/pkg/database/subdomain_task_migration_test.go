@@ -2,12 +2,50 @@ package database
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
+
+func TestAutoMigrateRepairsPreviouslyRebuiltSubdomainResults(t *testing.T) {
+	db := openMigrationTestDB(t)
+	// Older migration builds used tabs in stored DDL, even after the legacy
+	// task table was removed. Preserve every field when upgrading this schema.
+	if err := db.Exec("CREATE TABLE subdomain_scan_result (\n\tid TEXT PRIMARY KEY,\n\ttask_id TEXT NOT NULL,\n\tdomain TEXT NOT NULL,\n\tsubdomain TEXT NOT NULL,\n\tips TEXT NOT NULL,\n\tsource TEXT,\n\tresolution_error TEXT\n)").Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Exec("INSERT INTO subdomain_scan_result (id, task_id, domain, subdomain, ips, source, resolution_error) VALUES (?, ?, ?, ?, ?, ?, ?)",
+		"retained", "old-task", "example.test", "www.example.test", `["203.0.113.1"]`, "DNS", "original DNS error").Error; err != nil {
+		t.Fatal(err)
+	}
+	for range 2 {
+		if err := AutoMigrate(db); err != nil {
+			t.Fatal(err)
+		}
+		var got SubdomainScanResult
+		if err := db.First(&got, "id = ?", "retained").Error; err != nil {
+			t.Fatal(err)
+		}
+		if got.TaskID != "old-task" || got.Domain != "example.test" || got.Subdomain != "www.example.test" || got.IPs != `["203.0.113.1"]` || got.Source != "DNS" || got.ResolutionError != "original DNS error" {
+			t.Fatalf("upgrade lost stored result fields: %#v", got)
+		}
+		var ddl string
+		if err := db.Raw("SELECT sql FROM sqlite_master WHERE name = 'subdomain_scan_result'").Scan(&ddl).Error; err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(ddl, "\t") {
+			t.Fatal("rebuilt DDL still contains tab delimiters")
+		}
+		// Exercise schema sync again as a future release would, while retaining
+		// completed historical steps so the pre-schema repair cannot hide damage.
+		if err := db.Exec("DELETE FROM schema_migrations WHERE version LIKE 'schema_sync:%'").Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+}
 
 func TestMigrateAndDropLegacySubdomainTasksPreservesTasksAndResults(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "migration.db")+"?_foreign_keys=on"), &gorm.Config{})

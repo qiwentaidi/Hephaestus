@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"hephaestus-backend/pkg/config"
 	"hephaestus-backend/pkg/database/migrations"
 	"hephaestus-backend/pkg/logger"
 	"hephaestus-backend/pkg/version"
@@ -21,60 +20,36 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// Historical upgrades are selected only by the running application's version.
-// Schema synchronization remains versioned independently for all releases.
-const legacyWebMigrationMaxVersion = "v0.5.6"
-const legacyDesktopMigrationMaxVersion = "v3.3.2"
-
 // BeforeAutoMigrate lets packages upgrade legacy storage before schema sync.
-// It is part of the version-gated historical migration batch and must be idempotent.
+// Register it before startup migration; the upgrade must be idempotent.
 var BeforeAutoMigrate func(*gorm.DB) error
 
 func AutoMigrate(db *gorm.DB) error {
-	return autoMigrateForVersion(db, config.GetRuntimeMode(), version.Version, version.DesktopVersion)
-}
-
-func autoMigrateForVersion(db *gorm.DB, mode, webVersion, desktopVersion string) error {
-	includeLegacy, err := legacyMigrationsEnabled(mode, webVersion, desktopVersion)
-	if err != nil {
-		return err
-	}
 	ctx := context.Background()
 	if db != nil && db.Statement != nil && db.Statement.Context != nil {
 		ctx = db.Statement.Context
 	}
-	return migrations.Run(ctx, db, migrationSteps(includeLegacy))
-}
-
-func legacyMigrationsEnabled(mode, webVersion, desktopVersion string) (bool, error) {
-	current, maximum := webVersion, legacyWebMigrationMaxVersion
-	if mode == config.RuntimeModeDesktop {
-		current, maximum = desktopVersion, legacyDesktopMigrationMaxVersion
-	}
-	if !semver.IsValid(current) {
-		return false, fmt.Errorf("当前运行版本无效: %q", current)
-	}
-	return semver.Compare(current, maximum) <= 0, nil
+	return migrations.Run(ctx, db, migrationSteps())
 }
 
 // migrationSteps is the ordered upgrade list. Order matters: legacy structures
 // and data are upgraded before GORM rebuilds tables, and backfills run after the
-// schema is current.
-func migrationSteps(includeLegacy bool) []migrations.Step {
+// schema is current. All releases register the same historical steps; the
+// database completion ledger, not the running application version, selects work.
+func migrationSteps() []migrations.Step {
 	schema := migrations.Step{ID: schemaSyncStepID(), Name: "同步数据库表结构", Up: syncSchema}
-	if !includeLegacy {
-		return []migrations.Step{schema}
-	}
 	steps := []migrations.Step{
 		{ID: "0001_vuln_scan_task_primary_key", Name: "升级 vul_scan_task 主键结构", Up: once(migrateVulnScanTaskPrimaryKey)},
 		// Backfill before schema sync can enforce the new primary key.
 		{ID: "0012_web_vulnerability_ids", Name: "补齐 Web 漏洞独立 ID", Up: once(migrateWebVulnerabilityIDs)},
-		{ID: "0013_legacy_pre_schema", Name: "升级旧计划任务结构", Up: once(func(db *gorm.DB) error {
-			if BeforeAutoMigrate != nil {
-				return BeforeAutoMigrate(db)
-			}
-			return nil
-		})},
+	}
+	// Do not record completion if the entry point did not register the upgrader.
+	if BeforeAutoMigrate != nil {
+		steps = append(steps, migrations.Step{ID: "0013_legacy_pre_schema", Name: "升级旧计划任务结构", Up: once(BeforeAutoMigrate)})
+	}
+	steps = append(steps, []migrations.Step{
+		// SQLite's schema rebuild must not retain the obsolete task foreign key.
+		{ID: "0014_subdomain_pre_schema", Name: "解除旧子域名结果外键", Up: once(prepareLegacySubdomainResults), OutsideTx: true},
 		schema,
 		{ID: "0002_legacy_subdomain_tasks", Name: "升级旧子域名任务数据", Up: once(migrateAndDropLegacySubdomainTasks), OutsideTx: true},
 		{ID: "0003_subdomain_result_columns", Name: "补齐子域名结果表结构", Up: once(migrateSubdomainResultColumns)},
@@ -85,11 +60,26 @@ func migrationSteps(includeLegacy bool) []migrations.Step {
 		{ID: "0009_pentest_scan_task_origin", Name: "回填 AI 扫描任务来源", Up: once(backfillPentestScanTaskOrigins)},
 		{ID: "0010_unified_asset_ledger", Name: "回填统一资产台账字段", Up: once(backfillUnifiedAssetLedgerFields)},
 		{ID: "0011_collect_data", Name: "合并采集结果为结构化数据", Up: migrateCollectDataStep},
-	}
-	for i := range steps {
-		steps[i].Repeatable = steps[i].ID != schema.ID
-	}
+	}...)
 	return steps
+}
+
+func prepareLegacySubdomainResults(db *gorm.DB) error {
+	if db.Migrator().HasTable("subdomain_scan_task") {
+		return dropLegacySubdomainResultForeignKey(db)
+	}
+	if db.Dialector.Name() == "sqlite" {
+		// Previous SQLite rebuilds used tab-indented DDL. The SQLite migrator
+		// treats tabs as quote delimiters, losing columns during a later rebuild.
+		var ddl string
+		if err := db.Raw("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?", "subdomain_scan_result").Scan(&ddl).Error; err != nil {
+			return err
+		}
+		if strings.Contains(ddl, "\t") {
+			return dropLegacySubdomainResultForeignKey(db)
+		}
+	}
+	return nil
 }
 
 func once(fn func(*gorm.DB) error) func(context.Context, *gorm.DB) (bool, error) {
@@ -167,6 +157,7 @@ func schemaModels() []any {
 		&VulnerabilityInfo{},
 		&PortScanResult{},
 		&PortScanResultAsset{},
+		&SubdomainScanResult{},
 		&DBCollectResult{},
 		&DBCollectCustomRule{},
 		&ScanTemplate{},
@@ -685,7 +676,8 @@ func dropLegacySubdomainResultForeignKey(db *gorm.DB) error {
 				`CREATE INDEX IF NOT EXISTS idx_subdomain_scan_result_subdomain ON subdomain_scan_result(subdomain)`,
 			}
 			for _, statement := range statements {
-				if err := tx.Exec(statement).Error; err != nil {
+				// Keep stored DDL compatible with GORM's SQLite DDL parser.
+				if err := tx.Exec(strings.ReplaceAll(statement, "\t", " ")).Error; err != nil {
 					return err
 				}
 			}
@@ -805,7 +797,7 @@ func backfillPentestScanTaskOrigins(db *gorm.DB) error {
 // --- 采集结果合并迁移（HTML -> columns/rows）---
 //
 // The setting below is retained only for diagnostics and serialization. It does
-// not decide whether to run; migrationSteps selects this step by runtime version.
+// not decide whether to run; schema_migrations tracks step completion.
 const collectDataMigrationVersion = "v0.5.5"
 const collectDataMigrationSettingKey = "db_collect_data_migration_version"
 

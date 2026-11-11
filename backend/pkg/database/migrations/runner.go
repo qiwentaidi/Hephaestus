@@ -34,8 +34,8 @@ type Step struct {
 	// transaction. Use it only for upgrades that need connection scoped
 	// statements (such as SQLite PRAGMA) or that manage their own transaction.
 	OutsideTx bool
-	// Repeatable steps are selected by the caller (for example by runtime
-	// version), never by completion records. Existing records are ignored.
+	// Repeatable steps are selected by the caller, never by completion records.
+	// Reserve these for recurring maintenance, not one-time historical upgrades.
 	Repeatable bool
 }
 
