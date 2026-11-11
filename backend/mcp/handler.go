@@ -324,7 +324,6 @@ func callMCPTool(c *gin.Context, name string, rawArgs json.RawMessage, profile m
 				return mcpToolCallResult{}, err
 			}
 			if match := toolguard.CheckToolCall(name, rawArgs); match != nil {
-				recordMCPWorkbenchBlockedToolCall(name, rawArgs, match)
 				message := toolguard.FormatBlockedMessage(match)
 				return mcpToolCallResult{
 					Content: []mcpToolTextContent{{Type: "text", Text: message}},
