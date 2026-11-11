@@ -33,7 +33,7 @@ func pentestFindingRetestToolSchemas() []pentest.AgentToolSchema {
 					"result":        map[string]any{"type": "string", "enum": []string{"still_vulnerable", "fixed", "inconclusive"}, "description": "复测结论。"},
 					"summary":       map[string]any{"type": "string", "description": "简明复测结论，说明实际观察和边界。"},
 					"evidence":      map[string]any{"type": "string", "description": "复测请求/响应、命令输出或其他原始证据；缺少证据时明确说明。"},
-					"executionRefs": map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "支撑本次复测的真实工具执行 ID 列表；只能引用当前会话 status=completed 的执行。exec 即使产生了有用输出，只要最终退出码非 0 也不能引用，请重新运行一个退出码为 0 的证据命令。"},
+					"executionRefs": map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "支撑本次复测的真实工具执行 ID 列表；只能引用当前会话 status=completed 的执行。Bash 即使产生了有用输出，只要最终退出码非 0 也不能引用，请重新运行一个退出码为 0 的证据命令。"},
 				}, "findingId", "result", "summary"),
 			},
 		},

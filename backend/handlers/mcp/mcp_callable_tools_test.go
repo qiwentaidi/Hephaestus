@@ -15,7 +15,7 @@ import (
 func TestCallableAIToolsMatchDialogueRuntime(t *testing.T) {
 	oldRead := externalMCPReadSetting
 	defer func() { externalMCPReadSetting = oldRead }()
-	preferences := map[string]bool{"exec": false, "dnslog": true}
+	preferences := map[string]bool{"Bash": false, "dnslog": true}
 	servers := []mcpclient.Server{
 		{ID: "one", Name: "First", Enabled: true, Headers: map[string]string{"Authorization": "secret-header"}, Env: map[string]string{"KEY": "secret-env"}, Tools: []mcpclient.Tool{{Name: "search"}, {Name: "hidden"}}, DisabledTools: []string{"hidden"}},
 		{ID: "two", Name: "Second", Enabled: true, Tools: []mcpclient.Tool{{Name: "search"}}},
@@ -76,7 +76,7 @@ func TestCallableAIToolsMatchDialogueRuntime(t *testing.T) {
 			t.Fatalf("dialogue tool missing from catalog: %s", name)
 		}
 	}
-	if listed["exec"].Name != "" || listed["attack_surface_search_jsscan_vulnerabilities"].Name != "" || listed["dnslog"].Name == "" {
+	if listed["Bash"].Name != "" || listed["attack_surface_search_jsscan_vulnerabilities"].Name != "" || listed["dnslog"].Name == "" {
 		t.Fatalf("catalog ignored tool preferences: %+v", items)
 	}
 	for _, server := range servers[:2] {

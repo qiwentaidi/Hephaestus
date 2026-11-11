@@ -14,6 +14,7 @@ import (
 	"hephaestus-backend/pkg/database"
 	"hephaestus-backend/pkg/mcpclient"
 	"hephaestus-backend/pkg/mcptools"
+	"hephaestus-backend/pkg/toolruntime"
 
 	"github.com/gin-gonic/gin"
 )
@@ -60,6 +61,19 @@ func loadAgentToolVisibility() (map[string][]string, error) {
 	visibility := map[string][]string{}
 	if err = json.Unmarshal(data, &visibility); err != nil {
 		return nil, err
+	}
+	changed := false
+	for role, names := range visibility {
+		migrated, update := toolruntime.MigrateDisabled(names)
+		if update {
+			visibility[role] = migrated
+			changed = true
+		}
+	}
+	if changed {
+		if err := agentToolWriteSetting(agentToolVisibilityKey, visibility); err != nil {
+			return nil, err
+		}
 	}
 	return visibility, nil
 }
@@ -154,7 +168,7 @@ var planningOnlyTools = map[string]bool{
 
 func isExecutionTool(name string) bool {
 	switch name {
-	case "exec", "execute-python-script", "install-python-package",
+	case "Bash", "Monitor", "shell_open", "shell_send", "execute-python-script", "install-python-package",
 		"space_engine_search", "waybackurls", "http-framework-test", "dns_lookup",
 		"subdomain_create_task", "nuclei", "retest_vulnerability",
 		"record_vulnerability_retest":
@@ -243,8 +257,9 @@ func agentToolCatalog() ([]agentTool, error) {
 		}
 		add(agentTool{Name: tool.Name, Title: tool.Name, Description: mcptools.FirstNonEmpty(tool.ShortDescription, mcptools.FirstLine(tool.Description)), Source: "system", Enabled: globallyEnabled(tool.Name)})
 	}
-	if !seen["exec"] {
-		add(agentTool{Name: "exec", Title: "exec", Description: "Execute a local shell command", Source: "system", Enabled: globallyEnabled("exec")})
+	for _, schema := range pentest.NormaToolSchemas() {
+		name := schema.Function.Name
+		add(agentTool{Name: name, Title: name, Description: schema.Function.Description, Source: "system", Enabled: globallyEnabled(name)})
 	}
 	for _, server := range servers {
 		for _, tool := range server.Tools {

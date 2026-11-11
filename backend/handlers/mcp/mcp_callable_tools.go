@@ -5,6 +5,7 @@ import (
 	"hephaestus-backend/lib/pentest"
 	"hephaestus-backend/pkg/mcpclient"
 	"hephaestus-backend/pkg/mcptools"
+	"hephaestus-backend/pkg/toolruntime"
 )
 
 type callableAITool struct {
@@ -28,12 +29,15 @@ func callableAITools(catalog []gin.H, preferences map[string]bool, servers []mcp
 		if !ok {
 			enabled = defaults[name]
 		}
-		if !enabled || name == "" {
+		bashDisabled := toolruntime.IsCommand(name) && preferences["Bash"] == false
+		_, bashConfigured := preferences["Bash"]
+		if !enabled || name == "" || !toolruntime.Available(name) || (bashConfigured && bashDisabled) {
 			continue
 		}
 		source, _ := tool["source"].(string)
 		description, _ := tool["description"].(string)
-		items = append(items, callableAITool{Name: name, DisplayName: name, Description: description, Source: source})
+		sourceName, _ := tool["sourceName"].(string)
+		items = append(items, callableAITool{Name: name, DisplayName: name, Description: description, Source: source, SourceName: sourceName})
 	}
 	for _, server := range servers {
 		if !server.Enabled {

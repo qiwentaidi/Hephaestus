@@ -17,6 +17,7 @@ import (
 	"hephaestus-backend/pkg/database"
 	"hephaestus-backend/pkg/mcpclient"
 	"hephaestus-backend/pkg/mcptools"
+	"hephaestus-backend/pkg/toolruntime"
 )
 
 const externalMCPSettingKey = "ai.external_mcp_servers"
@@ -43,7 +44,21 @@ func loadAIToolPreferences() (map[string]bool, error) {
 		return nil, err
 	}
 	err = json.Unmarshal(data, &preferences)
-	return preferences, err
+	if err != nil {
+		return nil, err
+	}
+	if enabled, ok := preferences["exec"]; ok {
+		for _, name := range []string{"Bash", "Monitor", "shell_open", "shell_send"} {
+			if _, exists := preferences[name]; !exists {
+				preferences[name] = enabled
+			}
+		}
+		delete(preferences, "exec")
+		if err = externalMCPWriteSetting(aiToolsSettingKey, preferences); err != nil {
+			return nil, err
+		}
+	}
+	return preferences, nil
 }
 
 func aiCapabilityCatalog() ([]gin.H, error) {
@@ -70,8 +85,8 @@ func aiCapabilityCatalog() ([]gin.H, error) {
 		seen[tool.Name] = true
 		items = append(items, gin.H{"name": tool.Name, "source": "system", "command": tool.Command, "description": mcptools.FirstNonEmpty(tool.ShortDescription, mcptools.FirstLine(tool.Description)), "details": tool.Description, "parameters": tool.Parameters})
 	}
-	if !seen["exec"] {
-		items = append(items, gin.H{"name": "exec", "source": "system", "command": "sh", "description": "Execute a local command"})
+	for _, tool := range pentest.NormaToolSchemas() {
+		items = append(items, gin.H{"name": tool.Function.Name, "source": "system", "command": "", "description": mcptools.FirstLine(tool.Function.Description), "details": tool.Function.Description, "parameters": tool.Function.Parameters})
 	}
 	return items, nil
 }
@@ -98,7 +113,10 @@ func ListSystemToolsHandler(c *gin.Context) {
 			enabled = defaults[name]
 		}
 		item["enabled"] = enabled
-		item["availableToAI"] = enabled
+		item["availableToAI"] = enabled && toolruntime.Available(name)
+		if bashEnabled, configured := preferences["Bash"]; configured && !bashEnabled && toolruntime.IsCommand(name) {
+			item["availableToAI"] = false
+		}
 	}
 	c.JSON(200, gin.H{"success": true, "data": items})
 }
@@ -212,6 +230,11 @@ func RefreshPentestTools(cfg *pentest.AgentLoopConfig) error {
 	for name := range disabled {
 		delete(allowed, name)
 	}
+	if !allowed["Bash"] {
+		for _, name := range []string{"Monitor", "shell_open", "shell_send"} {
+			delete(allowed, name)
+		}
+	}
 	cfg.NativeTools = mcptools.NativeSchemas()
 	if !mcptools.ConversationHasJSScanAsset(cfg.Conversation.ID) {
 		cfg.NativeTools = mcptools.RemoveJSScanTools(cfg.NativeTools)
@@ -275,6 +298,11 @@ func AuthorizePentestTool(name string) error {
 	preferences, err := loadAIToolPreferences()
 	if err != nil {
 		return err
+	}
+	if toolruntime.IsCommand(name) && name != "Bash" {
+		if enabled, ok := preferences["Bash"]; ok && !enabled {
+			return fmt.Errorf("AI capability Bash is disabled")
+		}
 	}
 	if enabled, ok := preferences[name]; ok {
 		if enabled {

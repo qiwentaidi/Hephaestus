@@ -88,7 +88,7 @@ func executableInputs(toolName string, arguments any) []string {
 // blocked by command-oriented rules.
 func IsExecutionTool(name string) bool {
 	name = strings.ToLower(strings.TrimSpace(name))
-	return name == "exec" || name == "exec_run" || name == "python_execute" || name == "execute-python-script" || name == "install-python-package" || strings.Contains(name, "shell")
+	return name == "bash" || name == "monitor" || name == "exec" || name == "exec_run" || name == "python_execute" || name == "execute-python-script" || name == "install-python-package" || strings.Contains(name, "shell")
 }
 
 // IsInterceptionTool reports whether the runtime call guard should inspect the

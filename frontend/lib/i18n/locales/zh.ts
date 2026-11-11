@@ -575,9 +575,77 @@ export const zh = {
         "title": "补充漏洞证据",
         "summary": "把同一漏洞的新验证证据合并到当前记录。"
       },
-      "exec": {
-        "title": "本地命令执行",
+      "Bash": {
+        "title": "Bash 命令执行",
         "summary": "执行本地命令，完成验证与数据处理。"
+      },
+      "TaskOutput": {
+        "title": "读取后台输出",
+        "summary": "读取后台任务的输出和执行状态。"
+      },
+      "TaskList": {
+        "title": "后台任务列表",
+        "summary": "查看当前运行实例中的后台任务。"
+      },
+      "TaskStop": {
+        "title": "停止后台任务",
+        "summary": "停止指定后台任务及其子进程。"
+      },
+      "Monitor": {
+        "title": "持续监测命令",
+        "summary": "在后台运行持续输出的命令。"
+      },
+      "shell_open": {
+        "title": "打开交互终端",
+        "summary": "创建当前运行实例专属的交互终端。"
+      },
+      "shell_send": {
+        "title": "发送终端输入",
+        "summary": "向交互终端发送命令、文本或按键。"
+      },
+      "shell_read": {
+        "title": "读取终端输出",
+        "summary": "读取交互终端的增量输出或屏幕状态。"
+      },
+      "shell_close": {
+        "title": "关闭交互终端",
+        "summary": "关闭指定交互终端并清理进程。"
+      },
+      "shell_list": {
+        "title": "交互终端列表",
+        "summary": "查看当前运行实例的交互终端。"
+      },
+      "Read": {
+        "title": "读取文件",
+        "summary": "读取文件内容，支持分页和多种文件格式。"
+      },
+      "Write": {
+        "title": "写入文件",
+        "summary": "在当前工作目录内创建或覆盖文件。"
+      },
+      "Edit": {
+        "title": "编辑文件",
+        "summary": "替换文件中的指定文本。"
+      },
+      "MultiEdit": {
+        "title": "批量编辑文件",
+        "summary": "对同一文件应用多处文本修改。"
+      },
+      "LS": {
+        "title": "目录列表",
+        "summary": "查看目录中的文件与子目录。"
+      },
+      "Glob": {
+        "title": "匹配文件路径",
+        "summary": "使用路径模式查找文件。"
+      },
+      "Grep": {
+        "title": "搜索文件内容",
+        "summary": "按文本或正则表达式搜索文件内容。"
+      },
+      "sleep": {
+        "title": "等待",
+        "summary": "等待指定时间，可随任务取消。"
       },
       "execute-python-script": {
         "title": "Python 脚本执行",

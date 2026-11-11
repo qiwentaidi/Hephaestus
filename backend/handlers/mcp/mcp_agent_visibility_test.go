@@ -12,7 +12,7 @@ func TestAgentToolVisibilityByRole(t *testing.T) {
 			"planner":    []string{"nuclei"},
 			"worker":     []string{},
 			"controller": []string{"external_mcp_demo_search"},
-			"pentest":    []string{"exec", "nuclei"},
+			"pentest":    []string{"Bash", "nuclei"},
 		},
 	}
 	agentToolReadSetting = func(key string) (any, error) { return stored[key], nil }
@@ -22,10 +22,10 @@ func TestAgentToolVisibilityByRole(t *testing.T) {
 		want   []string
 		absent []string
 	}{
-		{"planner", []string{"nuclei"}, []string{"exec"}},
-		{"worker", nil, []string{"exec", "add_intent"}},
-		{"mainagent", []string{"external_mcp_demo_search"}, []string{"exec"}},
-		{"", []string{"exec", "nuclei"}, nil},
+		{"planner", []string{"nuclei"}, []string{"Bash"}},
+		{"worker", nil, []string{"Bash", "add_intent"}},
+		{"mainagent", []string{"external_mcp_demo_search"}, []string{"Bash"}},
+		{"", []string{"Bash", "nuclei"}, nil},
 	}
 	for _, tc := range cases {
 		disabled, restricted, err := AgentToolDisabled(tc.role)
@@ -51,11 +51,11 @@ func TestAgentToolVisibilityDefaultsApplyLeastPrivilege(t *testing.T) {
 	agentToolReadSetting = func(string) (any, error) { return nil, nil }
 
 	planner, restricted, err := AgentToolDisabled("planner")
-	if err != nil || !restricted || !planner["exec"] {
+	if err != nil || !restricted || !planner["Bash"] {
 		t.Fatalf("planner defaults: restricted=%v disabled=%v err=%v", restricted, planner, err)
 	}
 	worker, _, err := AgentToolDisabled("worker")
-	if err != nil || worker["exec"] {
+	if err != nil || worker["Bash"] {
 		t.Fatalf("worker should keep exec: disabled=%v err=%v", worker, err)
 	}
 	if !worker["add_intent"] {

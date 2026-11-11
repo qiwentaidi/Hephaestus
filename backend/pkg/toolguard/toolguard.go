@@ -11,6 +11,7 @@ import (
 	"sync/atomic"
 
 	"github.com/google/uuid"
+	"hephaestus-backend/pkg/toolruntime"
 )
 
 const (
@@ -149,7 +150,9 @@ func Compile(config Config) (*Policy, error) {
 		if len(rule.Tools) > 0 {
 			compiled.tools = make(map[string]struct{}, len(rule.Tools))
 			seenTools := make(map[string]struct{}, len(rule.Tools))
-			for _, rawTool := range rule.Tools {
+			tools, _ := toolruntime.MigrateDisabled(rule.Tools)
+			tools = append(tools, rule.Tools...) // Historical aliases still match imported rules.
+			for _, rawTool := range tools {
 				tool := strings.TrimSpace(rawTool)
 				if tool == "" || len(tool) > MaxToolNameLength {
 					return nil, fmt.Errorf("%s: 工具名不能为空且不能超过 %d 字节", prefix, MaxToolNameLength)

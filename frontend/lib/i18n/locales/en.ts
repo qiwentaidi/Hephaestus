@@ -577,9 +577,77 @@ export const en: Locale = {
         "title": "Update vulnerability evidence",
         "summary": "Merge new verification evidence into the existing finding."
       },
-      "exec": {
-        "title": "Local command",
+      "Bash": {
+        "title": "Bash command",
         "summary": "Run local commands for validation and data processing."
+      },
+      "TaskOutput": {
+        "title": "Read background output",
+        "summary": "Read output and status from a background task."
+      },
+      "TaskList": {
+        "title": "List background tasks",
+        "summary": "List background tasks owned by the current run."
+      },
+      "TaskStop": {
+        "title": "Stop background task",
+        "summary": "Stop a background task and its child processes."
+      },
+      "Monitor": {
+        "title": "Monitor command",
+        "summary": "Run a command that continuously produces output."
+      },
+      "shell_open": {
+        "title": "Open interactive terminal",
+        "summary": "Create an interactive terminal owned by the current run."
+      },
+      "shell_send": {
+        "title": "Send terminal input",
+        "summary": "Send commands, text or key presses to a terminal."
+      },
+      "shell_read": {
+        "title": "Read terminal output",
+        "summary": "Read incremental output or the terminal screen."
+      },
+      "shell_close": {
+        "title": "Close interactive terminal",
+        "summary": "Close a terminal and clean up its processes."
+      },
+      "shell_list": {
+        "title": "List interactive terminals",
+        "summary": "List terminals owned by the current run."
+      },
+      "Read": {
+        "title": "Read file",
+        "summary": "Read file contents with pagination and format support."
+      },
+      "Write": {
+        "title": "Write file",
+        "summary": "Create or overwrite a file within the workspace."
+      },
+      "Edit": {
+        "title": "Edit file",
+        "summary": "Replace specified text in a file."
+      },
+      "MultiEdit": {
+        "title": "Apply multiple edits",
+        "summary": "Apply multiple text changes to one file."
+      },
+      "LS": {
+        "title": "List directory",
+        "summary": "List files and subdirectories."
+      },
+      "Glob": {
+        "title": "Find file paths",
+        "summary": "Find files using path patterns."
+      },
+      "Grep": {
+        "title": "Search file contents",
+        "summary": "Search files using text or regular expressions."
+      },
+      "sleep": {
+        "title": "Wait",
+        "summary": "Wait for a duration, respecting task cancellation."
       },
       "execute-python-script": {
         "title": "Python scripts",

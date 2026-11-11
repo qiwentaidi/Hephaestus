@@ -1,6 +1,9 @@
 package toolguard
 
-import "strings"
+import (
+	"hephaestus-backend/pkg/toolruntime"
+	"strings"
+)
 
 const CurrentPresetVersion = 6
 
@@ -78,6 +81,19 @@ func IsLegacyDefaultRule(rule Rule) bool {
 // MigratePresetRules runs once per persisted configuration. It preserves all
 // user-created rules and reuses the legacy default rule ID for its replacement.
 func MigratePresetRules(config Config) (Config, bool) {
+	config, changed := migratePresetRules(config)
+	config = cloneConfig(config)
+	for i, rule := range config.Rules {
+		names, updated := toolruntime.MigrateDisabled(rule.Tools)
+		if updated {
+			config.Rules[i].Tools = names
+			changed = true
+		}
+	}
+	return config, changed
+}
+
+func migratePresetRules(config Config) (Config, bool) {
 	if config.PresetVersion >= CurrentPresetVersion {
 		return config, false
 	}

@@ -146,7 +146,7 @@ func TestAICapabilitySwitches(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		router.ServeHTTP(w, req)
 		if w.Code != 200 {
-			t.Fatal(w.Body.String())
+			t.Fatalf("%s: %s", name, w.Body.String())
 		}
 	}
 	catalog, err := pentest.LoadSystemTools("")
@@ -155,7 +155,7 @@ func TestAICapabilitySwitches(t *testing.T) {
 	}
 	cfg := pentest.AgentLoopConfig{ToolCatalog: catalog}
 	set("http-framework-test", false)
-	set("exec", false)
+	set("Bash", false)
 	set("dnslog", true)
 	if err := mcptools.RefreshTools(&cfg); err != nil {
 		t.Fatal(err)
@@ -164,17 +164,17 @@ func TestAICapabilitySwitches(t *testing.T) {
 	for _, tool := range pentest.BuildAgentToolSchemasForConfig(cfg) {
 		names[tool.Function.Name] = true
 	}
-	if names["http-framework-test"] || names["exec"] || names["attack_surface_create_jsscan_task"] || !names["dnslog"] {
+	if names["http-framework-test"] || names["Bash"] || names["attack_surface_create_jsscan_task"] || !names["dnslog"] {
 		t.Fatalf("incorrect schemas: %v", names)
 	}
-	if mcptools.AuthorizeTool("exec") == nil || mcptools.AuthorizeTool("http-framework-test") == nil || mcptools.AuthorizeTool("dnslog") != nil {
+	if mcptools.AuthorizeTool("Bash") == nil || mcptools.AuthorizeTool("http-framework-test") == nil || mcptools.AuthorizeTool("dnslog") != nil {
 		t.Fatal("execution policy did not follow switches")
 	}
-	set("exec", true)
+	set("Bash", true)
 	if err := mcptools.RefreshTools(&cfg); err != nil {
 		t.Fatal(err)
 	}
-	if mcptools.AuthorizeTool("exec") != nil {
+	if mcptools.AuthorizeTool("Bash") != nil {
 		t.Fatal("re-enable failed")
 	}
 	names = map[string]bool{}

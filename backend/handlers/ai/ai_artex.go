@@ -18,6 +18,7 @@ import (
 	"hephaestus-backend/lib/pentest/taskengine"
 	aipkg "hephaestus-backend/pkg/ai"
 	"hephaestus-backend/pkg/config"
+	"hephaestus-backend/pkg/toolruntime"
 
 	"github.com/gin-gonic/gin"
 )
@@ -593,7 +594,7 @@ func projectARTEXActivity(ctx context.Context, store *pentest.SQLStore, run pent
 		p.Type = "tool_start"
 		p.Status = "running"
 		p.Label = "正在调用工具：" + a.Tool
-	case "tool_result":
+	case "tool_result", "tool_execution_update":
 		p.Type = "tool_done"
 		p.Label = "工具调用完成：" + a.Tool
 		if a.IsError {
@@ -602,7 +603,7 @@ func projectARTEXActivity(ctx context.Context, store *pentest.SQLStore, run pent
 	default:
 		p.Type = "assistant_commentary"
 	}
-	if a.ToolUseID != "" && (a.Kind == "tool_use" || a.Kind == "tool_result") {
+	if a.ToolUseID != "" && (a.Kind == "tool_use" || a.Kind == "tool_result" || a.Kind == "tool_execution_update") {
 		execID := conv + ":tool:" + a.ToolUseID
 		exec, e := store.GetToolExecution(ctx, execID)
 		if e != nil {
@@ -617,6 +618,17 @@ func projectARTEXActivity(ctx context.Context, store *pentest.SQLStore, run pent
 			exec.ResultJSON = content
 			if a.IsError {
 				exec.Error = content
+			}
+		}
+		if o, ok := toolruntime.ParseOutcome(content); ok && a.Kind != "tool_use" && o.ToolName == a.Tool && o.ToolUseID == a.ToolUseID {
+			exec.Status, p.Status = o.Status, o.Status
+			if o.Status == "running" {
+				p.Label = "后台任务运行中：" + a.Tool
+			}
+			exec.EndTime = o.CompletedAt
+			exec.Error = o.Error
+			if o.CompletedAt != nil {
+				exec.Duration = o.CompletedAt.Sub(exec.StartTime)
 			}
 		}
 		if a.NodeID != nil {

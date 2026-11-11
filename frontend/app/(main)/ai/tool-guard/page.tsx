@@ -22,7 +22,7 @@ import { useI18n } from '@/lib/i18n'
 import toast from '@/lib/toast'
 
 const emptyConfig: ToolGuardConfig = { enabled: true, rules: [] }
-const commonTools = ['exec', 'exec_run', 'python_execute', 'execute-python-script', 'http-framework-test']
+const commonTools = ['Bash', 'Monitor', 'shell_open', 'shell_send', 'execute-python-script', 'http-framework-test']
 type RuleTarget = NonNullable<ToolGuardRule['target']>
 
 function normalizeConfig(value: ToolGuardConfig): ToolGuardConfig {
