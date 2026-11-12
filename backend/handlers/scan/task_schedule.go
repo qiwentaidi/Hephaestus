@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"hephaestus-backend/pkg/database"
+	"hephaestus-backend/pkg/datapurge"
 	"hephaestus-backend/pkg/logger"
 	"hephaestus-backend/pkg/scantask"
 	"hephaestus-backend/pkg/taskstate"
@@ -52,7 +53,7 @@ const (
 // occurrence from scan_schedule, records it once, then applies the same
 // window/busy policy to every schedule kind.
 func dispatchDueScheduledTasksWithDB(db *gorm.DB, now time.Time, starter func(string) (string, error)) {
-	if db == nil {
+	if db == nil || datapurge.IsRunning() {
 		return
 	}
 	if starter == nil {

@@ -42,18 +42,38 @@ func CancelTaskWithDB(db *gorm.DB, taskID string) error {
 			if task.Status == "completed" || task.Status == "failed" || task.Status == "cancelled" {
 				return ErrNotCancelable
 			}
+			now := time.Now()
 			var running int64
 			if err := tx.Model(&database.VulnScanTaskItem{}).Where("task_id=? AND version=? AND status='running'", taskID, task.Version).Count(&running).Error; err != nil {
 				return err
 			}
-			if err := tx.Model(&database.VulnScanTaskItem{}).Where("task_id=? AND version=? AND status IN ?", taskID, task.Version, []string{"pending", "paused"}).Updates(map[string]any{"status": "cancelled", "updated_at": time.Now()}).Error; err != nil {
+			if err := tx.Model(&database.VulnScanTaskItem{}).Where("task_id=? AND version=? AND status IN ?", taskID, task.Version, []string{"pending", "paused"}).Updates(map[string]any{"status": "cancelled", "updated_at": now}).Error; err != nil {
 				return err
 			}
 			state := "cancelling"
 			if running == 0 {
 				state = "cancelled"
 			}
-			return tx.Model(&database.VulnScanTask{}).Where("id=? AND version=?", taskID, task.Version).Updates(map[string]any{"status": state, "pause_requested": false, "updated_at": time.Now()}).Error
+			if err := tx.Model(&database.VulnScanTask{}).Where("id=? AND version=?", taskID, task.Version).Updates(map[string]any{"status": state, "pause_requested": false, "updated_at": now}).Error; err != nil {
+				return err
+			}
+			// Keep the combination orchestration row in step with the parent
+			// task. The SQLite path below has always done this; PostgreSQL used
+			// to leave a cancelled parent next to a running combination.
+			if task.ParentCombinationID != "" {
+				if err := tx.Model(&database.CombinationTask{}).
+					Where("id = ?", task.ParentCombinationID).
+					Updates(map[string]any{
+						"status":          taskstate.StatusCancelled,
+						"pause_requested": false,
+						"error_msg":       "任务已取消",
+						"completed_at":    now,
+						"updated_at":      now,
+					}).Error; err != nil {
+					return err
+				}
+			}
+			return nil
 		})
 	}
 	if err := control.GetTaskController().CancelTask(taskID); err != nil {

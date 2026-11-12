@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Settings, Key, BookOpen, Bell, Palette, FileText, Languages, RefreshCw, Bot, ArrowLeftRight } from 'lucide-react'
+import { Settings, Key, BookOpen, Bell, Palette, FileText, Languages, RefreshCw, Bot, ArrowLeftRight, Trash2 } from 'lucide-react'
 import { ScanConfigTab } from './ScanConfigTab'
 import { ApiKeysTab } from './ApiKeysTab'
 import { AIConfigTab } from './AIConfigTab'
@@ -15,9 +15,10 @@ import { ScanTemplateTab } from './ScanTemplateTabV2'
 import { ConfigMigrationTab } from './ConfigMigrationTab'
 import { LanguageTab } from './LanguageTab'
 import { SystemUpdateTab } from './SystemUpdateTab'
+import { DataCleanupTab } from './DataCleanupTab'
 import { useI18n } from '@/lib/i18n'
 
-const SETTINGS_TAB_VALUES = ['scan', 'space', 'ai', 'notification', 'dict', 'appearance', 'template', 'migration', 'language', 'update']
+const SETTINGS_TAB_VALUES = ['scan', 'space', 'ai', 'notification', 'dict', 'appearance', 'template', 'migration', 'language', 'update', 'cleanup']
 const LEGACY_SETTINGS_TAB_ALIASES: Record<string, string> = { dingtalk: 'notification' }
 
 export function SettingsContent() {
@@ -35,6 +36,7 @@ export function SettingsContent() {
     { value: 'migration', label: t.settings.tabs.migration, icon: ArrowLeftRight },
     { value: 'language', label: t.settings.tabs.language, icon: Languages },
     { value: 'update', label: t.settings.tabs.update, icon: RefreshCw },
+    { value: 'cleanup', label: t.settings.tabs.dataCleanup, icon: Trash2 },
   ]
   const [activeTab, setActiveTab] = useState('scan')
   useEffect(() => {
@@ -134,6 +136,11 @@ export function SettingsContent() {
           {/* 系统更新 */}
           <TabsContent value="update" className="m-0 scan-panel-enter">
             <SystemUpdateTab />
+          </TabsContent>
+
+          {/* 数据清理 */}
+          <TabsContent value="cleanup" className="m-0 scan-panel-enter">
+            <DataCleanupTab />
           </TabsContent>
       </section>
     </Tabs>

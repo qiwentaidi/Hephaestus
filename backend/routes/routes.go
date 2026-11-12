@@ -268,6 +268,7 @@ func SetupRoutes(r *gin.Engine) {
 			// CPU 控制：获取与设置应用可用核心数（GOMAXPROCS）
 			system.GET("/cpu", admin.GetAppCPUHandler)
 			system.POST("/cpu", admin.SetAppCPUHandler)
+			system.POST("/data-purge", admin.PurgeDataHandler) // 清空除系统设置外的业务数据
 			system.GET("/scan-runtime", scan.GetScanRuntimeConfigHandler)
 			system.POST("/scan-runtime", scan.UpdateScanRuntimeConfigHandler)
 			system.GET("/agent-config", agent.GetAgentConfigHandler)

@@ -62,6 +62,14 @@ func TestAutoMigrateIsVersionedAndIdempotent(t *testing.T) {
 		t.Fatalf("historical collect step recorded %d times, want 1", collectRows)
 	}
 
+	var combinationStatusRows int64
+	if err := db.Table("schema_migrations").Where("version = ?", "0015_cancelled_combination_status").Count(&combinationStatusRows).Error; err != nil {
+		t.Fatalf("read combination status step: %v", err)
+	}
+	if combinationStatusRows != 1 {
+		t.Fatalf("combination status step recorded %d times, want 1", combinationStatusRows)
+	}
+
 	var before int64
 	if err := db.Table("schema_migrations").Count(&before).Error; err != nil {
 		t.Fatalf("count before: %v", err)

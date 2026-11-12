@@ -1301,6 +1301,7 @@ export const zh = {
       migration: "配置迁移",
       language: "语言设置",
       update: "系统更新",
+      dataCleanup: "数据清理",
       logs: "后端日志",
     },
     logs: {
@@ -2137,6 +2138,102 @@ export const zh = {
       exportFailed: "导出配置失败",
       importFailed: "导入配置失败",
       unknown: "操作失败",
+    },
+  },
+
+
+  // 数据清理
+  dataCleanup: {
+    title: "数据清理",
+    description:
+      "一键清空业务数据与生成文件，保留系统设置、账号、主题、模板与基础设施配置。此操作不可撤销。",
+    warningTitle: "请先停止所有扫描与 AI 任务。",
+    warningText: "清理过程中请勿关闭页面；完成后建议刷新应用以更新列表与统计。",
+    keepTitle: "保留的数据",
+    keepDescription: "系统设置与运行所需的基础配置不会被修改",
+    clearTitle: "将被清空",
+    clearDescription: "除保留项外的所有业务数据与生成产物",
+    keep: {
+      settings: {
+        title: "系统设置",
+        description: "AI / API 密钥、通知渠道、扫描设置、工具拦截规则",
+      },
+      account: {
+        title: "账号与密码",
+        description: "当前账号保持可登录，不会退回初始化页面",
+      },
+      appearance: {
+        title: "外观与模板",
+        description: "自定义主题、扫描模板、JS 扫描配置",
+      },
+      prompts: {
+        title: "字典与提示词",
+        description: "字典文件、AI 角色提示词、模型路由与自定义策略",
+      },
+      infrastructure: {
+        title: "基础设施",
+        description: "工作节点、Agent Python 配置、许可证、机器标识与更新包",
+      },
+    },
+    clear: {
+      tasks: {
+        title: "扫描任务与结果",
+        description: "Web / 端口 / 目录 / JS / 弱口令 / 组合任务、子任务与日志",
+      },
+      assets: {
+        title: "资产与漏洞",
+        description: "统一资产、资产观测与变更、安全发现、风险记录",
+      },
+      ai: {
+        title: "AI 对话与证据",
+        description: "会话、消息、工具调用、证据、编排任务与副作用记录",
+      },
+      workspace: {
+        title: "工作区与历史",
+        description: "重放标签、POC 调试、数据库连接、空间引擎搜索历史",
+      },
+      files: {
+        title: "生成文件与定时任务",
+        description: "截图、图标、AI 工作区、导出包、反编译缓存、扫描计划",
+      },
+    },
+    includeLogs: "同时清空运行日志",
+    includeLogsDescription: "默认保留日志，便于清理后排查问题。勾选后将清空 logs/ 下的运行日志。",
+    scopeNote: "清理范围固定为除保留项外的全部数据，不建议在生产环境随意执行。",
+    action: "清空除系统设置外的所有数据",
+    dialogTitle: "永久清空业务数据？",
+    dialogDescription: "所有扫描任务、资产、漏洞、AI 对话、工作区与生成文件将被永久删除，且无法恢复。",
+    dialogKeep: "系统设置、账号、主题、模板、字典与基础设施配置会保留。",
+    confirmLabel: "输入 “{phrase}” 以确认",
+    confirmPhrase: "清空数据",
+    confirmHint: "如果当前有扫描或 AI 任务正在运行，系统会拒绝清理并提示先停止任务。",
+    confirmAction: "永久清空",
+    purging: "正在清理…",
+    successTitle: "数据已清空",
+    successDescription: "已清理 {tables} 张数据表。",
+    partialTitle: "数据已清理，但有以下提醒",
+    refresh: "刷新应用",
+    activeTitle: "存在运行中的任务",
+    activeDescription: "请先停止以下任务后再清理：{tasks}",
+    activeTaskKinds: {
+      scan: "扫描任务",
+      combination: "组合任务",
+      company_info: "企业信息任务",
+      api_doc_test: "接口文档测试",
+      space_export: "空间引擎导出",
+      ai_worker: "AI Worker",
+    },
+    warnings: {
+      orchestration_purge_failed: "AI 编排数据未完全清理，请重试。",
+      staged_files_cleanup_failed: "部分生成文件未能删除，请重试。",
+      logs_cleanup_failed: "部分运行日志未能清空。",
+    },
+    errors: {
+      invalid_confirmation: "确认词不正确",
+      purge_in_progress: "已有数据清理任务正在执行",
+      active_tasks: "存在运行中的任务，请先停止后再清理",
+      purge_failed: "数据清理失败，请重试",
+      request_failed: "请求失败，请检查网络后重试",
     },
   },
 

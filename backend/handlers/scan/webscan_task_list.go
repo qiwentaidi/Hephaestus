@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"hephaestus-backend/handlers/agent"
 	"hephaestus-backend/pkg/database"
+	"hephaestus-backend/pkg/datapurge"
 	"hephaestus-backend/pkg/scantask"
 	"hephaestus-backend/pkg/taskstate"
 	"net/http"
@@ -515,6 +516,9 @@ func GetWebScanTaskHandler(c *gin.Context) {
 
 // StartWebScanTaskHandler 开始任务（将 pending 状态的任务改为 running）
 func startScanTaskByID(taskID string) (string, error) {
+	if datapurge.IsRunning() {
+		return "", fmt.Errorf("数据清理进行中，任务暂不可启动")
+	}
 	if taskID == "" {
 		return "", fmt.Errorf("任务ID不能为空")
 	}

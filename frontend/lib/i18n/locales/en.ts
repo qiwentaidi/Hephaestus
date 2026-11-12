@@ -1303,6 +1303,7 @@ export const en: Locale = {
       migration: "Configuration Migration",
       language: "Language",
       update: "System Update",
+      dataCleanup: "Data Cleanup",
       logs: "Backend Logs",
     },
     logs: {
@@ -2172,6 +2173,102 @@ export const en: Locale = {
       exportFailed: "Failed to export configuration",
       importFailed: "Failed to import configuration",
       unknown: "Operation failed",
+    },
+  },
+
+
+  // Data cleanup
+  dataCleanup: {
+    title: "Data Cleanup",
+    description:
+      "Clear business data and generated files in one step while keeping system settings, accounts, themes, templates and infrastructure configuration. This action cannot be undone.",
+    warningTitle: "Stop all scan and AI tasks first.",
+    warningText: "Do not close the page during cleanup. Refresh the application afterwards to update lists and statistics.",
+    keepTitle: "Data that is kept",
+    keepDescription: "System settings and the configuration required to run the instance are not modified",
+    clearTitle: "Data that will be cleared",
+    clearDescription: "All business data and generated artifacts outside the kept list",
+    keep: {
+      settings: {
+        title: "System settings",
+        description: "AI / API keys, notification channels, scan settings, tool guard rules",
+      },
+      account: {
+        title: "Accounts and passwords",
+        description: "The current account can still sign in; the instance does not return to setup",
+      },
+      appearance: {
+        title: "Appearance and templates",
+        description: "Custom themes, scan templates and JS scan configurations",
+      },
+      prompts: {
+        title: "Dictionaries and prompts",
+        description: "Dictionary files, AI role prompts, model routing and custom strategies",
+      },
+      infrastructure: {
+        title: "Infrastructure",
+        description: "Work nodes, Agent Python configuration, licenses, machine identity and update packages",
+      },
+    },
+    clear: {
+      tasks: {
+        title: "Scan tasks and results",
+        description: "Web / port / directory / JS / weak-password / combination tasks, subtasks and logs",
+      },
+      assets: {
+        title: "Assets and findings",
+        description: "Unified assets, observations and changes, security findings and risk records",
+      },
+      ai: {
+        title: "AI conversations and evidence",
+        description: "Sessions, messages, tool calls, evidence, orchestration tasks and side effects",
+      },
+      workspace: {
+        title: "Workspaces and history",
+        description: "Repeater tabs, POC debug tabs, database connections and space-engine search history",
+      },
+      files: {
+        title: "Generated files and schedules",
+        description: "Screenshots, favicons, AI workspaces, export packages, decompile caches and scan schedules",
+      },
+    },
+    includeLogs: "Also clear runtime logs",
+    includeLogsDescription: "Logs are kept by default for post-cleanup troubleshooting. Enable this to empty runtime logs under logs/.",
+    scopeNote: "The scope is every table and artifact outside the kept list. Avoid running this in production carelessly.",
+    action: "Clear all data except system settings",
+    dialogTitle: "Permanently clear business data?",
+    dialogDescription: "All scan tasks, assets, findings, AI conversations, workspaces and generated files will be permanently deleted and cannot be recovered.",
+    dialogKeep: "System settings, accounts, themes, templates, dictionaries and infrastructure configuration are kept.",
+    confirmLabel: "Type “{phrase}” to confirm",
+    confirmPhrase: "CLEAR DATA",
+    confirmHint: "If a scan or AI task is still running, the server refuses the cleanup and asks you to stop it first.",
+    confirmAction: "Clear permanently",
+    purging: "Clearing…",
+    successTitle: "Data cleared",
+    successDescription: "Cleared {tables} data tables.",
+    partialTitle: "Data cleared with warnings",
+    refresh: "Refresh application",
+    activeTitle: "Tasks are still running",
+    activeDescription: "Stop the following tasks before cleaning: {tasks}",
+    activeTaskKinds: {
+      scan: "scan tasks",
+      combination: "combination tasks",
+      company_info: "company info tasks",
+      api_doc_test: "API doc tests",
+      space_export: "space-engine exports",
+      ai_worker: "AI workers",
+    },
+    warnings: {
+      orchestration_purge_failed: "AI orchestration data was not fully cleared. Please retry.",
+      staged_files_cleanup_failed: "Some generated files could not be deleted. Please retry.",
+      logs_cleanup_failed: "Some runtime logs could not be cleared.",
+    },
+    errors: {
+      invalid_confirmation: "The confirmation phrase is incorrect",
+      purge_in_progress: "A data cleanup is already running",
+      active_tasks: "Stop running tasks before clearing data",
+      purge_failed: "Data cleanup failed. Please retry",
+      request_failed: "Request failed. Check the network and retry",
     },
   },
 
