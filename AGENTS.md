@@ -1,5 +1,21 @@
 # AGENTS.md
 
+## Release repository sync
+
+The `release` remote points at `github.com/qiwentaidi/Hephaestus`. Its `developer` branch is a snapshot mirror, not a branch that shares source history.
+
+- Never merge, rebase, or push source `main` onto `release/developer`. The branch must keep starting at the imported snapshot commit and contain only curated base commits plus cherry-picked source commits added after the last sync point.
+- The last synced source commit is recorded by the `developer-sync` tag in this repository. Do not hard-code a SHA in docs or scripts.
+- Sync procedure:
+  1. `git fetch origin --tags` and `git fetch release --prune`.
+  2. `git rev-parse developer-sync` to get the last synced source commit. Add a temporary worktree from `release/developer`.
+  3. In that worktree, cherry-pick the source range after that commit: `git cherry-pick "$LAST"..main`. Resolve conflicts and run the affected backend/frontend checks.
+  4. Push with `git push release HEAD:developer`; this should be a fast-forward.
+  5. Move the marker to the new source head: `git tag -f -a developer-sync <new-source-head> -m "last source commit synced to release/developer"` and `git push --force origin refs/tags/developer-sync`.
+  6. Remove the temporary worktree.
+- Force-push `developer` only with `--force-with-lease`, and only to replace a known partial sync. Never use `--force` to make source history fit.
+- Resolve `backend/pkg/version/version.go` conflicts in favor of the source version.
+
 ## Backend
 
 ### Scan task pause
