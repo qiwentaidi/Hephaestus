@@ -8,7 +8,7 @@ The `release` remote points at `github.com/qiwentaidi/Hephaestus`. Its `develope
 - The last synced source commit is recorded by the `developer-sync` tag in this repository. Do not hard-code a SHA in docs or scripts.
 - Sync procedure:
   1. `git fetch origin --tags` and `git fetch release --prune`.
-  2. `git rev-parse developer-sync` to get the last synced source commit. Add a temporary worktree from `release/developer`.
+  2. `git rev-parse developer-sync^{commit}` to get the last synced source commit. Add a temporary worktree from `release/developer`.
   3. In that worktree, cherry-pick the source range after that commit: `git cherry-pick "$LAST"..main`. Resolve conflicts and run the affected backend/frontend checks.
   4. Push with `git push release HEAD:developer`; this should be a fast-forward.
   5. Move the marker to the new source head: `git tag -f -a developer-sync <new-source-head> -m "last source commit synced to release/developer"` and `git push --force origin refs/tags/developer-sync`.
