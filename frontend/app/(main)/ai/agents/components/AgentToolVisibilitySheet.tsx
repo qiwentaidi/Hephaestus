@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
-import { Loader2, Search, ShieldCheck } from 'lucide-react'
+import { ListChecks, Loader2, Search } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -34,14 +34,16 @@ const SOURCES: AgentToolSource[] = ['platform', 'system', 'mcp']
 export default function AgentToolVisibilitySheet({
   open,
   onOpenChange,
+  initialRole,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
+  initialRole?: AgentToolRole
 }) {
   const { t } = useI18n()
   const copy = t.agentPrompts
   const [config, setConfig] = useState<AgentToolVisibilityConfig | null>(null)
-  const [role, setRole] = useState<AgentToolRole>('planner')
+  const [role, setRole] = useState<AgentToolRole>(initialRole ?? 'planner')
   const [disabled, setDisabled] = useState<Partial<Record<AgentToolRole, string[]>>>({})
   const [query, setQuery] = useState('')
   const [source, setSource] = useState<'all' | AgentToolSource>('all')
@@ -66,6 +68,10 @@ export default function AgentToolVisibilitySheet({
   useEffect(() => {
     if (open) void load()
   }, [open, load])
+
+  useEffect(() => {
+    if (open && initialRole) setRole(initialRole)
+  }, [open, initialRole])
 
   const tools = config?.tools ?? []
   const disabledSet = useMemo(() => new Set(disabled[role] ?? []), [disabled, role])
@@ -173,7 +179,7 @@ export default function AgentToolVisibilitySheet({
       <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-2xl">
         <SheetHeader className="border-b border-border/70 px-5 py-4">
           <SheetTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4" />
+            <ListChecks className="h-4 w-4" />
             {copy.toolTitle}
           </SheetTitle>
           <SheetDescription>{copy.toolDescription}</SheetDescription>

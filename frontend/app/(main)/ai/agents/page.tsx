@@ -20,6 +20,7 @@ import {
   FileCode2,
   GitBranch,
   History,
+  ListChecks,
   Loader2,
   MoreHorizontal,
   Pencil,
@@ -288,7 +289,7 @@ export default function AgentManagementPage() {
             className="h-7 gap-1.5 px-2.5 text-[11px]"
             onClick={() => setToolsOpen(true)}
           >
-            <ShieldCheck className="h-3.5 w-3.5" />
+            <ListChecks className="h-3.5 w-3.5" />
             {copy.toolVisibility}
           </Button>
           <Button
@@ -304,7 +305,7 @@ export default function AgentManagementPage() {
         </div>
       </header>
 
-      <AgentToolVisibilitySheet open={toolsOpen} onOpenChange={setToolsOpen} />
+      <AgentToolVisibilitySheet open={toolsOpen} onOpenChange={setToolsOpen} initialRole={activeRole} />
 
       {saveError && (
         <div
