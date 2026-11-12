@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -376,20 +377,70 @@ func Discover(ctx context.Context, server Server) ([]Tool, error) {
 	return nil, fmt.Errorf("MCP tools pagination exceeds limit")
 }
 
-func Call(ctx context.Context, server Server, name string, args map[string]any) (map[string]any, error) {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
-	defer cancel()
+// Client is a persistent MCP session. Open it once per agent run and reuse it
+// for every tool call; Close it when the run ends. It deliberately does not
+// call tools/list, so the caller can keep using the cached tool catalog.
+type Client struct {
+	server  Server
+	session *session
+	mu      sync.Mutex
+	closed  bool
+}
+
+// Open establishes one MCP session. The context must live for the whole run:
+// stdio/SSE transports keep a stream whose lifetime is tied to it.
+func Open(ctx context.Context, server Server) (*Client, error) {
 	s, err := connect(ctx, server)
 	if err != nil {
 		return nil, err
 	}
-	defer s.close()
+	return &Client{server: server, session: s}, nil
+}
+
+// Server returns the configuration this client was opened with.
+func (c *Client) Server() Server { return c.server }
+
+// Call invokes one remote tool on the persistent session. Calls are serialized:
+// a stateful MCP server is not expected to handle overlapping requests.
+func (c *Client) Call(ctx context.Context, name string, args map[string]any) (map[string]any, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.closed || c.session == nil {
+		return nil, fmt.Errorf("MCP client is closed")
+	}
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
 	var result map[string]any
-	if err := s.rpc(ctx, "tools/call", map[string]any{"name": name, "arguments": args}, &result); err != nil {
+	if err := c.session.rpc(ctx, "tools/call", map[string]any{"name": name, "arguments": args}, &result); err != nil {
 		return nil, err
 	}
 	if failed, _ := result["isError"].(bool); failed {
 		return result, fmt.Errorf("external MCP tool reported an error")
 	}
 	return result, nil
+}
+
+// Close terminates the persistent session. It is safe to call more than once.
+func (c *Client) Close() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.closed {
+		return nil
+	}
+	c.closed = true
+	if c.session != nil {
+		c.session.close()
+	}
+	return nil
+}
+
+// Call is the one-shot compatibility path. Session-owning callers should use
+// Open/Client.Call instead so repeated calls share one MCP session.
+func Call(ctx context.Context, server Server, name string, args map[string]any) (map[string]any, error) {
+	client, err := Open(ctx, server)
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
+	return client.Call(ctx, name, args)
 }

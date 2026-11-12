@@ -88,6 +88,9 @@ type Tool struct {
 	ReadOnly    bool
 	Concurrent  bool
 	Deferred    bool
+	// Client is the per-run persistent MCP session. Nil falls back to the
+	// one-shot mcpclient.Call path (standalone consumers and tests).
+	Client *mcpclient.Client
 }
 
 // Native tools that the engine may use. The list is deliberately curated:
@@ -154,6 +157,78 @@ func Tools(ctx context.Context, runtime Runtime, agentKey string) []Tool {
 	out := append(native, mcp...)
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out
+}
+
+// OpenTools returns the tools for one agent run. Every visible MCP server is
+// opened once and all of its tools share that persistent client; cleanup closes
+// them. Tool names/descriptions/schemas come from the discovery cache, so this
+// never calls tools/list. Per-server open failures skip only that server.
+func OpenTools(ctx context.Context, runtime Runtime, agentKey string) ([]Tool, func(), error) {
+	_ = runtime
+	disabled := DisabledTools(ctx, agentKey)
+	out := append([]Tool{}, nativeTools(agentKey, disabled)...)
+	servers, err := mcptools.LoadServers()
+	if err != nil {
+		sort.SliceStable(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+		return out, func() {}, err
+	}
+	closers := make([]*mcpclient.Client, 0, len(servers))
+	cleanup := func() {
+		for _, client := range closers {
+			_ = client.Close()
+		}
+	}
+	planning := NormalizeRole(agentKey) == "planner" || NormalizeRole(agentKey) == "controller"
+	for _, server := range servers {
+		if !server.Enabled {
+			continue
+		}
+		visible := make([]mcpclient.Tool, 0, len(server.Tools))
+		for _, remote := range server.Tools {
+			if !server.ToolEnabled(remote.Name) {
+				continue
+			}
+			if disabled[mcpclient.Alias(server.ID, remote.Name)] {
+				continue
+			}
+			visible = append(visible, remote)
+		}
+		if len(visible) == 0 {
+			continue
+		}
+		if planning {
+			// Planning roles only need the cached names/schemas for deferred
+			// discovery. Do not open a live session they cannot execute through.
+			for _, remote := range visible {
+				out = append(out, mcpTool(server, remote, nil))
+			}
+			continue
+		}
+		client, openErr := mcpclient.Open(ctx, server)
+		if openErr != nil {
+			continue
+		}
+		closers = append(closers, client)
+		for _, remote := range visible {
+			out = append(out, mcpTool(server, remote, client))
+		}
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+	return out, cleanup, nil
+}
+
+func mcpTool(server mcpclient.Server, remote mcpclient.Tool, client *mcpclient.Client) Tool {
+	return Tool{
+		Name:        mcpclient.Alias(server.ID, remote.Name),
+		Description: fmt.Sprintf("External MCP / %s / %s: %s", server.Name, remote.Name, remote.Description),
+		Schema:      nonNilSchema(remote.InputSchema),
+		Kind:        KindMCP,
+		ServerID:    server.ID,
+		ServerName:  server.Name,
+		RemoteName:  remote.Name,
+		Concurrent:  false,
+		Client:      client,
+	}
 }
 
 func nativeTools(agentKey string, disabled map[string]bool) []Tool {
@@ -245,6 +320,9 @@ func nonNilSchema(schema map[string]any) map[string]any {
 func Call(ctx context.Context, host Host, tool Tool, args map[string]any) (any, error) {
 	switch tool.Kind {
 	case KindMCP:
+		if tool.Client != nil {
+			return tool.Client.Call(ctx, tool.RemoteName, args)
+		}
 		return callMCP(ctx, tool, args)
 	case KindNative:
 		return callNative(ctx, host, tool, args)

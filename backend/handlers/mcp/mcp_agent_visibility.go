@@ -183,6 +183,9 @@ func isExecutionTool(name string) bool {
 // defaultRoleAllows is the built-in least-privilege policy. It applies until an
 // explicit role policy is saved; the sheet materializes it on first open.
 func defaultRoleAllows(role string, tool agentTool) bool {
+	if tool.Source == "mcp" {
+		return false
+	}
 	switch capabilities.NormalizeRole(role) {
 	case "pentest":
 		return true

@@ -94,6 +94,63 @@ func TestDiscoverAndCall(t *testing.T) {
 	}
 }
 
+func TestClientReusesOneSession(t *testing.T) {
+	var initialize, calls, deletes, lists atomic.Int32
+	remote := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodDelete {
+			deletes.Add(1)
+			w.WriteHeader(204)
+			return
+		}
+		var req struct {
+			ID     int    `json:"id"`
+			Method string `json:"method"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Error(err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		switch req.Method {
+		case "initialize":
+			initialize.Add(1)
+			w.Header().Set("Mcp-Session-Id", "persistent-session")
+			fmt.Fprint(w, `{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-03-26","capabilities":{"tools":{}}}}`)
+		case "notifications/initialized":
+			w.WriteHeader(202)
+		case "tools/list":
+			lists.Add(1)
+			fmt.Fprint(w, `{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"echo","inputSchema":{"type":"object"}}]}}`)
+		case "tools/call":
+			calls.Add(1)
+			fmt.Fprintf(w, `{"jsonrpc":"2.0","id":%d,"result":{"content":[{"type":"text","text":"ok"}]}}`, req.ID)
+		default:
+			t.Errorf("unexpected method %s", req.Method)
+		}
+	}))
+	defer remote.Close()
+
+	client, err := Open(context.Background(), Server{Name: "persistent", URL: remote.URL})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 2; i++ {
+		result, err := client.Call(context.Background(), "echo", map[string]any{"n": i})
+		if err != nil || result["content"] == nil {
+			t.Fatalf("call %d: %+v %v", i, result, err)
+		}
+	}
+	if err := client.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if initialize.Load() != 1 || calls.Load() != 2 || deletes.Load() != 1 {
+		t.Fatalf("initialize=%d calls=%d deletes=%d", initialize.Load(), calls.Load(), deletes.Load())
+	}
+	if lists.Load() != 0 {
+		t.Fatalf("OpenTools path must not call tools/list, got %d", lists.Load())
+	}
+}
+
 func TestNoCredentialRedirectAndNoErrorBodyLeak(t *testing.T) {
 	var hits atomic.Int32
 	destination := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { hits.Add(1) }))

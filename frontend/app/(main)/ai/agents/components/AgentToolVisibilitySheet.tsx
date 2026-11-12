@@ -80,12 +80,35 @@ export default function AgentToolVisibilitySheet({
   const grouped = useMemo(() => {
     return SOURCES.map((item) => ({ source: item, tools: filtered.filter((tool) => tool.source === item) })).filter((item) => item.tools.length > 0)
   }, [filtered])
+  const mcpServerGroups = useMemo(() => {
+    const map = new Map<string, AgentTool[]>()
+    for (const tool of filtered) {
+      if (tool.source !== 'mcp') continue
+      const key = tool.serverName || tool.serverId || copy.toolSourceMCP
+      const items = map.get(key)
+      if (items) items.push(tool)
+      else map.set(key, [tool])
+    }
+    return [...map.entries()].sort(([a], [b]) => a.localeCompare(b))
+  }, [filtered, copy.toolSourceMCP])
 
   const toggle = (tool: AgentTool) => {
     setDisabled((current) => {
       const next = new Set(current[role] ?? [])
       if (next.has(tool.name)) next.delete(tool.name)
       else next.add(tool.name)
+      return { ...current, [role]: [...next] }
+    })
+  }
+
+  const toggleMany = (items: AgentTool[], on: boolean) => {
+    setDisabled((current) => {
+      const next = new Set(current[role] ?? [])
+      for (const tool of items) {
+        if (!tool.enabled) continue
+        if (on) next.delete(tool.name)
+        else next.add(tool.name)
+      }
       return { ...current, [role]: [...next] }
     })
   }
@@ -114,6 +137,36 @@ export default function AgentToolVisibilitySheet({
   }
 
   const sourceLabel = (value: AgentToolSource) => value === 'platform' ? copy.toolSourcePlatform : value === 'system' ? copy.toolSourceSystem : copy.toolSourceMCP
+
+  const renderTool = (tool: AgentTool) => {
+    const checked = !disabledSet.has(tool.name)
+    return (
+      <label
+        key={tool.name}
+        className={cn(
+          'flex cursor-pointer items-start gap-2 rounded-md border border-border/60 px-2.5 py-2',
+          !tool.enabled && 'cursor-not-allowed opacity-55',
+          checked && tool.enabled && 'border-primary/35 bg-primary/5',
+        )}
+      >
+        <Checkbox
+          className="mt-0.5"
+          checked={checked}
+          disabled={!tool.enabled}
+          onCheckedChange={() => toggle(tool)}
+        />
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-1.5">
+            <span className="truncate text-xs font-medium">{tool.title || tool.name}</span>
+            <Badge variant="outline" className="h-4 rounded px-1 text-[9px] font-normal">{sourceLabel(tool.source)}</Badge>
+            {!tool.enabled ? <Badge variant="outline" className="h-4 rounded border-amber-500/40 px-1 text-[9px] font-normal text-amber-700 dark:text-amber-300">{copy.toolDisabledGlobally}</Badge> : null}
+          </span>
+          <span className="mt-0.5 block truncate font-mono text-[10px] text-muted-foreground">{tool.name}</span>
+          {tool.description ? <span className="mt-1 block line-clamp-2 text-[11px] leading-4 text-muted-foreground">{tool.description}</span> : null}
+        </span>
+      </label>
+    )
+  }
 
   return (
     <Sheet open={open} onOpenChange={(next) => { if (!saving) onOpenChange(next) }}>
@@ -187,37 +240,27 @@ export default function AgentToolVisibilitySheet({
                     <span>{sourceLabel(group.source)}</span>
                     <span className="tabular-nums opacity-70">{group.tools.length}</span>
                   </div>
-                  <div className="space-y-1">
-                    {group.tools.map((tool) => {
-                      const checked = !disabledSet.has(tool.name)
-                      return (
-                        <label
-                          key={tool.name}
-                          className={cn(
-                            'flex cursor-pointer items-start gap-2 rounded-md border border-border/60 px-2.5 py-2',
-                            !tool.enabled && 'cursor-not-allowed opacity-55',
-                            checked && tool.enabled && 'border-primary/35 bg-primary/5',
-                          )}
-                        >
+                  {group.source === 'mcp' ? <div className="space-y-3">
+                    {mcpServerGroups.map(([serverName, serverTools]) => {
+                      const selectable = serverTools.filter((tool) => tool.enabled)
+                      const enabledCount = selectable.filter((tool) => !disabledSet.has(tool.name)).length
+                      const allOn = selectable.length > 0 && enabledCount === selectable.length
+                      const state: boolean | 'indeterminate' = allOn ? true : enabledCount > 0 ? 'indeterminate' : false
+                      return <div key={serverName} className="space-y-1">
+                        <div className="flex items-center gap-2 rounded-md border border-border/50 bg-muted/25 px-2.5 py-1.5">
                           <Checkbox
-                            className="mt-0.5"
-                            checked={checked}
-                            disabled={!tool.enabled}
-                            onCheckedChange={() => toggle(tool)}
+                            checked={state}
+                            disabled={!selectable.length}
+                            aria-label={`${copy.toolSelectAll}: ${serverName}`}
+                            onCheckedChange={(value) => toggleMany(serverTools, value === true)}
                           />
-                          <span className="min-w-0 flex-1">
-                            <span className="flex flex-wrap items-center gap-1.5">
-                              <span className="truncate text-xs font-medium">{tool.title || tool.name}</span>
-                              <Badge variant="outline" className="h-4 rounded px-1 text-[9px] font-normal">{sourceLabel(tool.source)}</Badge>
-                              {!tool.enabled ? <Badge variant="outline" className="h-4 rounded border-amber-500/40 px-1 text-[9px] font-normal text-amber-700 dark:text-amber-300">{copy.toolDisabledGlobally}</Badge> : null}
-                            </span>
-                            <span className="mt-0.5 block truncate font-mono text-[10px] text-muted-foreground">{tool.name}</span>
-                            {tool.description ? <span className="mt-1 block line-clamp-2 text-[11px] leading-4 text-muted-foreground">{tool.description}</span> : null}
-                          </span>
-                        </label>
-                      )
+                          <span className="truncate text-[11px] font-medium">{serverName}</span>
+                          <span className="ml-auto tabular-nums text-[10px] text-muted-foreground">{enabledCount}/{serverTools.length}</span>
+                        </div>
+                        <div className="space-y-1 pl-1">{serverTools.map(renderTool)}</div>
+                      </div>
                     })}
-                  </div>
+                  </div> : <div className="space-y-1">{group.tools.map(renderTool)}</div>}
                 </section>
               ))}
             </div>

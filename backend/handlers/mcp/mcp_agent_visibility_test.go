@@ -62,8 +62,24 @@ func TestAgentToolVisibilityDefaultsApplyLeastPrivilege(t *testing.T) {
 		t.Fatalf("worker default should hide planning tools: %v", worker)
 	}
 	pentest, _, err := AgentToolDisabled("")
-	if err != nil || len(pentest) != 0 {
-		t.Fatalf("pentest default should keep everything: %v err=%v", pentest, err)
+	if err != nil {
+		t.Fatalf("pentest defaults: %v", err)
+	}
+	// MCP is opt-in for every role, including the standalone pentest role.
+	// Native tools remain allowed by default.
+	catalog, err := agentToolCatalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tool := range catalog {
+		if tool.Source == "mcp" && !pentest[tool.Name] {
+			t.Fatalf("pentest default should disable MCP tool %q", tool.Name)
+		}
+	}
+	for _, name := range []string{"Bash", "nuclei"} {
+		if pentest[name] {
+			t.Fatalf("pentest default should keep %q: %v", name, pentest)
+		}
 	}
 }
 

@@ -2,6 +2,11 @@ package capabilities
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 
 	"hephaestus-backend/lib/pentest"
@@ -146,6 +151,87 @@ func TestMCPToolsAreGenericAndRoleFiltered(t *testing.T) {
 	}
 	if value.(map[string]any)["ok"] != true {
 		t.Fatalf("unexpected result %#v", value)
+	}
+}
+
+func TestOpenToolsSharesOneMCPClientAndUsesCachedTools(t *testing.T) {
+	var initialize, calls, lists, deletes atomic.Int32
+	remote := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodDelete {
+			deletes.Add(1)
+			w.WriteHeader(204)
+			return
+		}
+		var req struct {
+			ID     int    `json:"id"`
+			Method string `json:"method"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Error(err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		switch req.Method {
+		case "initialize":
+			initialize.Add(1)
+			w.Header().Set("Mcp-Session-Id", "open-tools-session")
+			fmt.Fprint(w, `{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-03-26","capabilities":{"tools":{}}}}`)
+		case "notifications/initialized":
+			w.WriteHeader(202)
+		case "tools/list":
+			lists.Add(1)
+			fmt.Fprint(w, `{"jsonrpc":"2.0","id":2,"result":{"tools":[]}}`)
+		case "tools/call":
+			calls.Add(1)
+			fmt.Fprintf(w, `{"jsonrpc":"2.0","id":%d,"result":{"content":[{"type":"text","text":"ok"}]}}`, req.ID)
+		default:
+			t.Errorf("unexpected method %s", req.Method)
+		}
+	}))
+	defer remote.Close()
+
+	provider := &fakeProvider{servers: []mcpclient.Server{{
+		ID: "srv-open", Name: "demo", Enabled: true, URL: remote.URL,
+		Tools: []mcpclient.Tool{
+			{Name: "echo", Description: "echo", InputSchema: map[string]any{"type": "object"}},
+			{Name: "ping", Description: "ping", InputSchema: map[string]any{"type": "object"}},
+		},
+	}}}
+	mcptools.RegisterServerProvider(provider)
+	previousVisibility := ToolDisabled
+	ToolDisabled = func(context.Context, string) (map[string]bool, bool, error) { return nil, false, nil }
+	t.Cleanup(func() {
+		ToolDisabled = previousVisibility
+		mcptools.RegisterServerProvider(provider)
+	})
+
+	tools, cleanup, err := OpenTools(context.Background(), RuntimeEngine, "worker")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+	var mcpTools []Tool
+	for _, tool := range tools {
+		if tool.Kind == KindMCP {
+			mcpTools = append(mcpTools, tool)
+		}
+	}
+	if len(mcpTools) != 2 {
+		t.Fatalf("mcp tools = %#v", mcpTools)
+	}
+	if mcpTools[0].Client == nil || mcpTools[0].Client != mcpTools[1].Client {
+		t.Fatal("tools from one server must share one persistent client")
+	}
+	for _, tool := range mcpTools {
+		if _, err := Call(context.Background(), Host{}, tool, map[string]any{"n": 1}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if initialize.Load() != 1 || calls.Load() != 2 {
+		t.Fatalf("initialize=%d calls=%d", initialize.Load(), calls.Load())
+	}
+	if lists.Load() != 0 {
+		t.Fatalf("OpenTools must use the cached tool list, got %d tools/list calls", lists.Load())
 	}
 }
 
