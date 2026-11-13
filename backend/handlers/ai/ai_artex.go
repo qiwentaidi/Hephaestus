@@ -36,6 +36,18 @@ func nativeTaskID(runID string) string {
 func nativeConversation(runID, role string) string { return runID + ":" + role }
 func nativeNodeID(runID string, id int64) string   { return fmt.Sprintf("%s:node:%d", runID, id) }
 
+// orchestrationConversationTitle names the auto-created Controller and Planner
+// conversations after the run objective the operator asked for. The target list
+// is only one input to that objective, so the first target must not become the
+// session name.
+func orchestrationConversationTitle(role, objective, fallback string) string {
+	prefix := "Planner · "
+	if role == "controller" {
+		prefix = "主控 · "
+	}
+	return prefix + firstNonEmptyPentest(compactPentestProgressText(objective, 80), fallback)
+}
+
 func artexProfile(providerID, model string) (artexdb.LLMProfile, error) {
 	cfg, err := config.GetAIConfig()
 	if err != nil {
@@ -151,11 +163,7 @@ func createARTEXPlan(c *gin.Context) {
 	run.ControllerConversationID = nativeConversation(run.ID, "controller")
 	for _, role := range []string{"planner", "controller"} {
 		id := nativeConversation(run.ID, role)
-		title := "Planner · "
-		if role == "controller" {
-			title = "主控 · "
-		}
-		_, err = store.UpsertConversation(ctx, pentest.Conversation{ID: id, ProjectID: project.ID, Title: title + project.Name, Target: targets[0], ScopeJSON: run.ScopeJSON, Mode: pentest.SoloPentestMode, Status: "completed"})
+		_, err = store.UpsertConversation(ctx, pentest.Conversation{ID: id, ProjectID: project.ID, Title: orchestrationConversationTitle(role, objective, project.Name), Target: targets[0], ScopeJSON: run.ScopeJSON, Mode: pentest.SoloPentestMode, Status: "completed"})
 		if err == nil {
 			err = store.SetAgentRole(ctx, id, role, "", run.ID)
 		}

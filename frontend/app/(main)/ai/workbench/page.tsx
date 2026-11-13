@@ -3,6 +3,7 @@
 import { useI18n } from '@/lib/i18n'
 import { formatWorkbenchText, localizeAssistantText, localizeBackendText, localizeWorkbenchActivity, workbenchErrorMessage, WorkbenchRequestError, type WorkbenchMessages } from '@/lib/ai-workbench-i18n'
 import { useProjectSessions, type ProjectSessionPage } from './use-project-sessions'
+import { sessionTitle } from './session-title'
 import { SESSION_GROUP_VISIBLE_LIMIT, sessionGroupPagination } from './session-pagination'
 import { TokenUsage, TokenUsageButton } from './components/TokenUsage'
 import { ProjectTokenUsage } from './components/ProjectTokenUsage'
@@ -332,9 +333,6 @@ function turnHasActiveThinking(turn: AIWorkbenchConversationTurn, sessionActive 
   if (!sessionActive || !allowActive) return false
   return getActivities(turn.chatItems).some((activity) => activity.status === 'running')
 }
-function sessionTitle(summary: AIWorkbenchConversationSummary | null | undefined, l: WorkbenchMessages) {
-  return compactText(summary?.task.target || summary?.task.name || summary?.latestMessage?.content || l.unnamedTarget, 42)
-}
 function projectFromSummary(summary: AIWorkbenchConversationSummary, fallbackName = 'Untitled project'): AIWorkbenchProject | null {
   const project = summary.project
   const projectId = displayText(project?.id || summary.task.projectId)
@@ -537,7 +535,7 @@ function SessionListItem({ summary, active, projects, moving, hideRoleBadge = fa
   const roleLabel = isMain ? t.aiPlan.mainAgent : role === 'planner' ? t.aiPlan.planner : role === 'worker' ? t.aiPlan.worker : ''
   const status = displayText(summary.task.status).toLowerCase()
   const target = displayText(summary.task.target || summary.project?.scope?.[0] || summary.task.name || l.unnamedTarget)
-  const title = role === 'worker' ? (summary.task.planItemTitle || sessionTitle(summary, l)) : sessionTitle(summary, l)
+  const title = role === 'worker' ? (summary.task.planItemTitle || sessionTitle(summary, l.unnamedTarget)) : sessionTitle(summary, l.unnamedTarget)
   const time = formatDateTime(summary.lastActivityAt, language)
   return (
     <Tooltip>
