@@ -158,11 +158,24 @@ SQLite 文件位于 `/var/lib/hephaestus/data/hephaestus.db`。适合单机轻�
 - Python 3、`pip`、`requests`
 - `sqlmap 1.10.10`
 - `nmap`、`curl`、`wget`、`git`、`jq`、`unzip`、`bash`
-- `bubblewrap`（`bwrap`），用于 AI 本地命令的文件写入隔离
 
-AI 会话创建的 `exec`/Python 命令会被限制在会话目录内，写入会话目录之外会被拒绝。
-镜像调整了 bubblewrap 的 `/proc` 处理，因此默认 Docker 权限即可运行，不需要
-`--privileged`。如果宿主机禁用了 user namespace，`bwrap` 会失败并按 fail-closed 返回阻断错误。
+AI 会话创建的 `exec`/Python 命令以容器为隔离边界，和 ARTEX 一致：不再额外把命令限制在
+会话目录内，也不需要 `--privileged`、`bwrap` 或 user namespace 支持。命令的副作用策略由
+「工具拦截规则」和审计承担。需要把命令放进隔离网络执行时，改用下面的出口网关。
+
+`Write`/`Edit` 文件工具仍只能写当前会话工作目录，`cmd-output` 为保留目录；这样遗留产物都
+落在界面可删除的会话目录里。命令产生的临时文件也会通过 `TMPDIR` 指向会话目录的 `tmp`，
+但命令显式写 `/tmp` 不会被拦截。担心临时目录膨胀时，可以给容器 `/tmp` 加内存盘上限：
+
+```yaml
+services:
+  hephaestus:
+    tmpfs:
+      - /tmp:size=512m
+```
+
+`docker run` 使用 `--tmpfs /tmp:size=512m`。超出上限的写入会直接失败，不会撑满宿主机磁盘；
+该目录由内存承载，重启容器即清空。
 
 > 漏洞扫描的 SYN/原始套接字能力依赖 Docker 默认的 `NET_RAW` 权限；如果需要更完整的
 > 网络能力，可自行增加 `cap_add: ["NET_RAW", "NET_ADMIN"]`。
@@ -261,13 +274,14 @@ ALTER USER postgres PASSWORD 'new-password';
 
 然后同步修改 `/var/lib/hephaestus/config.yaml` 中的 `database.password`。
 
-**AI 命令提示 workspace blocked**
+**AI 本地命令被拦截**
 
-确认容器具有 user namespace 支持，并检查：
+AI 会话里的 `Bash`、Python、交互终端以容器为隔离边界，不再有额外的文件系统沙箱，因此
+不会出现 bwrap / user namespace 相关报错。命令被拒绝时通常是「工具拦截规则」命中：
 
-```bash
-docker exec hephaestus bwrap --version
-```
+- 「系统设置 → 工具拦截规则」中查看命中的规则，按需调整或停用；
+- 出口网关开启时（`HEPHAESTUS_AI_ENFORCE_EGRESS=1`），命令进入网关容器执行，网络请求
+  还会经过出口审计，被拦截时提示会指向「出口审计」记录。
 
-若宿主机内核禁用了 unprivileged user namespace，需要在宿主机启用，或改用独立扫描
-Agent 节点执行 AI 工具。
+如果命令直接执行失败（非规则拦截），按普通容器排障处理：确认镜像里有对应工具、容器有
+足够权限，并查看 `docker logs hephaestus`。

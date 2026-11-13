@@ -27,7 +27,7 @@ bash install.sh --server 'https://your-server'
 
 默认目录为执行命令时所在目录的 `hephaestus-agent`。脚本检测 amd64/arm64，下载 ZIP 和 `SHA256SUMS.txt`，只提取预期的二进制，校验 SHA-256 并实际执行 `version` 检查，然后询问 PostgreSQL 连接与节点角色。数据库密码不回显，配置文件权限为 `0600`。已有 `config.yaml` 原样保留，不覆盖节点 ID、角色、容量或用户配置。非交互首次安装使用 `--config /path/to/node-config.yaml`。
 
-安装需要 Bash、curl 或 wget、unzip、iconv，以及 sha256sum 或 shasum。配置使用 UTF-8；输入包含无效编码时会要求重新输入对应字段，已有配置包含无效编码时会在启动前提示修正。Linux 的 AI 执行工具仍需要 Bubblewrap；节点使用的 Python、stdio MCP 等依赖也需在该节点准备。安装器不关闭沙箱、不提升扫描进程权限来绕过缺失依赖。
+安装需要 Bash、curl 或 wget、unzip、iconv，以及 sha256sum 或 shasum。配置使用 UTF-8；输入包含无效编码时会要求重新输入对应字段，已有配置包含无效编码时会在启动前提示修正。AI 本地命令以宿主/容器边界隔离，不再依赖 Bubblewrap；节点使用的 Python、stdio MCP 等依赖仍需在该节点准备。安装器不会提升扫描进程权限来绕过缺失依赖。
 
 默认前台运行，实际启动错误会返回终端。正常退出用 Ctrl+C。再次启动和更新：
 

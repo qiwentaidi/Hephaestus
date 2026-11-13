@@ -561,7 +561,7 @@ Screenshots require a working Chromium browser and its runtime environment. On L
 <details>
 <summary><b>AI local commands cannot run</b></summary>
 
-Local commands and interactive terminals in AI sessions use filesystem write isolation, and output is written to the session working directory. macOS uses `sandbox-exec`; Linux uses Bubblewrap (`bwrap`). Execution is refused if the isolation tool is missing or initialization fails.
+Local commands and interactive terminals in AI sessions use the container as the isolation boundary, matching ARTEX; they no longer depend on `bwrap`, `sandbox-exec`, or user namespaces. `Write`/`Edit` still stay inside the session working directory so leftovers remain removable from the UI. Side effects are governed by tool interception rules plus auditing, and the Docker egress gateway provides network isolation when enabled.
 
 </details>
 

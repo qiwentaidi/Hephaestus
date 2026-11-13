@@ -65,7 +65,6 @@ RUN apk add --no-cache \
         python3 \
         py3-pip \
         py3-requests \
-        bubblewrap \
         su-exec \
         bash \
         curl \
