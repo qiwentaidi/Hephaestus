@@ -98,6 +98,7 @@ import { GoalModeCard } from './components/GoalModeCard'
 import { ComposerQueuedMessages } from './components/ComposerQueuedMessages'
 import { loadQueuedMessages, saveQueuedMessages, workbenchQueueOwnerKey } from '@/lib/ai-workbench-queue-store'
 import { goalTurnMessages, type GoalModeAction, type GoalModeRequest, type GoalRun } from '@/lib/ai-goal-mode'
+import { isPlannerRoundBoundary } from '@/lib/ai-workbench-rounds'
 import { AssetReferenceChips, AssetReferencePicker } from './components/AssetReferencePicker'
 import type { AssetReferenceSelection, AssetReferenceSnapshot } from '@/lib/api/ai-asset-references'
 
@@ -131,7 +132,7 @@ type ComposerSnapshot = {
   mcpTools: CallableMCPTool[]
 }
 type SessionSideChatMessage = AIWorkbenchSideChatMessage & { id: string }
-type ThinkingActivity = { id?: string; eventType?: string; toolName?: string; title: string; detail?: string; status?: string; type?: AIWorkbenchChatItem['type']; blockedMatch?: AIWorkbenchBlockedMatch | null; blockedPhase?: string; retry?: ModelRetryNotice }
+type ThinkingActivity = { id?: string; eventType?: string; toolName?: string; title: string; detail?: string; status?: string; type?: AIWorkbenchChatItem['type']; roundBoundary?: boolean; blockedMatch?: AIWorkbenchBlockedMatch | null; blockedPhase?: string; retry?: ModelRetryNotice }
 
 function displayText(value?: string | null) { return (value || '').trim() }
 function compactText(value?: string | null, max = 96) {
@@ -244,7 +245,7 @@ function activityEntry(item: AIWorkbenchChatItem): ThinkingActivity | null {
   const retry = eventType === 'model_retry'
     ? modelRetryNotice(item.marker?.description || item.description || detail, item.metadata?.attempt, item.metadata?.maxRetries)
     : null
-  return { id: item.id, eventType, toolName: item.tool?.name, title, detail, status: activityStatus(item), type: item.type, blockedMatch: item.tool?.blockedMatch || null, blockedPhase: item.tool?.blockedPhase, retry: retry || undefined }
+  return { id: item.id, eventType, toolName: item.tool?.name, title, detail, status: activityStatus(item), type: item.type, roundBoundary: item.metadata?.roundBoundary === true, blockedMatch: item.tool?.blockedMatch || null, blockedPhase: item.tool?.blockedPhase, retry: retry || undefined }
 }
 function getActivities(items?: AIWorkbenchChatItem[] | null) {
   const activities: ThinkingActivity[] = []
@@ -821,7 +822,17 @@ const ActivityStep = memo(function ActivityStep({ activity, activeNode }: { acti
   const markerTitle = <MarkerContent className="min-w-0 [overflow-wrap:anywhere]">
     <span className={cn(activeNode && 'ai-thinking-shimmer')}>{localizeWorkbenchActivity(activity.title, l)}{activity.retry ? ` ${activity.retry.attempt}/${activity.retry.max}` : ''}</span>
   </MarkerContent>
-  if (isAnalysis) {
+  // A planner round boundary is a transcript divider, not a commentary card. It
+  // has no body of its own, so rendering it as a collapsed section used to show
+  // an empty round repeating its own label.
+  if (isPlannerRoundBoundary(activity)) {
+    return <div data-slot="planner-round-divider" className="my-2 flex min-w-0 items-center gap-2 text-[10px] font-medium text-muted-foreground">
+      <span aria-hidden="true" className="h-px flex-1 bg-border" />
+      <span className="min-w-0 truncate">{localizeWorkbenchActivity(activity.title, l)}</span>
+      <span aria-hidden="true" className="h-px flex-1 bg-border" />
+    </div>
+  }
+  if (isAnalysis && detail.trim()) {
     return <Collapsible open={analysisOpen} onOpenChange={setAnalysisOpen} className="min-w-0 max-w-full">
       <CollapsibleTrigger asChild>
         <Marker asChild className="items-start text-foreground">
@@ -876,6 +887,7 @@ const ActivityStep = memo(function ActivityStep({ activity, activeNode }: { acti
   && previous.activity.id === next.activity.id && previous.activity.status === next.activity.status
   && previous.activity.title === next.activity.title && previous.activity.detail === next.activity.detail
   && previous.activity.eventType === next.activity.eventType && previous.activity.type === next.activity.type
+  && previous.activity.roundBoundary === next.activity.roundBoundary
   && previous.activity.toolName === next.activity.toolName
   && previous.activity.retry?.attempt === next.activity.retry?.attempt && previous.activity.retry?.max === next.activity.retry?.max
   && previous.activity.blockedPhase === next.activity.blockedPhase

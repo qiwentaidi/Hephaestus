@@ -3,6 +3,7 @@ package ai
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -144,6 +145,7 @@ func createARTEXPlan(c *gin.Context) {
 	}
 	run := pentest.PlanRun{ID: pentest.OrchestrationRunPrefix + t.ID, ProjectID: project.ID, Objective: objective, ScopeJSON: marshalPlanScope(scope), Status: "planning", PlannerProviderID: req.PlannerProviderID, PlannerModel: planner.Model, WorkerProviderID: req.WorkerProviderID, WorkerModel: worker.Model, MaxWorkers: workers}
 	mapped := false
+	ownedConversations := make(map[string]bool, 2)
 	defer func() {
 		if mapped {
 			return
@@ -153,8 +155,11 @@ func createARTEXPlan(c *gin.Context) {
 		if e := rt.Engine.DeleteHostTask(cleanupCtx, t.ID); e != nil {
 			log.Printf("[orchestration] rollback prepared task %s: %v", t.ID, e)
 		}
-		for _, role := range []string{"planner", "controller"} {
-			if e := store.DeleteConversation(cleanupCtx, nativeConversation(run.ID, role)); e != nil {
+		for id, owned := range ownedConversations {
+			if !owned {
+				continue
+			}
+			if e := store.DeleteConversation(cleanupCtx, id); e != nil {
 				log.Printf("[orchestration] rollback conversation: %v", e)
 			}
 		}
@@ -163,11 +168,24 @@ func createARTEXPlan(c *gin.Context) {
 	run.ControllerConversationID = nativeConversation(run.ID, "controller")
 	for _, role := range []string{"planner", "controller"} {
 		id := nativeConversation(run.ID, role)
-		_, err = store.UpsertConversation(ctx, pentest.Conversation{ID: id, ProjectID: project.ID, Title: orchestrationConversationTitle(role, objective, project.Name), Target: targets[0], ScopeJSON: run.ScopeJSON, Mode: pentest.SoloPentestMode, Status: "completed"})
-		if err == nil {
-			err = store.SetAgentRole(ctx, id, role, "", run.ID)
+		// A re-created native task can reuse a numeric id and therefore this run id.
+		// Never append a new run's history onto an existing conversation: the
+		// planner transcript would then mix two round sequences (and round numbers
+		// would appear to go backwards). Rollback must not delete that history.
+		if existing, e := store.GetConversation(ctx, id); e == nil {
+			nativeError(c, 409, fmt.Errorf("编排会话 %s 已存在（项目 %s），请重试以分配新的任务编号", id, existing.ProjectID))
+			return
+		} else if !errors.Is(e, sql.ErrNoRows) {
+			nativeError(c, 500, e)
+			return
 		}
+		_, err = store.UpsertConversation(ctx, pentest.Conversation{ID: id, ProjectID: project.ID, Title: orchestrationConversationTitle(role, objective, project.Name), Target: targets[0], ScopeJSON: run.ScopeJSON, Mode: pentest.SoloPentestMode, Status: "completed"})
 		if err != nil {
+			nativeError(c, 500, err)
+			return
+		}
+		ownedConversations[id] = true
+		if err = store.SetAgentRole(ctx, id, role, "", run.ID); err != nil {
 			nativeError(c, 500, err)
 			return
 		}
@@ -587,9 +605,10 @@ func projectARTEXActivity(ctx context.Context, store *pentest.SQLStore, run pent
 		return nil
 	}
 	id := fmt.Sprintf("%s:activity:%d", run.ID, a.ID)
-	content := firstNonEmptyPentest(a.Detail, a.Summary)
+	detail := strings.TrimSpace(a.Detail)
+	content := firstNonEmptyPentest(detail, a.Summary)
 	role := "progress"
-	p := pentestProgressPayload{RunID: run.ID, BlockID: id, Sequence: int(a.ID), Status: "completed", Detail: content, Label: a.Summary, ToolName: a.Tool, ToolCallID: a.ToolUseID, UpdatedAt: a.CreatedAt.Format(time.RFC3339Nano)}
+	p := pentestProgressPayload{RunID: run.ID, BlockID: id, Sequence: int(a.ID), Status: "completed", Detail: detail, Label: a.Summary, ToolName: a.Tool, ToolCallID: a.ToolUseID, UpdatedAt: a.CreatedAt.Format(time.RFC3339Nano)}
 	switch a.Kind {
 	case "user":
 		role = "user"
@@ -610,6 +629,9 @@ func projectARTEXActivity(ctx context.Context, store *pentest.SQLStore, run pent
 		}
 	default:
 		p.Type = "assistant_commentary"
+		// A planner round boundary carries no body of its own; the UI renders it
+		// as a divider instead of an empty commentary card.
+		p.Round = a.Kind == "round"
 	}
 	if a.ToolUseID != "" && (a.Kind == "tool_use" || a.Kind == "tool_result" || a.Kind == "tool_execution_update") {
 		execID := conv + ":tool:" + a.ToolUseID
