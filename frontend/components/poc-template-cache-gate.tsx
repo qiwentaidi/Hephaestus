@@ -207,6 +207,15 @@ export function PocTemplateCacheGate({ children }: { children: React.ReactNode }
                     <div className="heph-eclipse-circle" />
                     <div className="heph-eclipse-disc" />
                   </div>
+                  <svg className="heph-eclipse-curve" viewBox="0 0 500 500" aria-hidden="true">
+                    <path
+                      id="heph-eclipse-curve-path"
+                      d="M73.2,148.6c4-6.1,65.5-96.8,178.6-95.6c111.3,1.2,170.8,90.3,175.1,97"
+                    />
+                    <text>
+                      <textPath href="#heph-eclipse-curve-path">loading...</textPath>
+                    </text>
+                  </svg>
                 </div>
               </div>
               <p className="text-sm font-medium text-foreground">

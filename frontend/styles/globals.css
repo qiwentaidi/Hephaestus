@@ -2878,6 +2878,7 @@ html.glass .asset-table-loading-surface,
   --bh-halo: #fff;
   --bh-shadow: #9a9a9a;
   --bh-disc: #353535;
+  --bh-text: #fff;
   position: relative;
   display: flex;
   align-items: center;
@@ -2906,6 +2907,23 @@ html.glass .asset-table-loading-surface,
   height: 8rem;
 }
 
+.heph-eclipse-curve {
+  position: absolute;
+  width: 180%;
+  height: 180%;
+  fill: transparent;
+  will-change: transform;
+  animation: heph-eclipse-rotate 8s linear infinite;
+}
+
+.heph-eclipse-curve text {
+  fill: var(--bh-text);
+  font: 1.5em "Fira Sans", system-ui, sans-serif;
+  letter-spacing: 20px;
+  text-transform: uppercase;
+  filter: drop-shadow(0 2px 8px rgb(0 0 0 / 0.35));
+}
+
 .heph-eclipse-circle {
   display: flex;
   align-items: center;
@@ -2928,6 +2946,8 @@ html.glass .asset-table-loading-surface,
   background: radial-gradient(circle at center, var(--bh-core) 35%, var(--bh-halo) 60%, var(--bh-halo) 100%);
   box-shadow: 0 0 5rem var(--bh-shadow);
   filter: blur(4px);
+  will-change: transform;
+  animation: heph-eclipse-pulse 2s linear infinite alternate-reverse;
 }
 
 .heph-eclipse-circle::before {
@@ -2956,6 +2976,8 @@ html.glass .asset-table-loading-surface,
   filter: blur(1rem) brightness(130%);
   box-shadow: 0 0 3rem var(--bh-shadow);
   transform: rotate3d(1, 1, 1, 220deg);
+  will-change: transform;
+  animation: heph-eclipse-pulse-disc 2s linear infinite alternate-reverse;
 }
 
 .heph-eclipse-disc::before {
@@ -2968,6 +2990,8 @@ html.glass .asset-table-loading-surface,
   background: radial-gradient(circle at center, var(--bh-halo) 80%, var(--bh-disc) 90%, var(--bh-halo) 100%);
   filter: blur(3rem);
   box-shadow: 0 0 6rem var(--bh-shadow);
+  will-change: transform;
+  animation: heph-eclipse-pulse 2s linear infinite alternate-reverse;
 }
 
 /* 浅色主题：对齐截图里的浅色方案（白光圈 + 浅灰核），不做整体反相。 */
@@ -2976,6 +3000,7 @@ html:not(.dark):not(.shadcn-dark):not(.flame):not(.graphite):not(.glass):not(.pa
   --bh-core: #b8b8b8;
   --bh-shadow: #d8d8d8;
   --bh-disc: #cfcfcf;
+  --bh-text: #6f6f6f;
 }
 
 /* 浅色主题的加载背景，和 Uiverse 浅色预览一致。 */
@@ -2986,6 +3011,16 @@ html:not(.dark):not(.shadcn-dark):not(.flame):not(.graphite):not(.glass):not(.pa
 
 @keyframes heph-eclipse-rotate {
   to { transform: rotate(360deg); }
+}
+
+@keyframes heph-eclipse-pulse {
+  0% { box-shadow: 0 0 3rem var(--bh-shadow); transform: scale(1); }
+  100% { box-shadow: 0 0 5rem var(--bh-shadow); transform: scale(1.09); }
+}
+
+@keyframes heph-eclipse-pulse-disc {
+  0% { box-shadow: 0 0 3rem var(--bh-shadow); transform: rotate3d(1, 1, 1, 220deg) scale(1); }
+  100% { box-shadow: 0 0 5rem var(--bh-shadow); transform: rotate3d(1, 1, 1, 220deg) scale(0.95); }
 }
 
 
