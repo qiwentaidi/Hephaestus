@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"sync"
 	"time"
@@ -89,42 +90,92 @@ func defaultPOCTemplateIndexPath() string {
 }
 
 // buildPOCTemplateCache 读取并解析所有模板文件，返回内存缓存和可落盘的索引条目。
+// 解析是 CPU/IO 混合型工作，按 CPU 数并发读取，缩短首次冷启动构建时间。
 func buildPOCTemplateCache(templateFolders []string) (map[string]Template, []pocTemplateIndexEntry, error) {
 	templateFiles, err := collectTemplateFiles(templateFolders)
 	if err != nil {
 		return nil, nil, err
 	}
+	if len(templateFiles) == 0 {
+		return map[string]Template{}, []pocTemplateIndexEntry{}, nil
+	}
+
+	type buildResult struct {
+		template Template
+		entry    pocTemplateIndexEntry
+		ok       bool
+	}
+	results := make([]buildResult, len(templateFiles))
+
+	workers := runtime.NumCPU()
+	if workers > 8 {
+		workers = 8
+	}
+	if workers < 1 {
+		workers = 1
+	}
+	if workers > len(templateFiles) {
+		workers = len(templateFiles)
+	}
+
+	logger.Info("开始构建 PoC 模板缓存: %d 个模板, 并发 %d", len(templateFiles), workers)
+
+	jobIndexes := make(chan int)
+	var wg sync.WaitGroup
+	wg.Add(workers)
+	for w := 0; w < workers; w++ {
+		go func() {
+			defer wg.Done()
+			for index := range jobIndexes {
+				item := templateFiles[index]
+				content, err := os.ReadFile(item.path)
+				if err != nil {
+					continue
+				}
+				var template Template
+				if err := yaml.Unmarshal(content, &template); err != nil {
+					continue
+				}
+
+				// yaml.v2 会把嵌套 map 解析成 map[interface{}]interface{}，JSON 无法编码；
+				// 统一转换成字符串键，保证索引和内存缓存结构一致。
+				template.Info.Metadata = normalizeTemplateMetadata(template.Info.Metadata)
+				if !item.modTime.IsZero() {
+					template.ModifiedTime = item.modTime.Format("2006-01-02")
+				}
+				template.FilePath = item.path
+				template.RawContent = string(content)
+
+				results[index] = buildResult{
+					template: template,
+					entry: pocTemplateIndexEntry{
+						Key:       item.key,
+						FilePath:  item.path,
+						SourceDir: item.sourceDir,
+						ModTimeNs: item.modTime.UnixNano(),
+						Size:      item.size,
+						Template:  template,
+					},
+					ok: true,
+				}
+			}
+		}()
+	}
+	for index := range templateFiles {
+		jobIndexes <- index
+	}
+	close(jobIndexes)
+	wg.Wait()
 
 	nextDB := make(map[string]Template, len(templateFiles))
 	entries := make([]pocTemplateIndexEntry, 0, len(templateFiles))
-	for _, item := range templateFiles {
-		content, err := os.ReadFile(item.path)
-		if err != nil {
+	for index, item := range templateFiles {
+		result := results[index]
+		if !result.ok {
 			continue
 		}
-		var template Template
-		if err := yaml.Unmarshal(content, &template); err != nil {
-			continue
-		}
-
-		// yaml.v2 会把嵌套 map 解析成 map[interface{}]interface{}，JSON 无法编码；
-		// 统一转换成字符串键，保证索引和内存缓存结构一致。
-		template.Info.Metadata = normalizeTemplateMetadata(template.Info.Metadata)
-		if !item.modTime.IsZero() {
-			template.ModifiedTime = item.modTime.Format("2006-01-02")
-		}
-		template.FilePath = item.path
-		template.RawContent = string(content)
-
-		nextDB[item.key] = template
-		entries = append(entries, pocTemplateIndexEntry{
-			Key:       item.key,
-			FilePath:  item.path,
-			SourceDir: item.sourceDir,
-			ModTimeNs: item.modTime.UnixNano(),
-			Size:      item.size,
-			Template:  template,
-		})
+		nextDB[item.key] = result.template
+		entries = append(entries, result.entry)
 	}
 
 	return nextDB, entries, nil
@@ -148,8 +199,13 @@ func EnsurePOCTemplateCache() error {
 
 	folders := normalizePOCTemplateFolderInputs(GetPOCTemplateFolders())
 	indexPath := defaultPOCTemplateIndexPath()
+	loadStarted := time.Now()
 	if loadPOCTemplateIndexFrom(indexPath, folders) {
+		mutx.RLock()
+		loaded := len(WorkFlowDB)
+		mutx.RUnlock()
 		setPOCTemplateCacheStatus("ready", "")
+		logger.Info("PoC 模板索引加载完成: %d 个模板, 用时 %s", loaded, time.Since(loadStarted).Round(time.Millisecond))
 		return nil
 	}
 	if _, err := os.Stat(indexPath); err == nil {
@@ -163,7 +219,7 @@ func EnsurePOCTemplateCache() error {
 func StartPOCTemplateCacheWarmup() {
 	go func() {
 		started := time.Now()
-		if err := EnsurePOCTemplateCache(); err != nil {
+		if err := warmPOCTemplateCache(); err != nil {
 			logger.Warning("预热 PoC 模板缓存失败: %v", err)
 			return
 		}
@@ -171,9 +227,34 @@ func StartPOCTemplateCacheWarmup() {
 	}()
 }
 
+// warmPOCTemplateCache 是启动预热的严格版本：即使 WorkFlowDB 已被扫描路径
+// 提前填充，也会确认索引存在；索引缺失/过期时用标准目录重建并落盘。
+// 否则首次启动可能只内存预热成功、索引没写，导致每次启动都重新全量构建。
+func warmPOCTemplateCache() error {
+	pocCacheMu.Lock()
+	defer pocCacheMu.Unlock()
+
+	folders := normalizePOCTemplateFolderInputs(GetPOCTemplateFolders())
+	indexPath := defaultPOCTemplateIndexPath()
+	loadStarted := time.Now()
+	if loadPOCTemplateIndexFrom(indexPath, folders) {
+		mutx.RLock()
+		loaded := len(WorkFlowDB)
+		mutx.RUnlock()
+		setPOCTemplateCacheStatus("ready", "")
+		logger.Info("PoC 模板索引加载完成: %d 个模板, 用时 %s", loaded, time.Since(loadStarted).Round(time.Millisecond))
+		return nil
+	}
+	if _, err := os.Stat(indexPath); err == nil {
+		logger.Info("PoC 模板索引已失效，正在重建")
+	}
+	return refreshPOCTemplateCacheLocked()
+}
+
 // refreshPOCTemplateCacheLocked 重建缓存并写入索引，调用方必须持有 pocCacheMu。
 func refreshPOCTemplateCacheLocked() error {
 	folders := normalizePOCTemplateFolderInputs(GetPOCTemplateFolders())
+	started := time.Now()
 	setPOCTemplateCacheStatus("building", "")
 	nextDB, entries, err := buildPOCTemplateCache(folders)
 	if err != nil {
@@ -181,11 +262,14 @@ func refreshPOCTemplateCacheLocked() error {
 		return err
 	}
 	setPOCTemplateCache(nextDB)
-	setPOCTemplateCacheStatus("ready", "")
 
+	// 先把索引写到磁盘，再对外宣布 ready：避免遮罩刚消失、用户立即退出时
+	// 索引还没落盘，导致下次启动又从头构建一遍。
 	if err := writePOCTemplateIndexTo(defaultPOCTemplateIndexPath(), folders, entries); err != nil {
 		logger.Warning("写入 PoC 模板索引失败: %v", err)
 	}
+	setPOCTemplateCacheStatus("ready", "")
+	logger.Info("PoC 模板缓存构建完成: %d 个模板, 用时 %s", len(nextDB), time.Since(started).Round(time.Millisecond))
 	return nil
 }
 

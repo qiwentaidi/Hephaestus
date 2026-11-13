@@ -459,12 +459,16 @@ func ExecuteLocalScanWithContext(ctx context.Context, taskID string, targets []s
 		stageTracker.Record(StageNuclei, "漏洞扫描 · PoC 检测", 60)
 
 		// 准备模板目录，确保全局追加目录和任务级追加目录都进入模板仓库。
-		allTemplateFolders := GetPOCTemplateFolders()
-		if options.AppendTemplateFolder != "" {
-			allTemplateFolders = append(allTemplateFolders, options.AppendTemplateFolder)
-		}
-		if err := GetTagsList(allTemplateFolders); err != nil {
-			return fmt.Errorf("刷新 PoC 模板仓库失败: %w", err)
+		if options.AppendTemplateFolder == "" {
+			// 没有任务级追加目录时直接复用启动时预热的缓存，避免每次扫描都全量重扫。
+			if err := EnsurePOCTemplateCache(); err != nil {
+				return fmt.Errorf("刷新 PoC 模板仓库失败: %w", err)
+			}
+		} else {
+			allTemplateFolders := append(GetPOCTemplateFolders(), options.AppendTemplateFolder)
+			if err := GetTagsList(allTemplateFolders); err != nil {
+				return fmt.Errorf("刷新 PoC 模板仓库失败: %w", err)
+			}
 		}
 
 		// 提取所有目标和标签

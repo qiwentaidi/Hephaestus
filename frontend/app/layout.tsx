@@ -8,6 +8,7 @@ import { DesktopWindowBootstrap } from '@/components/DesktopWindowBootstrap'
 import { AppToaster } from '@/components/ui/toaster'
 import { I18nProvider } from '@/lib/i18n'
 import { CUSTOM_THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme/custom-theme-bootstrap'
+import { DESKTOP_BOOT_CLASS_SCRIPT } from '@/lib/desktop-boot'
 import '@/styles/globals.css'
 
 export const metadata: Metadata = {
@@ -41,6 +42,7 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning>
       <body className={`font-sans antialiased`}>
         <script dangerouslySetInnerHTML={{ __html: CUSTOM_THEME_BOOTSTRAP_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: DESKTOP_BOOT_CLASS_SCRIPT }} />
         <CustomThemeRuntime />
         <DesktopStorageBridge />
         <DesktopWindowBootstrap />

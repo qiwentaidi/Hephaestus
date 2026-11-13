@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Loader2, RotateCw } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -9,7 +9,7 @@ import { hasDesktopApiToken } from "@/lib/env"
 import { useI18n } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
-type Phase = "ready" | "building" | "failed"
+type Phase = "checking" | "ready" | "building" | "failed"
 
 const POLL_INTERVAL_MS = 700
 const POLL_FAILURE_LIMIT = 5
@@ -25,11 +25,12 @@ const FADE_OUT_MS = 260
  */
 export function PocTemplateCacheGate({ children }: { children: React.ReactNode }) {
   const { t } = useI18n()
-  const [phase, setPhase] = useState<Phase>("ready")
+  const [phase, setPhase] = useState<Phase>("checking")
   const [errorMessage, setErrorMessage] = useState("")
   const [leaving, setLeaving] = useState(false)
   const [retrying, setRetrying] = useState(false)
   const [retryNonce, setRetryNonce] = useState(0)
+  const shownLoaderRef = useRef(false)
 
   const finish = useCallback(() => {
     setLeaving(true)
@@ -42,8 +43,13 @@ export function PocTemplateCacheGate({ children }: { children: React.ReactNode }
   useEffect(() => {
     // 只在桌面端、已登录的主窗口生效。
     if (!hasDesktopApiToken() || !getToken()) {
-      return
+      // Web 模式或未登录：首帧后立即撤掉遮罩（CSS 默认也会隐藏它）。
+      const timer = window.setTimeout(() => setPhase("ready"), 0)
+      return () => window.clearTimeout(timer)
     }
+    // 登录后首次进入主界面时，内联脚本可能还没打上标记；这里补上，
+    // 让首帧的检查遮罩立即生效。
+    document.documentElement.classList.add("heph-desktop")
 
     let cancelled = false
     let timer: number | null = null
@@ -76,15 +82,22 @@ export function PocTemplateCacheGate({ children }: { children: React.ReactNode }
             const elapsedSeconds = Number(payload?.data?.elapsedSeconds) || 0
 
             if (state === "ready") {
-              finish()
+              if (shownLoaderRef.current) {
+                finish()
+              } else {
+                // 只是检查阶段：直接撤掉遮罩，不做淡出，尽量少占时间。
+                setPhase("ready")
+              }
               return
             }
             if (elapsedSeconds >= MAX_WAIT_SECONDS) {
+              shownLoaderRef.current = true
               setPhase("failed")
               setErrorMessage(t.pocTemplateCache.timeout)
               return
             }
             if (state === "failed") {
+              shownLoaderRef.current = true
               setPhase("failed")
               setErrorMessage(String(payload?.data?.error || ""))
               return
@@ -92,6 +105,7 @@ export function PocTemplateCacheGate({ children }: { children: React.ReactNode }
             // idle 表示后台还没开始构建（或正在快速加载索引）：
             // 保持当前界面可用，不闪一下遮罩；真正开始重建时才显示。
             if (state === "building") {
+              shownLoaderRef.current = true
               setPhase("building")
             }
           }
@@ -127,6 +141,7 @@ export function PocTemplateCacheGate({ children }: { children: React.ReactNode }
     }
     setRetrying(false)
     setErrorMessage("")
+    shownLoaderRef.current = true
     setPhase("building")
     setRetryNonce((value) => value + 1)
   }, [])
@@ -151,6 +166,7 @@ export function PocTemplateCacheGate({ children }: { children: React.ReactNode }
           aria-live="polite"
           className={cn(
             "heph-poc-loading-overlay fixed inset-0 z-[1500] flex flex-col items-center justify-center gap-7 bg-background px-6 text-center transition-opacity duration-300",
+            phase === "checking" && "heph-poc-checking-overlay",
             leaving ? "pointer-events-none opacity-0" : "opacity-100",
           )}
         >
@@ -183,7 +199,7 @@ export function PocTemplateCacheGate({ children }: { children: React.ReactNode }
                 </Button>
               </div>
             </div>
-          ) : (
+          ) : phase === "building" ? (
             <div className="relative flex flex-col items-center gap-6">
               <div className="heph-poc-eclipse" aria-hidden="true">
                 <div className="heph-eclipse-loader">
@@ -197,7 +213,7 @@ export function PocTemplateCacheGate({ children }: { children: React.ReactNode }
                 {t.pocTemplateCache.loading}
               </p>
             </div>
-          )}
+          ) : null}
         </div>
       )}
     </>

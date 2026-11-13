@@ -2928,7 +2928,6 @@ html.glass .asset-table-loading-surface,
   background: radial-gradient(circle at center, var(--bh-core) 35%, var(--bh-halo) 60%, var(--bh-halo) 100%);
   box-shadow: 0 0 5rem var(--bh-shadow);
   filter: blur(4px);
-  animation: heph-eclipse-pulse 2s linear infinite alternate-reverse;
 }
 
 .heph-eclipse-circle::before {
@@ -2940,6 +2939,7 @@ html.glass .asset-table-loading-surface,
   border-radius: 50%;
   box-shadow: 3px 3px 10px var(--bh-shadow), inset 0 0 1rem var(--bh-halo);
   filter: blur(0.5px);
+  will-change: transform;
   animation: heph-eclipse-rotate 3s linear infinite;
 }
 
@@ -2956,7 +2956,6 @@ html.glass .asset-table-loading-surface,
   filter: blur(1rem) brightness(130%);
   box-shadow: 0 0 3rem var(--bh-shadow);
   transform: rotate3d(1, 1, 1, 220deg);
-  animation: heph-eclipse-pulse-disc 2s linear infinite alternate-reverse;
 }
 
 .heph-eclipse-disc::before {
@@ -2969,7 +2968,6 @@ html.glass .asset-table-loading-surface,
   background: radial-gradient(circle at center, var(--bh-halo) 80%, var(--bh-disc) 90%, var(--bh-halo) 100%);
   filter: blur(3rem);
   box-shadow: 0 0 6rem var(--bh-shadow);
-  animation: heph-eclipse-pulse 2s linear infinite alternate-reverse;
 }
 
 /* 浅色主题：对齐截图里的浅色方案（白光圈 + 浅灰核），不做整体反相。 */
@@ -2990,12 +2988,12 @@ html:not(.dark):not(.shadcn-dark):not(.flame):not(.graphite):not(.glass):not(.pa
   to { transform: rotate(360deg); }
 }
 
-@keyframes heph-eclipse-pulse {
-  0% { box-shadow: 0 0 3rem var(--bh-shadow); transform: scale(1); }
-  100% { box-shadow: 0 0 5rem var(--bh-shadow); transform: scale(1.09); }
+
+/* 桌面端首帧：在 React 水合前遮住主界面，避免冷启动先闪一下仪表盘。 */
+.heph-poc-checking-overlay {
+  display: none;
 }
 
-@keyframes heph-eclipse-pulse-disc {
-  0% { box-shadow: 0 0 3rem var(--bh-shadow); transform: rotate3d(1, 1, 1, 220deg) scale(1); }
-  100% { box-shadow: 0 0 5rem var(--bh-shadow); transform: rotate3d(1, 1, 1, 220deg) scale(0.95); }
+html.heph-desktop .heph-poc-checking-overlay {
+  display: flex;
 }
