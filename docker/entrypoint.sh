@@ -125,9 +125,11 @@ start_embedded_postgres() {
   if [ ! -f "$PGDATA/PG_VERSION" ]; then
     chown -R postgres:postgres "$PGDATA"
     pwfile="$(mktemp /tmp/hephaestus-pg-pw.XXXXXX)"
+    # Write before handing the file to postgres: afterwards only a process with
+    # root's DAC override can write to it, which breaks hardened/rootless runs.
+    (umask 077; printf '%s\n' "$DB_PASSWORD" > "$pwfile")
     chown postgres:postgres "$pwfile"
     chmod 600 "$pwfile"
-    printf '%s\n' "$DB_PASSWORD" > "$pwfile"
     if ! su-exec postgres initdb \
       -D "$PGDATA" \
       -U "$DB_USER" \
