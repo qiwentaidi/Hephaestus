@@ -212,7 +212,7 @@ func runDeployCommand(args []string) error {
 	if err := webscan.SignUpdatedCodeTemplatesForNuclei(webscan.GetPoCDir()); err != nil {
 		return fmt.Errorf("签名 code PoC 模板失败: %w", err)
 	}
-	if err := webscan.RefreshPOCTemplateCache(); err != nil {
+	if err := webscan.EnsurePOCTemplateCache(); err != nil {
 		return fmt.Errorf("刷新 PoC 模板缓存失败: %w", err)
 	}
 	logger.Info("[agent] deploy prepare completed: resourceDir=%s", config.GetConfigResourceRoot())

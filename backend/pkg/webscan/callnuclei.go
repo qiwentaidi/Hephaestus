@@ -443,6 +443,10 @@ func isBenignNucleiSkipError(err error) bool {
 
 // 获取在指定模板路径下对应指纹的poc文件
 func findTagsFile(isWeb bool, inputTags, templateDirs []string) []string {
+	if err := EnsurePOCTemplateCache(); err != nil {
+		logger.Warning("[nuclei] 加载 PoC 模板缓存失败: %v", err)
+	}
+
 	var tempFileList []string
 
 	// 使用读锁保护 WorkFlowDB 的访问

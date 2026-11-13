@@ -15,7 +15,7 @@ import (
 
 // GetTemplateListHandler 获取模板列表
 func GetTemplateListHandler(c *gin.Context) {
-	if err := webscan.RefreshPOCTemplateCache(); err != nil {
+	if err := webscan.EnsurePOCTemplateCache(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"error":   "刷新 PoC 模板仓库失败: " + err.Error(),
@@ -437,7 +437,7 @@ func containsStringFold(items []string, target string) bool {
 
 // ListPoCsHandler 获取 PoC 列表
 func ListPoCsHandler(c *gin.Context) {
-	if err := webscan.RefreshPOCTemplateCache(); err != nil {
+	if err := webscan.EnsurePOCTemplateCache(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"error":   "刷新 PoC 模板仓库失败: " + err.Error(),
@@ -562,7 +562,7 @@ func ListPoCsHandler(c *gin.Context) {
 
 // GetPoCContentHandler 获取单个 PoC 内容
 func GetPoCContentHandler(c *gin.Context) {
-	if err := webscan.RefreshPOCTemplateCache(); err != nil {
+	if err := webscan.EnsurePOCTemplateCache(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"error":   "刷新 PoC 模板仓库失败: " + err.Error(),
@@ -598,7 +598,7 @@ func GetPoCContentHandler(c *gin.Context) {
 
 // UpdatePoCContentHandler 保存 PoC 内容
 func UpdatePoCContentHandler(c *gin.Context) {
-	if err := webscan.RefreshPOCTemplateCache(); err != nil {
+	if err := webscan.EnsurePOCTemplateCache(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"error":   "刷新 PoC 模板仓库失败: " + err.Error(),
@@ -635,7 +635,7 @@ func UpdatePoCContentHandler(c *gin.Context) {
 
 // DeletePoCHandler 删除 PoC 文件
 func DeletePoCHandler(c *gin.Context) {
-	if err := webscan.RefreshPOCTemplateCache(); err != nil {
+	if err := webscan.EnsurePOCTemplateCache(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"error":   "刷新 PoC 模板仓库失败: " + err.Error(),

@@ -141,9 +141,8 @@ func (a *App) Bootstrap() error {
 	if err := webscan.RegisterCodeTemplateSignerForNuclei(); err != nil {
 		logger.Warning("Nuclei code 模板签名验证器初始化失败: %v", err)
 	}
-	if err := webscan.RefreshPOCTemplateCache(); err != nil {
-		logger.Warning("PoC 模板缓存刷新失败: %v", err)
-	}
+	// 模板索引在后台预热：窗口不必等待 5795 个模板文件被逐个读取解析。
+	webscan.StartPOCTemplateCacheWarmup()
 	if err := ai.StartUnifiedLocalAgent(context.Background(), scanRuntimeConfig.MaxConcurrentTasks); err != nil {
 		return fmt.Errorf("start unified local Agent: %w", err)
 	}

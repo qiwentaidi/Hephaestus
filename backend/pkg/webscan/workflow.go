@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"hephaestus-backend/pkg/database"
 
@@ -49,7 +50,8 @@ type pocTemplateFile struct {
 	path       string
 	sourceDir  string
 	sourceRank int
-	info       fs.DirEntry
+	modTime    time.Time
+	size       int64
 }
 
 func normalizeTemplateTimeValue(raw any) string {
@@ -91,47 +93,24 @@ func (template Template) UpdatedTime() string {
 
 var mutx sync.RWMutex
 
-func init() {
-	_ = GetTagsList([]string{GetPoCDir()})
-}
-
-// RefreshPOCTemplateCache 重新加载当前 PoC 目录下的模板缓存。
+// RefreshPOCTemplateCache 重新加载当前 PoC 目录下的模板缓存，并把解析结果写入持久化索引。
 func RefreshPOCTemplateCache() error {
-	folders := GetPOCTemplateFolders()
-	return GetTagsList(folders)
+	pocCacheMu.Lock()
+	defer pocCacheMu.Unlock()
+	return refreshPOCTemplateCacheLocked()
 }
 
+// GetTagsList 使用指定目录列表重建模板缓存。任务级的追加目录通过这里进入缓存，
+// 因此这里不写持久化索引（索引只对应标准目录集合）。
 func GetTagsList(templateFolders []string) error {
-	templateFiles, err := collectTemplateFiles(templateFolders)
+	pocCacheMu.Lock()
+	defer pocCacheMu.Unlock()
+
+	nextDB, _, err := buildPOCTemplateCache(templateFolders)
 	if err != nil {
 		return err
 	}
-
-	nextDB := make(map[string]Template)
-	for _, item := range templateFiles {
-		file, err := os.ReadFile(item.path)
-		if err != nil {
-			continue
-		}
-		var template Template
-		if err := yaml.Unmarshal(file, &template); err != nil {
-			continue
-		}
-
-		fileInfo, err := item.info.Info()
-		if err == nil {
-			template.ModifiedTime = fileInfo.ModTime().Format("2006-01-02")
-		}
-
-		template.FilePath = item.path // 设置完整路径
-		template.RawContent = string(file)
-		nextDB[item.key] = template
-	}
-
-	mutx.Lock()
-	WorkFlowDB = nextDB
-	mutx.Unlock()
-
+	setPOCTemplateCache(nextDB)
 	return nil
 }
 
@@ -153,6 +132,10 @@ func collectTemplateFiles(templateFolders []string) ([]pocTemplateFile, error) {
 			if d.IsDir() || !isSupportedPOCTemplateFile(d.Name()) {
 				return nil
 			}
+			info, err := d.Info()
+			if err != nil {
+				return nil
+			}
 
 			cleanPath := filepath.Clean(path)
 			if abs, err := filepath.Abs(cleanPath); err == nil {
@@ -164,7 +147,8 @@ func collectTemplateFiles(templateFolders []string) ([]pocTemplateFile, error) {
 				path:       cleanPath,
 				sourceDir:  sourceDir,
 				sourceRank: sourceRank,
-				info:       d,
+				modTime:    info.ModTime(),
+				size:       info.Size(),
 			})
 			return nil
 		}); err != nil {
@@ -350,6 +334,7 @@ func SetAdditionalPOCTemplateFolders(paths []string) ([]string, error) {
 
 // GetTemplateList 获取所有模板 ID 列表（线程安全）
 func GetTemplateList() []string {
+	_ = EnsurePOCTemplateCache()
 	mutx.RLock()
 	defer mutx.RUnlock()
 
@@ -362,6 +347,7 @@ func GetTemplateList() []string {
 
 // GetTemplateMapCopy 获取模板映射副本（线程安全）
 func GetTemplateMapCopy() map[string]Template {
+	_ = EnsurePOCTemplateCache()
 	mutx.RLock()
 	defer mutx.RUnlock()
 
@@ -410,6 +396,7 @@ func resolvePOCFilePath(key string) (string, error) {
 }
 
 func getTemplateByKey(key string) (Template, bool) {
+	_ = EnsurePOCTemplateCache()
 	mutx.RLock()
 	defer mutx.RUnlock()
 	template, ok := WorkFlowDB[key]

@@ -288,7 +288,7 @@ func cmdWebscan(args []string) int {
 	} else if err := webscan.SignUpdatedCodeTemplatesForNuclei(webscan.GetPoCDir()); err != nil {
 		logger.Warning("[cli] 签名 code PoC 模板失败: %v", err)
 	}
-	if err := webscan.RefreshPOCTemplateCache(); err != nil {
+	if err := webscan.EnsurePOCTemplateCache(); err != nil {
 		logger.Warning("[cli] 刷新 PoC 模板缓存失败: %v", err)
 	}
 
