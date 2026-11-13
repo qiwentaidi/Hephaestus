@@ -157,17 +157,7 @@ func APIDocTestUpdateTaskHandler(c *gin.Context) {
 		return
 	}
 
-	now := time.Now()
-	updates := map[string]interface{}{
-		"task_name":     defaultAPIDocTaskName(req.SourceURL, now),
-		"source_url":    req.SourceURL,
-		"base_url":      strings.TrimSpace(req.BaseURL),
-		"document_type": strings.TrimSpace(req.DocumentType),
-		"headers":       sanitizeAPIDocHeaders(req.Headers),
-		"max_endpoints": req.MaxEndpoints,
-		"updated_at":    now,
-	}
-	if err := db.Model(&database.APIDocTestTask{}).Where("id = ?", taskID).Updates(updates).Error; err != nil {
+	if err := updateAPIDocTestTask(db, taskID, req, time.Now()); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "更新任务失败: " + err.Error()})
 		return
 	}
@@ -176,6 +166,26 @@ func APIDocTestUpdateTaskHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": task, "message": "任务已更新"})
+}
+
+// updateAPIDocTestTask 通过结构体更新任务，让 headers 这类带 serializer 的字段
+// 走 GORM 的序列化逻辑。map[string]interface{} 形式的 Updates 不应用字段
+// serializer，会把 map 原样交给数据库驱动并报 unsupported type 错误。
+// Select 显式列出列，保证 BaseURL、Headers 等被清空时零值也会写入。
+func updateAPIDocTestTask(db *gorm.DB, taskID string, req apiDocTestTaskCreateRequest, now time.Time) error {
+	updates := database.APIDocTestTask{
+		TaskName:     defaultAPIDocTaskName(req.SourceURL, now),
+		SourceURL:    req.SourceURL,
+		BaseURL:      strings.TrimSpace(req.BaseURL),
+		DocumentType: strings.TrimSpace(req.DocumentType),
+		Headers:      sanitizeAPIDocHeaders(req.Headers),
+		MaxEndpoints: req.MaxEndpoints,
+		UpdatedAt:    now,
+	}
+	return db.Model(&database.APIDocTestTask{}).
+		Where("id = ?", taskID).
+		Select("task_name", "source_url", "base_url", "document_type", "headers", "max_endpoints", "updated_at").
+		Updates(updates).Error
 }
 
 func APIDocTestRetestTaskHandler(c *gin.Context) {
