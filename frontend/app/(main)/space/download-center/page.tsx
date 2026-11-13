@@ -142,6 +142,22 @@ function formatDateTime(value: string | undefined, locale: string) {
 export default function ReportManagementPage() {
   const { t, language } = useI18n()
   const locale = language === 'en' ? 'en-US' : 'zh-CN'
+
+  // 扫描类型展示映射：列表与已选任务摘要统一显示可读类型名称
+  const scanTypeLabels: Record<string, string> = {
+    subdomain: t.vulnScan.taskManagement.subdomain,
+    webscan: t.vulnScan.taskManagement.webscan,
+    portscan: t.vulnScan.taskManagement.portscan,
+    crack: t.vulnScan.taskManagement.crack,
+    dirscan: t.vulnScan.taskManagement.dirscan,
+    jsscan: t.vulnScan.taskManagement.jsscan,
+    combination: t.vulnScan.taskManagement.combination,
+  }
+  const getScanTypeLabel = (scanType?: string | null) => {
+    if (!scanType) return '-'
+    const key = scanType.toLowerCase().trim()
+    return scanTypeLabels[key] || scanType
+  }
   const [activeTab, setActiveTab] = useState<'space-export' | 'vuln-scan' | 'company-info' | 'ai-workbench'>('vuln-scan')
 
   const [spaceTasks, setSpaceTasks] = useState<ExportTask[]>([])
@@ -995,7 +1011,7 @@ export default function ReportManagementPage() {
                       <Badge variant="outline" className={`${getRiskLevel(selectedWebscanTask).className} border`}>
                         {t.downloadCenter.vulnScan.risk}: {getRiskLevel(selectedWebscanTask).label}
                       </Badge>
-                      <span>{t.downloadCenter.vulnScan.type}: {selectedWebscanTask.scanType || '-'}</span>
+                      <span>{t.downloadCenter.vulnScan.type}: {getScanTypeLabel(selectedWebscanTask.scanType)}</span>
                       <span>{t.downloadCenter.vulnScan.version}: v{selectedWebscanTask.version}</span>
                       <span>{t.downloadCenter.vulnScan.status}: {getTaskStatusLabel(selectedWebscanTask.status)}</span>
                     </div>
@@ -1119,7 +1135,7 @@ export default function ReportManagementPage() {
                             {getRiskLevel(task).label}
                           </Badge>
                         </TableCell>
-                        <TableCell data-label={t.downloadCenter.vulnScan.type} className="uppercase">{task.scanType || '-'}</TableCell>
+                        <TableCell data-label={t.downloadCenter.vulnScan.type} className="uppercase" title={task.scanType || undefined}>{getScanTypeLabel(task.scanType)}</TableCell>
                         <TableCell data-label={t.downloadCenter.vulnScan.status}>{webscanTaskStatusBadge(task.status)}</TableCell>
                         <TableCell data-label={t.downloadCenter.vulnScan.version}>v{task.version}</TableCell>
                         <TableCell data-label={t.downloadCenter.vulnScan.resultCount}>{task.resultCount ?? '-'}</TableCell>
