@@ -117,7 +117,7 @@ flowchart TB
 | 方式 | 适合场景 | 数据存储 | 默认入口 |
 | --- | --- | --- | --- |
 | **单二进制**（推荐） | 常规部署、生产环境、离线运行 | PostgreSQL 或 SQLite | `http://localhost:18181` |
-| **Docker Compose** | 团队共享、服务器部署、快速体验 | 内置 PostgreSQL 17，可切 SQLite 或外部 PostgreSQL | `http://localhost:18181` |
+| **Docker（官方镜像 / Compose）** | 团队共享、服务器部署、快速体验，可直接拉取官方镜像 | 内置 PostgreSQL 17，可切 SQLite 或外部 PostgreSQL | `http://localhost:18181` |
 | **桌面客户端** | 单机使用、本地工具整合 | SQLite，可切换 PostgreSQL | 桌面窗口 |
 | **扫描 Agent** | 分布式扫描、远程网络执行 | 与主服务共享 PostgreSQL | 无 Web 入口 |
 
@@ -157,13 +157,45 @@ Linux 目标通过 Docker Buildx 构建，需要本机 Docker 服务。
 
 </details>
 
-### 2. Docker Compose
+### 2. Docker（官方镜像 / Compose）
 
-发布版 Compose 部署接入宿主机更新器后，可在页面内升级。详见 [Docker 升级](docs/docker-deployment.md#升级)。
+官方镜像发布在 `ghcr.io/qiwentaidi/hephaestus`，提供 `linux/amd64` 与 `linux/arm64`，可以不编译直接拉取运行。镜像默认内置 PostgreSQL 17，启动后只有一个 `hephaestus` 容器。需要 Docker 24+（含 Compose V2），建议预留 2 GB 以上内存。截图和无头浏览器交互可[按需安装 Chromium](docs/docker-deployment.md#按需安装-chromium)。
 
-镜像默认内置 PostgreSQL 17，启动后只有一个 `hephaestus` 容器。需要 Docker 24+（含 Compose V2），建议预留 2 GB 以上内存。截图和无头浏览器交互可[按需安装 Chromium](docs/docker-deployment.md#按需安装-chromium)。
+**方式一：直接使用官方镜像（无需编译）**
 
-在仓库根目录执行：
+不需要克隆仓库，先拉取再运行：
+
+```bash
+docker pull ghcr.io/qiwentaidi/hephaestus:latest
+
+docker run -d --name hephaestus \
+  -p 18181:18181 \
+  -v hephaestus-data:/var/lib/hephaestus \
+  --shm-size=256m \
+  --restart unless-stopped \
+  ghcr.io/qiwentaidi/hephaestus:latest
+```
+
+包内 tag 与 [Releases](https://github.com/qiwentaidi/Hephaestus/releases) 的版本号一致（如 `v0.5.7`），另有浮动的 `latest`；生产环境建议把上面的 `latest` 换成具体版本。公开包可直接匿名拉取，需要登录的网络环境先执行 `docker login ghcr.io`。升级时重新 `docker pull`，再用相同参数重建容器，数据卷 `hephaestus-data` 会保留数据。
+
+用 Compose 管理时，在本仓库根目录叠加 `docker-compose.ghcr.yml`，把本地构建替换为已发布镜像：
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+
+# 固定版本
+HEPHAESTUS_IMAGE=ghcr.io/qiwentaidi/hephaestus:v0.5.7 \
+  docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+```
+
+Compose 部署的升级方式：
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.ghcr.yml pull
+docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+```
+
+**方式二：从源码构建**
 
 ```bash
 cp .env.example .env   # 可选：调整端口与数据库
@@ -173,6 +205,8 @@ curl -fsS http://localhost:18181/healthz
 ```
 
 打开 `http://localhost:18181`，首次访问会引导创建管理员账号。
+
+发布版 Compose 部署接入宿主机更新器后，可在页面内升级。详见 [Docker 升级](docs/docker-deployment.md#升级)。
 
 <details>
 <summary><b>数据持久化与常用操作</b></summary>
@@ -229,7 +263,7 @@ services:
 </details>
 
 <details>
-<summary><b>不用 Compose：Docker 单容器</b></summary>
+<summary><b>不用 Compose：本地构建后单容器运行</b></summary>
 
 ```bash
 docker build -t hephaestus:local .

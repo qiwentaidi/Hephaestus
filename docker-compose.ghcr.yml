@@ -1,0 +1,14 @@
+# 叠加在 docker-compose.yml 之上，改用已发布的官方镜像而不是本地构建。
+#
+#   docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+#
+# 需要固定版本（tag 与 Releases 一致）时：
+#
+#   HEPHAESTUS_IMAGE=ghcr.io/qiwentaidi/hephaestus:v0.5.7 \
+#     docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+#
+# 需要支持 !reset 的 Compose V2（2.24+）。
+services:
+  hephaestus:
+    build: !reset null
+    image: "${HEPHAESTUS_IMAGE:-ghcr.io/qiwentaidi/hephaestus:latest}"

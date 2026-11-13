@@ -5,12 +5,54 @@ Hephaestus 的 Docker 镜像默认内置 PostgreSQL 17。`docker run` 或 `docke
 
 ## 快速启动
 
+官方镜像发布在 `ghcr.io/qiwentaidi/hephaestus`，同时提供 `linux/amd64` 与 `linux/arm64`。
+公开包可以直接匿名拉取，不需要先登录 GHCR。
+
+### 方式一：拉取官方镜像
+
 ```bash
-# 方式一：Compose（推荐）
+docker pull ghcr.io/qiwentaidi/hephaestus:latest
+
+docker run -d --name hephaestus \
+  -p 18181:18181 \
+  -v hephaestus-data:/var/lib/hephaestus \
+  --restart unless-stopped \
+  --shm-size=256m \
+  ghcr.io/qiwentaidi/hephaestus:latest
+```
+
+用 Compose 管理时，在本仓库根目录叠加 `docker-compose.ghcr.yml`（只需要 `docker-compose.yml` 和这个覆盖文件），把本地构建换成已发布镜像：
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+```
+
+镜像 tag 与 Release 版本号一致（如 `v0.5.7`），另有浮动的 `latest`。生产环境建议固定版本：
+
+```bash
+HEPHAESTUS_IMAGE=ghcr.io/qiwentaidi/hephaestus:v0.5.7 \
+  docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+```
+
+升级时重新拉取镜像并重建容器，数据卷不变：
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.ghcr.yml pull
+docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+```
+
+单容器部署同理：重新 `docker pull` 后，用相同参数重建 `hephaestus` 容器。
+
+### 方式二：从源码构建
+
+```bash
 cp .env.example .env   # 可选
 docker compose up -d --build
+```
 
-# 方式二：直接运行镜像
+不使用 Compose 时：
+
+```bash
 docker build -t hephaestus:local .
 docker run -d --name hephaestus \
   -p 18181:18181 \
@@ -185,6 +227,7 @@ docker compose -p 项目名 --env-file .env --env-file .hephaestus-updater/image
 ```
 
 没有 `.env` 时省略对应参数。有额外 Compose 覆盖文件时，应继续使用原覆盖文件。
+未接入更新器的官方镜像部署，按「快速启动」中的 `pull` + `up -d` 升级。
 源码构建部署仍可用 `git pull --ff-only && docker compose build --pull && docker compose up -d` 升级。
 
 ## 安全说明

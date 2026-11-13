@@ -117,7 +117,7 @@ flowchart TB
 | Mode | Best for | Data storage | Default entry point |
 | --- | --- | --- | --- |
 | **Single Binary** (recommended) | General deployment, production, offline use | PostgreSQL or SQLite | `http://localhost:18181` |
-| **Docker Compose** | Team sharing, server deployment, quick evaluation | Built-in PostgreSQL 17, switchable to SQLite or external PostgreSQL | `http://localhost:18181` |
+| **Docker (official image / Compose)** | Team sharing, server deployment, quick evaluation; pull the official image directly | Built-in PostgreSQL 17, switchable to SQLite or external PostgreSQL | `http://localhost:18181` |
 | **Desktop Client** | Single-machine use, local tool integration | SQLite, switchable to PostgreSQL | Desktop window |
 | **Scanning Agent** | Distributed scanning, remote network execution | Shared PostgreSQL with the main service | No web entry point |
 
@@ -157,13 +157,45 @@ Linux targets are built through Docker Buildx and require a local Docker service
 
 </details>
 
-### 2. Docker Compose
+### 2. Docker (official image or Compose)
 
-Release-image deployments can upgrade from the UI after you enable the host updater. See [Docker upgrades](docs/docker-deployment.md#升级).
+The official image is published at `ghcr.io/qiwentaidi/hephaestus` for `linux/amd64` and `linux/arm64`, so you can pull and run it without building. It ships with PostgreSQL 17 and starts a single `hephaestus` container. It requires Docker 24+ with Compose V2. We recommend at least 2 GB of memory. For screenshots or headless browser interaction, [install Chromium on demand](docs/docker-deployment.md#按需安装-chromium).
 
-The image ships with PostgreSQL 17 and starts a single `hephaestus` container. It requires Docker 24+ with Compose V2. We recommend at least 2 GB of memory. For screenshots or headless browser interaction, [install Chromium on demand](docs/docker-deployment.md#按需安装-chromium).
+**Option 1: Use the official image (no build required)**
 
-Run from the repository root:
+Cloning the repository is not required: pull the image and run it.
+
+```bash
+docker pull ghcr.io/qiwentaidi/hephaestus:latest
+
+docker run -d --name hephaestus \
+  -p 18181:18181 \
+  -v hephaestus-data:/var/lib/hephaestus \
+  --shm-size=256m \
+  --restart unless-stopped \
+  ghcr.io/qiwentaidi/hephaestus:latest
+```
+
+Tags match the [Releases](https://github.com/qiwentaidi/Hephaestus/releases) version (for example `v0.5.7`), plus a floating `latest`. For production, replace `latest` above with a specific version. The package is public and can be pulled anonymously; run `docker login ghcr.io` first on networks that require authentication. To upgrade, `docker pull` again and recreate the container with the same arguments; the `hephaestus-data` volume keeps your data.
+
+If you use Compose, layer `docker-compose.ghcr.yml` on top of the default file in the repository root to replace the local build with the published image:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+
+# Pin a version
+HEPHAESTUS_IMAGE=ghcr.io/qiwentaidi/hephaestus:v0.5.7 \
+  docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+```
+
+Upgrade a Compose deployment:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.ghcr.yml pull
+docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+```
+
+**Option 2: Build from source**
 
 ```bash
 cp .env.example .env   # Optional: adjust ports and database settings
@@ -173,6 +205,8 @@ curl -fsS http://localhost:18181/healthz
 ```
 
 Open `http://localhost:18181`; the first visit guides you through creating an administrator account.
+
+Release-image deployments can upgrade from the UI after you enable the host updater. See [Docker upgrades](docs/docker-deployment.md#升级).
 
 <details>
 <summary><b>Data persistence and common operations</b></summary>
@@ -229,7 +263,7 @@ services:
 </details>
 
 <details>
-<summary><b>Docker without Compose: single container</b></summary>
+<summary><b>Docker without Compose: build locally and run a single container</b></summary>
 
 ```bash
 docker build -t hephaestus:local .
