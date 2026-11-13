@@ -1492,8 +1492,21 @@ export interface UpdateAIWorkbenchPenTestSessionPayload {
   status?: string
 }
 
+function isAbortedRequest(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && (error as { name?: unknown }).name === 'AbortError'
+}
+
 async function parseAPIResponse<T>(response: Response): Promise<T> {
-  const data = await response.json().catch(() => null)
+  let data: { success?: boolean; data?: T; error?: string; message?: string } | null = null
+  try {
+    data = await response.json()
+  } catch (error) {
+    // The fetch can resolve with headers (HTTP 200) and only reject while the
+    // body is read because the caller aborted a superseded request. Keep that
+    // AbortError so callers can ignore it; turning it into requestFailed(200)
+    // made fast session switches toast "Request failed (200)".
+    if (isAbortedRequest(error)) throw error
+  }
   if (!response.ok || !data?.success) {
     throw data?.error || data?.message ? new Error(data.error || data.message) : new WorkbenchRequestError('requestFailed', { status: response.status })
   }
