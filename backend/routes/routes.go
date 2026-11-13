@@ -433,6 +433,8 @@ func SetupRoutes(r *gin.Engine) {
 			webscan.PUT("/vulnerability/:id/status", scan.UpdateVulnerabilityDisposalStatusHandler)          // 更新漏洞处置状态
 			webscan.PUT("/vulnerability/status", scan.UpdateVulnerabilityDisposalStatusHandler)              // 更新漏洞处置状态（兼容无ID场景）
 			webscan.GET("/templates", scan.GetTemplateListHandler)                                           // 获取模板列表             // 删除扫描模板
+			webscan.GET("/poc-cache/status", scan.GetPOCTemplateCacheStatusHandler)                          // 获取 PoC 模板缓存预热状态
+			webscan.POST("/poc-cache/warmup", scan.WarmupPOCTemplateCacheHandler)                            // 重试 PoC 模板缓存预热
 			webscan.GET("/poc-template-folders", scan.GetPOCTemplateFoldersHandler)                          // 获取追加 PoC 模板目录
 			webscan.PUT("/poc-template-folders", scan.UpdatePOCTemplateFoldersHandler)                       // 更新追加 PoC 模板目录
 			webscan.GET("/pocs", scan.ListPoCsHandler)                                                       // 获取 PoC 列表

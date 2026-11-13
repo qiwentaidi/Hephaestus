@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { Loader2 } from 'lucide-react'
+import { PocTemplateCacheGate } from '@/components/poc-template-cache-gate'
 import MainLayoutClient from './MainLayoutClient'
 
 export default function MainLayout({
@@ -15,7 +16,9 @@ export default function MainLayout({
         </div>
       }
     >
-      <MainLayoutClient>{children}</MainLayoutClient>
+      <PocTemplateCacheGate>
+        <MainLayoutClient>{children}</MainLayoutClient>
+      </PocTemplateCacheGate>
     </Suspense>
   )
 }

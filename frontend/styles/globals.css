@@ -2868,3 +2868,134 @@ html.glass .asset-table-loading-surface,
 .glass .asset-table-loading-surface {
   background-color: var(--glass-surface-opaque);
 }
+
+
+/* 漏洞模板索引首次构建时的加载动画（黑洞 / 日食）。
+   来源：uiverse.io/loaders（作者 StealthWorm, pink-duck-62）。
+   深色：白光圈 + 黑核；浅色：白光圈 + 浅灰核（对齐 Uiverse 浅色预览）。 */
+.heph-poc-eclipse {
+  --bh-core: #000;
+  --bh-halo: #fff;
+  --bh-shadow: #9a9a9a;
+  --bh-disc: #353535;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 380px;
+  height: 380px;
+}
+
+.heph-eclipse-loader {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 8rem;
+  height: 8rem;
+  transform: scale(1.9);
+}
+
+.heph-eclipse-blackhole {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 8rem;
+  height: 8rem;
+}
+
+.heph-eclipse-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, var(--bh-core) 25%, var(--bh-halo) 35%, var(--bh-halo) 100%);
+  box-shadow: 0 0 2rem var(--bh-shadow);
+}
+
+.heph-eclipse-circle::after {
+  position: absolute;
+  content: "";
+  display: flex;
+  width: 100%;
+  height: 100%;
+  border: 4px solid var(--bh-halo);
+  border-radius: 50%;
+  background: radial-gradient(circle at center, var(--bh-core) 35%, var(--bh-halo) 60%, var(--bh-halo) 100%);
+  box-shadow: 0 0 5rem var(--bh-shadow);
+  filter: blur(4px);
+  animation: heph-eclipse-pulse 2s linear infinite alternate-reverse;
+}
+
+.heph-eclipse-circle::before {
+  content: "";
+  display: flex;
+  width: 4rem;
+  height: 4rem;
+  border: 2px solid var(--bh-halo);
+  border-radius: 50%;
+  box-shadow: 3px 3px 10px var(--bh-shadow), inset 0 0 1rem var(--bh-halo);
+  filter: blur(0.5px);
+  animation: heph-eclipse-rotate 3s linear infinite;
+}
+
+.heph-eclipse-disc {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 5rem;
+  height: 10rem;
+  border: 1rem solid var(--bh-halo);
+  border-radius: 50%;
+  background: radial-gradient(circle at center, var(--bh-halo) 80%, var(--bh-disc) 90%, var(--bh-halo) 100%);
+  filter: blur(1rem) brightness(130%);
+  box-shadow: 0 0 3rem var(--bh-shadow);
+  transform: rotate3d(1, 1, 1, 220deg);
+  animation: heph-eclipse-pulse-disc 2s linear infinite alternate-reverse;
+}
+
+.heph-eclipse-disc::before {
+  content: "";
+  position: absolute;
+  width: 5rem;
+  height: 10rem;
+  border: 1rem solid var(--bh-halo);
+  border-radius: 50%;
+  background: radial-gradient(circle at center, var(--bh-halo) 80%, var(--bh-disc) 90%, var(--bh-halo) 100%);
+  filter: blur(3rem);
+  box-shadow: 0 0 6rem var(--bh-shadow);
+  animation: heph-eclipse-pulse 2s linear infinite alternate-reverse;
+}
+
+/* 浅色主题：对齐截图里的浅色方案（白光圈 + 浅灰核），不做整体反相。 */
+html:is(.light, .shadcn-light, .paper-ink, .glass) .heph-poc-eclipse,
+html:not(.dark):not(.shadcn-dark):not(.flame):not(.graphite):not(.glass):not(.paper-ink) .heph-poc-eclipse {
+  --bh-core: #b8b8b8;
+  --bh-shadow: #d8d8d8;
+  --bh-disc: #cfcfcf;
+}
+
+/* 浅色主题的加载背景，和 Uiverse 浅色预览一致。 */
+html:is(.light, .shadcn-light, .paper-ink, .glass) .heph-poc-loading-overlay,
+html:not(.dark):not(.shadcn-dark):not(.flame):not(.graphite):not(.glass):not(.paper-ink) .heph-poc-loading-overlay {
+  background-color: #e8e8e8;
+}
+
+@keyframes heph-eclipse-rotate {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes heph-eclipse-pulse {
+  0% { box-shadow: 0 0 3rem var(--bh-shadow); transform: scale(1); }
+  100% { box-shadow: 0 0 5rem var(--bh-shadow); transform: scale(1.09); }
+}
+
+@keyframes heph-eclipse-pulse-disc {
+  0% { box-shadow: 0 0 3rem var(--bh-shadow); transform: rotate3d(1, 1, 1, 220deg) scale(1); }
+  100% { box-shadow: 0 0 5rem var(--bh-shadow); transform: rotate3d(1, 1, 1, 220deg) scale(0.95); }
+}

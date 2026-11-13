@@ -157,8 +157,8 @@ func main() {
 		Frameless:                  runtime.GOOS != "darwin",
 		EnableFileDrop:             true,
 		DefaultContextMenuDisabled: true,
-		// BackgroundColour:   application.NewRGB(16, 19, 24),
-		UseApplicationMenu: true,
+		BackgroundColour:           application.NewRGB(16, 19, 24),
+		UseApplicationMenu:         true,
 		Windows: application.WindowsWindow{
 			DisableFramelessWindowDecorations: false,
 		},

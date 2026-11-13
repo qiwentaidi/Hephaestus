@@ -6184,6 +6184,16 @@ export const en: Locale = {
     },
   },
 
+  // Desktop first-run vulnerability template index preparation
+  pocTemplateCache: {
+    loading: "Building the vulnerability template index",
+    errorTitle: "Failed to build the vulnerability template index",
+    errorHint: "Please retry. If it keeps failing, check the logs or the template folder permissions.",
+    timeout: "Building the template index timed out. Please retry or quit.",
+    retry: "Retry",
+    exit: "Quit",
+  },
+
   // PoC manager
   pocManager: {
     title: "PoC Manager",

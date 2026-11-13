@@ -6037,6 +6037,16 @@ export const zh = {
     },
   },
 
+  // 桌面端首次启动的漏洞模板索引准备
+  pocTemplateCache: {
+    loading: "漏洞模板索引正在建立",
+    errorTitle: "漏洞模板索引建立失败",
+    errorHint: "请重试；如果持续失败，请检查日志或模板目录权限。",
+    timeout: "模板索引建立超时，请重试或退出应用。",
+    retry: "重试",
+    exit: "退出应用",
+  },
+
   // PoC 管理
   pocManager: {
     title: "PoC 管理",
