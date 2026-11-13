@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"hephaestus-backend/pkg/database"
+	"hephaestus-backend/pkg/httpquery"
 	"hephaestus-backend/pkg/logger"
 	"hephaestus-backend/pkg/nanoid"
 
@@ -275,9 +276,15 @@ func applyMCPAuditLogFilters(query *gorm.DB, c *gin.Context) *gorm.DB {
 		query = query.Where("method <> ? AND status <> ?", "tools/call", "failed")
 	}
 
-	status := strings.ToLower(strings.TrimSpace(c.Query("status")))
-	if status == "success" || status == "failed" || status == "blocked" {
-		query = query.Where("status = ?", status)
+	statuses := make([]string, 0, 2)
+	for _, value := range httpquery.Values(c, "status") {
+		status := strings.ToLower(value)
+		if status == "success" || status == "failed" || status == "blocked" {
+			statuses = append(statuses, status)
+		}
+	}
+	if len(statuses) > 0 {
+		query = query.Where("status IN ?", statuses)
 	}
 
 	keyword := trimAuditValue(c.Query("keyword"), 120)

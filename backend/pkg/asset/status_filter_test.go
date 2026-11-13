@@ -42,20 +42,24 @@ func TestFingerprintStatusFilterPostgres(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, tc := range []struct {
-		filter string
-		want   []int
+		name    string
+		filters []string
+		want    []int
 	}{
-		{"2xx", []int{200, 201, 204, 299}},
-		{"3xx", []int{300, 301, 302, 399}},
-		{"4xx", []int{400, 401, 403, 404, 429, 499}},
-		{"5xx", []int{500, 502, 503, 599}},
-		{"400", []int{400}},
-		{"404", []int{404}},
-		{"", statuses},
-		{"all", statuses},
+		{"2xx", []string{"2xx"}, []int{200, 201, 204, 299}},
+		{"3xx", []string{"3xx"}, []int{300, 301, 302, 399}},
+		{"4xx", []string{"4xx"}, []int{400, 401, 403, 404, 429, 499}},
+		{"5xx", []string{"5xx"}, []int{500, 502, 503, 599}},
+		{"400", []string{"400"}, []int{400}},
+		{"404", []string{"404"}, []int{404}},
+		{"403 scoped to task", []string{"403"}, []int{403}},
+		{"empty", nil, statuses},
+		{"all", []string{"all"}, statuses},
+		{"multi ranges", []string{"4xx", "5xx"}, []int{400, 401, 403, 404, 429, 499, 500, 502, 503, 599}},
+		{"range and exact", []string{"2xx", "404"}, []int{200, 201, 204, 299, 404}},
 	} {
-		t.Run(tc.filter, func(t *testing.T) {
-			query := ApplyFingerprintStatusFilter(tx.Table("fingerprint_status_fixture").Where("task_id = ? AND version = ?", "target", 2), tc.filter)
+		t.Run(tc.name, func(t *testing.T) {
+			query := ApplyFingerprintStatusFilter(tx.Table("fingerprint_status_fixture").Where("task_id = ? AND version = ?", "target", 2), tc.filters)
 			var total int64
 			if err := query.Count(&total).Error; err != nil {
 				t.Fatal(err)

@@ -86,7 +86,7 @@ export function FingerprintTable({
 }: FingerprintTableProps) {
   const { t } = useI18n()
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string[]>([])
   const [highRiskFilter, setHighRiskFilter] = useState<string>('all')
   const [lengthSortOrder, setLengthSortOrder] = useState<'asc' | 'desc' | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
@@ -114,7 +114,7 @@ export function FingerprintTable({
     try {
       const versionParam = version ? `&version=${version}` : ''
       const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ''
-      const statusParam = statusFilter !== 'all' ? `&status=${statusFilter}` : ''
+      const statusParam = statusFilter.length > 0 ? `&status=${statusFilter.join(',')}` : ''
       const highRiskParam = highRiskFilter !== 'all' ? `&highRisk=${highRiskFilter}` : ''
       const sortParam = lengthSortOrder ? `&sortBy=length&sortOrder=${lengthSortOrder}` : ''
       const response = await fetchWithAuth(
@@ -209,8 +209,8 @@ export function FingerprintTable({
     }
 
     // 状态过滤
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter((item) => matchesFingerprintStatus(item.status, statusFilter))
+    if (statusFilter.length > 0) {
+      filtered = filtered.filter((item) => statusFilter.some((filter) => matchesFingerprintStatus(item.status, filter)))
     }
 
     if (highRiskFilter === 'with_high_risk') {

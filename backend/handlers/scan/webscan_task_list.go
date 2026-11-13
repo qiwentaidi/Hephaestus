@@ -7,6 +7,7 @@ import (
 	"hephaestus-backend/handlers/agent"
 	"hephaestus-backend/pkg/database"
 	"hephaestus-backend/pkg/datapurge"
+	"hephaestus-backend/pkg/httpquery"
 	"hephaestus-backend/pkg/scantask"
 	"hephaestus-backend/pkg/taskstate"
 	"net/http"
@@ -49,8 +50,8 @@ func ListWebScanTasksHandler(c *gin.Context) {
 	}
 	offset := (page - 1) * pageSize
 
-	scanModeStr := strings.TrimSpace(c.DefaultQuery("scanMode", ""))
-	status := strings.TrimSpace(c.DefaultQuery("status", ""))
+	scanModesRaw := httpquery.Values(c, "scanMode")
+	statusFilters := httpquery.Values(c, "status")
 	search := strings.TrimSpace(c.DefaultQuery("search", ""))
 
 	scanTypeMap := map[string]string{
@@ -63,19 +64,22 @@ func ListWebScanTasksHandler(c *gin.Context) {
 		"combination": "combination",
 	}
 
-	normalizedScanMode := ""
-	if scanModeStr != "" {
-		lower := strings.ToLower(scanModeStr)
+	scanModes := make([]string, 0, len(scanModesRaw))
+	seenScanModes := make(map[string]struct{}, len(scanModesRaw))
+	for _, raw := range scanModesRaw {
+		lower := strings.ToLower(raw)
+		normalized := lower
 		if scanType, ok := scanTypeMap[lower]; ok {
-			normalizedScanMode = scanType
-		} else if lower == "combination" {
-			normalizedScanMode = "combination"
-		} else {
-			normalizedScanMode = lower
+			normalized = scanType
 		}
+		if _, ok := seenScanModes[normalized]; ok {
+			continue
+		}
+		seenScanModes[normalized] = struct{}{}
+		scanModes = append(scanModes, normalized)
 	}
 
-	listSQL, listArgs, countSQL, countArgs := buildCombinedTasksQueries(normalizedScanMode, status, search, pageSize, offset)
+	listSQL, listArgs, countSQL, countArgs := buildCombinedTasksQueries(scanModes, statusFilters, search, pageSize, offset)
 
 	var rows []combinedTaskRow
 	if err := db.Raw(listSQL, listArgs...).Scan(&rows).Error; err != nil {
@@ -221,7 +225,7 @@ func ListWebScanTasksHandler(c *gin.Context) {
 	})
 }
 
-func buildCombinedTasksQueries(scanMode, status, search string, pageSize, offset int) (string, []interface{}, string, []interface{}) {
+func buildCombinedTasksQueries(scanModes, statuses []string, search string, pageSize, offset int) (string, []interface{}, string, []interface{}) {
 	latestTasksCTE := `
 SELECT t1.* FROM vul_scan_task t1
 INNER JOIN (
@@ -234,13 +238,13 @@ INNER JOIN (
 	normalClauses := make([]string, 0)
 	normalArgs := make([]interface{}, 0)
 
-	if scanMode != "" {
-		normalClauses = append(normalClauses, "t1.scan_type = ?")
-		normalArgs = append(normalArgs, scanMode)
+	if len(scanModes) > 0 {
+		normalClauses = append(normalClauses, "t1.scan_type IN ?")
+		normalArgs = append(normalArgs, scanModes)
 	}
-	if status != "" {
-		normalClauses = append(normalClauses, "t1.status = ?")
-		normalArgs = append(normalArgs, status)
+	if len(statuses) > 0 {
+		normalClauses = append(normalClauses, "t1.status IN ?")
+		normalArgs = append(normalArgs, statuses)
 	}
 	if search != "" {
 		pattern := "%" + search + "%"

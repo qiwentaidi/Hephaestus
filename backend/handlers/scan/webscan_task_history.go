@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"hephaestus-backend/pkg/database"
 	"hephaestus-backend/pkg/findings"
+	"hephaestus-backend/pkg/httpquery"
 	"hephaestus-backend/pkg/logger"
 	"net/http"
 	"strconv"
@@ -53,7 +54,7 @@ func GetWebScanTaskVulnerabilitiesHandler(c *gin.Context) {
 	// 获取搜索和过滤参数
 	searchQuery := c.DefaultQuery("search", "")
 	severityFilter := c.DefaultQuery("severity", "")
-	disposalStatusFilter := c.DefaultQuery("disposalStatus", "")
+	disposalStatusFilters := httpquery.Values(c, "disposalStatus")
 
 	// 获取版本号（如果指定了 version 参数，使用指定版本；否则使用最新版本）
 	versionStr := c.DefaultQuery("version", "")
@@ -129,8 +130,8 @@ func GetWebScanTaskVulnerabilitiesHandler(c *gin.Context) {
 	}
 
 	// 添加处置状态过滤条件
-	if disposalStatusFilter != "" {
-		query = query.Where("disposal_status = ?", disposalStatusFilter)
+	if len(disposalStatusFilters) > 0 {
+		query = query.Where("disposal_status IN ?", disposalStatusFilters)
 	}
 
 	// 获取总数

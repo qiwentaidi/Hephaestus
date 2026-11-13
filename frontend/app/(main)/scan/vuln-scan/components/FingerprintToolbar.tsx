@@ -16,12 +16,13 @@ import {
 import { Search, LayoutGrid, LayoutList } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
 import { FingerprintIconAggregation } from './FingerprintIconAggregation'
+import { MultiSelectFilter } from '@/components/ui/multi-select-filter'
 
 interface FingerprintToolbarProps {
   searchQuery: string
   onSearchChange: (value: string) => void
-  statusFilter: string
-  onStatusFilterChange: (value: string) => void
+  statusFilter: string[]
+  onStatusFilterChange: (value: string[]) => void
   highRiskFilter: string
   onHighRiskFilterChange: (value: string) => void
   taskId?: string
@@ -45,7 +46,7 @@ export function FingerprintToolbar({
   const { t } = useI18n()
 
   return (
-    <DetailResultToolbar activeCount={Number(Boolean(searchQuery.trim())) + Number(statusFilter !== 'all') + Number(highRiskFilter !== 'all')} onReset={() => { onSearchChange(''); onStatusFilterChange('all'); onHighRiskFilterChange('all') }}>
+    <DetailResultToolbar activeCount={Number(Boolean(searchQuery.trim())) + Number(statusFilter.length > 0) + Number(highRiskFilter !== 'all')} onReset={() => { onSearchChange(''); onStatusFilterChange([]); onHighRiskFilterChange('all') }}>
 <div className="flex flex-wrap items-center gap-2 md:flex-nowrap md:gap-4">
       <div className="hidden md:block">
         <FingerprintIconAggregation taskId={taskId} version={version} onSelectHash={onSearchChange} />
@@ -60,18 +61,22 @@ export function FingerprintToolbar({
         />
       </div>
 
-      <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-        <SelectTrigger className="min-h-11 w-[calc(50%-0.25rem)] md:min-h-0 md:w-[180px]">
-          <SelectValue placeholder={t.vulnScan.fingerprint.statusFilter} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{t.vulnScan.fingerprint.allStatus}</SelectItem>
-          <SelectItem value="2xx">2xx</SelectItem>
-          <SelectItem value="3xx">3xx</SelectItem>
-          <SelectItem value="4xx">4xx</SelectItem>
-          <SelectItem value="5xx">5xx</SelectItem>
-        </SelectContent>
-      </Select>
+      <MultiSelectFilter
+        values={statusFilter}
+        options={[
+          { value: '2xx', label: '2xx' },
+          { value: '3xx', label: '3xx' },
+          { value: '4xx', label: '4xx' },
+          { value: '5xx', label: '5xx' },
+        ]}
+        allLabel={t.vulnScan.fingerprint.allStatus}
+        countLabel={t.common.selectedCount}
+        removeLabel={t.common.remove}
+        clearLabel={t.common.clear}
+        ariaLabel={t.vulnScan.fingerprint.statusFilter}
+        onChange={onStatusFilterChange}
+        className="min-h-11 w-[calc(50%-0.25rem)] md:min-h-0 md:w-[180px]"
+      />
 
       <Select value={highRiskFilter} onValueChange={onHighRiskFilterChange}>
         <SelectTrigger className="min-h-11 w-[calc(50%-0.25rem)] md:min-h-0 md:w-[180px]">

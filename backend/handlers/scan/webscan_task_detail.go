@@ -7,6 +7,7 @@ import (
 	assetstore "hephaestus-backend/pkg/asset"
 	"hephaestus-backend/pkg/control"
 	"hephaestus-backend/pkg/database"
+	"hephaestus-backend/pkg/httpquery"
 	"hephaestus-backend/pkg/logger"
 	"hephaestus-backend/pkg/scantask"
 	"hephaestus-backend/pkg/taskstate"
@@ -130,7 +131,7 @@ func GetWebScanTaskFingerprintsHandler(c *gin.Context) {
 
 	// 获取搜索和过滤参数
 	searchQuery := c.DefaultQuery("search", "")
-	statusFilter := c.DefaultQuery("status", "")
+	statusFilters := httpquery.Values(c, "status")
 	highRiskFilter := strings.TrimSpace(c.DefaultQuery("highRisk", ""))
 	sortBy := strings.TrimSpace(c.DefaultQuery("sortBy", ""))
 	sortOrder := strings.TrimSpace(c.DefaultQuery("sortOrder", ""))
@@ -200,7 +201,7 @@ func GetWebScanTaskFingerprintsHandler(c *gin.Context) {
 	}
 
 	// 添加状态过滤条件
-	query = assetstore.ApplyFingerprintStatusFilter(query, statusFilter)
+	query = assetstore.ApplyFingerprintStatusFilter(query, statusFilters)
 
 	if highRiskFilter == "with_high_risk" {
 		query = query.Where("high_risk_fingerprints IS NOT NULL AND TRIM(high_risk_fingerprints) != '' AND high_risk_fingerprints != '[]' AND LOWER(high_risk_fingerprints) != 'null'")

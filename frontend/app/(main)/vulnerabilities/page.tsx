@@ -63,7 +63,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { PaginationPro } from '@/components/ui/pagination-pro'
-import { FindingMultiSelectFilter } from './components/FindingMultiSelectFilter'
+import { MultiSelectFilter } from '@/components/ui/multi-select-filter'
 import {
   SourceScopeFilter,
   type ScopeSelection,
@@ -694,17 +694,20 @@ function VulnerabilityManagementContent() {
               disabled={saving}
               onChange={changeScope}
             />
-            <FindingMultiSelectFilter
+            <MultiSelectFilter
               values={severities}
               options={Object.entries(labels.severity).map(
                 ([value, label]) => ({ value, label }),
               )}
               allLabel={l.allSeverities}
               countLabel={l.selectedSeverities}
+              removeLabel={t.common.remove}
+              clearLabel={t.common.clear}
               ariaLabel={l.severityFilter}
+              className="w-full xl:w-36"
               onChange={(values) => changeQuery({ severity: values.join(',') })}
             />
-            <FindingMultiSelectFilter
+            <MultiSelectFilter
               values={selectedStatuses}
               options={statuses.map((value) => ({
                 value,
@@ -712,7 +715,10 @@ function VulnerabilityManagementContent() {
               }))}
               allLabel={l.allStatuses}
               countLabel={l.selectedStatuses}
+              removeLabel={t.common.remove}
+              clearLabel={t.common.clear}
               ariaLabel={l.statusFilterTitle}
+              className="w-full xl:w-36"
               onChange={(values) => changeQuery({ status: values.join(',') })}
             />
           </div>

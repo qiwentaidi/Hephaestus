@@ -116,6 +116,7 @@ type HandshakeStepStatus = 'pending' | 'success' | 'error'
 type ToolModuleKey = 'all' | string
 type AuditKindFilter = 'important' | 'all' | 'tool_call' | 'protocol'
 type AuditStatusFilter = 'all' | 'success' | 'failed'
+type AuditStatus = Exclude<AuditStatusFilter, 'all'>
 
 const TOOL_ARGUMENT_EXAMPLES: Record<string, string> = {
   space_engine_search: JSON.stringify(
@@ -192,7 +193,7 @@ export default function PlatformMcpPageClient() {
   const auditPageRef = useRef(1)
   const auditPageSizeRef = useRef(10)
   const auditKindRef = useRef<AuditKindFilter>('important')
-  const auditStatusRef = useRef<AuditStatusFilter>('all')
+  const auditStatusRef = useRef<AuditStatus[]>([])
   const auditKeywordRef = useRef('')
   const [apiBaseUrl, setApiBaseUrl] = useState('http://localhost:8080')
   const [loading, setLoading] = useState(true)
@@ -209,7 +210,7 @@ export default function PlatformMcpPageClient() {
   const [auditPage, setAuditPage] = useState(1)
   const [auditPageSize, setAuditPageSize] = useState(10)
   const [auditKind, setAuditKind] = useState<AuditKindFilter>('important')
-  const [auditStatus, setAuditStatus] = useState<AuditStatusFilter>('all')
+  const [auditStatuses, setAuditStatuses] = useState<AuditStatus[]>([])
   const [auditKeyword, setAuditKeyword] = useState('')
   const [submittedAuditKeyword, setSubmittedAuditKeyword] = useState('')
   const [selectedTool, setSelectedTool] = useState('space_engine_search')
@@ -532,8 +533,8 @@ export default function PlatformMcpPageClient() {
       if (auditKindRef.current !== 'all') {
         params.set('kind', auditKindRef.current)
       }
-      if (auditStatusRef.current !== 'all') {
-        params.set('status', auditStatusRef.current)
+      if (auditStatusRef.current.length > 0) {
+        params.set('status', auditStatusRef.current.join(','))
       }
       const auditKeyword = auditKeywordRef.current.trim()
       if (auditKeyword) {
@@ -771,8 +772,13 @@ export default function PlatformMcpPageClient() {
   }, [loadAuditLogs])
 
   const handleAuditStatusChange = useCallback((value: AuditStatusFilter) => {
-    auditStatusRef.current = value
-    setAuditStatus(value)
+    const next = value === 'all'
+      ? []
+      : auditStatusRef.current.includes(value)
+        ? auditStatusRef.current.filter((item) => item !== value)
+        : [...auditStatusRef.current, value]
+    auditStatusRef.current = next
+    setAuditStatuses(next)
     void loadAuditLogs(1, auditPageSizeRef.current)
   }, [loadAuditLogs])
 
@@ -987,7 +993,12 @@ export default function PlatformMcpPageClient() {
     { key: 'failed', label: pageCopy.failed },
   ], [pageCopy.auditStatusAll, pageCopy.failed, pageCopy.success])
   const activeAuditKindLabel = auditKindOptions.find((option) => option.key === auditKind)?.label || pageCopy.auditLog
-  const activeAuditStatusLabel = auditStatusOptions.find((option) => option.key === auditStatus)?.label || pageCopy.auditStatusAll
+  const activeAuditStatusLabel = auditStatuses.length === 0
+    ? pageCopy.auditStatusAll
+    : auditStatusOptions
+        .filter((option) => option.key !== 'all' && auditStatuses.includes(option.key as AuditStatus))
+        .map((option) => option.label)
+        .join(' / ')
   const currentConfigCode = clientConfigTabs[clientConfigKey]
   const defaultDebugResponse = connected
     ? pageCopy.waitingToolCall
@@ -1311,7 +1322,7 @@ export default function PlatformMcpPageClient() {
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge tone={auditError ? 'danger' : 'neutral'}>{formatCopy(pageCopy.auditCountUnit, { count: auditTotal })}</StatusBadge>
               <StatusBadge tone="neutral">{activeAuditKindLabel}</StatusBadge>
-              {auditStatus !== 'all' ? <StatusBadge tone="neutral">{activeAuditStatusLabel}</StatusBadge> : null}
+              {auditStatuses.length > 0 ? <StatusBadge tone="neutral">{activeAuditStatusLabel}</StatusBadge> : null}
               <button
                 type="button"
                 onClick={() => void loadAuditLogs()}
@@ -1350,21 +1361,27 @@ export default function PlatformMcpPageClient() {
               <div className="flex flex-col gap-2">
                 <div className="text-xs text-muted-foreground">{pageCopy.status}</div>
                 <div className="flex flex-wrap gap-2">
-                  {auditStatusOptions.map((option) => (
-                    <button
-                      key={option.key}
-                      type="button"
-                      onClick={() => handleAuditStatusChange(option.key)}
-                      className={cn(
-                        'rounded-full border px-3 py-1.5 text-xs transition',
-                        auditStatus === option.key
-                          ? 'border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-100'
-                          : 'border-border/70 bg-muted/30 text-muted-foreground hover:bg-muted/30 hover:text-foreground',
-                      )}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+                  {auditStatusOptions.map((option) => {
+                    const isActive = option.key === 'all'
+                      ? auditStatuses.length === 0
+                      : auditStatuses.includes(option.key as AuditStatus)
+                    return (
+                      <button
+                        key={option.key}
+                        type="button"
+                        aria-pressed={isActive}
+                        onClick={() => handleAuditStatusChange(option.key)}
+                        className={cn(
+                          'rounded-full border px-3 py-1.5 text-xs transition',
+                          isActive
+                            ? 'border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-100'
+                            : 'border-border/70 bg-muted/30 text-muted-foreground hover:bg-muted/30 hover:text-foreground',
+                        )}
+                      >
+                        {option.label}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 

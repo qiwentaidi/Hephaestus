@@ -16,13 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { PaginationPro } from '@/components/ui/pagination-pro'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { MultiSelectFilter } from '@/components/ui/multi-select-filter'
 import {
   Tooltip,
   TooltipContent,
@@ -102,7 +96,7 @@ export function TaskManagementView({
     cancelled: t.companyInfo.taskManagement.cancelled,
   }
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set())
@@ -121,7 +115,7 @@ export function TaskManagementView({
         return false
       }
     }
-    if (statusFilter !== 'all' && task.status !== statusFilter) {
+    if (statusFilter.length > 0 && !statusFilter.includes(task.status)) {
       return false
     }
     return true
@@ -200,25 +194,26 @@ export function TaskManagementView({
 
   const selectableTasksOnPage = paginatedTasks.filter(task => task.status !== 'running')
   const statusFilterControl = (
-          <Select
-            value={statusFilter}
-            onValueChange={(value) => {
-              setStatusFilter(value)
+          <MultiSelectFilter
+            values={statusFilter}
+            options={[
+              { value: 'pending', label: t.companyInfo.taskManagement.pending },
+              { value: 'running', label: t.companyInfo.taskManagement.running },
+              { value: 'completed', label: t.companyInfo.taskManagement.completed },
+              { value: 'failed', label: t.companyInfo.taskManagement.failed },
+              { value: 'cancelled', label: t.companyInfo.taskManagement.cancelled },
+            ]}
+            allLabel={t.companyInfo.taskManagement.allStatus}
+            countLabel={t.common.selectedCount}
+            removeLabel={t.common.remove}
+            clearLabel={t.common.clear}
+            ariaLabel={t.companyInfo.taskManagement.allStatus}
+            onChange={(values) => {
+              setStatusFilter(values)
               setCurrentPage(1)
             }}
-          >
-            <SelectTrigger className={isMobile ? "w-full" : "w-[140px]"}>
-              <SelectValue placeholder={t.companyInfo.taskManagement.allStatus} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t.companyInfo.taskManagement.allStatus}</SelectItem>
-              <SelectItem value="pending">{t.companyInfo.taskManagement.pending}</SelectItem>
-              <SelectItem value="running">{t.companyInfo.taskManagement.running}</SelectItem>
-              <SelectItem value="completed">{t.companyInfo.taskManagement.completed}</SelectItem>
-              <SelectItem value="failed">{t.companyInfo.taskManagement.failed}</SelectItem>
-              <SelectItem value="cancelled">{t.companyInfo.taskManagement.cancelled}</SelectItem>
-            </SelectContent>
-          </Select>
+            className={isMobile ? 'h-11 w-full' : 'w-[140px]'}
+          />
   )
 
   return (
@@ -230,8 +225,8 @@ export function TaskManagementView({
           searchPlaceholder={t.companyInfo.taskManagement.searchPlaceholder}
           onSearchChange={value => { setSearchQuery(value); setCurrentPage(1) }}
           filters={statusFilterControl}
-          activeFilterCount={Number(Boolean(searchQuery.trim())) + Number(statusFilter !== 'all')}
-          onResetFilters={() => { setSearchQuery(''); setStatusFilter('all'); setCurrentPage(1) }}
+          activeFilterCount={Number(Boolean(searchQuery.trim())) + Number(statusFilter.length > 0)}
+          onResetFilters={() => { setSearchQuery(''); setStatusFilter([]); setCurrentPage(1) }}
           createLabel={t.companyInfo.taskManagement.newTask}
           onCreate={onCreateTask}
           selecting={mobileSelecting}

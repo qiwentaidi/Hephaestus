@@ -1110,6 +1110,8 @@ export const en: Locale = {
     clear: "Clear",
     select: "Select",
     selectAll: "Select All",
+    selectedCount: "{count} selected",
+    remove: "Remove",
     upload: "Upload",
     download: "Download",
     preview: "Preview",

@@ -1108,6 +1108,8 @@ export const zh = {
     clear: "清空",
     select: "选择",
     selectAll: "全选",
+    selectedCount: "已选 {count} 项",
+    remove: "移除",
     upload: "上传",
     download: "下载",
     preview: "预览",

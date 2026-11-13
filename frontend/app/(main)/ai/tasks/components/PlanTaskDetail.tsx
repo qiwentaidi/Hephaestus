@@ -49,7 +49,7 @@ export function PlanTaskDetail({ item, rows, error, refreshing, onRefresh, proje
   const router = useRouter()
   const [openingController, setOpeningController] = useState(false)
   const [query, setQuery] = useState('')
-  const [status, setStatus] = useState('all')
+  const [statusFilter, setStatusFilter] = useState<string[]>([])
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [selectedId, setSelectedId] = useState<string>()
@@ -67,7 +67,7 @@ export function PlanTaskDetail({ item, rows, error, refreshing, onRefresh, proje
   const items = rows?.items || []
   const needle = query.trim()
   const result = searchResult?.query === needle ? searchResult : undefined
-  const filtered = (needle ? result?.items || [] : items).filter(row => status === 'all' || row.status === status)
+  const filtered = (needle ? result?.items || [] : items).filter(row => statusFilter.length === 0 || statusFilter.includes(row.status))
   const currentPage = Math.min(page, Math.max(1, Math.ceil(filtered.length / pageSize)))
   const pageItems = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize)
   const selectedRow = items.find(value => value.id === selectedId)
@@ -113,6 +113,14 @@ export function PlanTaskDetail({ item, rows, error, refreshing, onRefresh, proje
   const filters = [...new Set(['running', 'pending', 'paused', 'failed', 'completed', ...Object.keys(statusCounts)])]
   const statusLabel = (value: string) => text.statuses[value as keyof typeof text.statuses] || value
   const resetPage = () => { setPage(1); listRef.current?.scrollTo({ top: 0 }) }
+  const toggleStatusFilter = (value: string) => {
+    setStatusFilter(prev => value === 'all'
+      ? []
+      : prev.includes(value)
+        ? prev.filter(item => item !== value)
+        : [...prev, value])
+    resetPage()
+  }
   const name = item.project?.name || projectName
   const active = run.status === 'planning' || run.status === 'waiting'
   const openController = async () => {
@@ -163,7 +171,10 @@ export function PlanTaskDetail({ item, rows, error, refreshing, onRefresh, proje
     </header>
     <div className="mt-4 flex shrink-0 flex-col gap-3">
       <div role="group" aria-label={text.statusFilter} className="flex min-w-0 max-w-full gap-3 overflow-x-auto border-b">
-        {['all', ...filters].map(value => <button key={value} type="button" aria-pressed={status === value} className={cn('shrink-0 border-b-2 px-1 py-2 text-xs outline-offset-2 focus-visible:outline-2 focus-visible:outline-foreground', status === value ? 'border-foreground font-medium text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground')} onClick={() => { setStatus(value); resetPage() }}>{value === 'all' ? t.aiBatch.all : statusLabel(value)} <span className="tabular-nums">{value === 'all' ? items.length : statusCounts[value] || 0}</span></button>)}
+        {['all', ...filters].map(value => {
+          const isActive = value === 'all' ? statusFilter.length === 0 : statusFilter.includes(value)
+          return <button key={value} type="button" aria-pressed={isActive} className={cn('shrink-0 border-b-2 px-1 py-2 text-xs outline-offset-2 focus-visible:outline-2 focus-visible:outline-foreground', isActive ? 'border-foreground font-medium text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground')} onClick={() => toggleStatusFilter(value)}>{value === 'all' ? t.aiBatch.all : statusLabel(value)} <span className="tabular-nums">{value === 'all' ? items.length : statusCounts[value] || 0}</span></button>
+        })}
       </div>
       <div className="relative"><Search className="pointer-events-none absolute left-3 top-2.5 size-4 text-muted-foreground" aria-hidden /><Input className="h-9 pl-9" aria-label={text.searchItems} placeholder={text.searchItems} value={query} onChange={event => { setQuery(event.target.value); if (event.target.value.trim() !== needle) setSearchResult(undefined); resetPage() }} /></div>
     </div>
@@ -191,7 +202,7 @@ export function PlanTaskDetail({ item, rows, error, refreshing, onRefresh, proje
             <Button variant="outline" size="sm" className="mt-3" onClick={() => { setSearchResult(undefined); setSearchAttempt(value => value + 1) }}>{t.aiBatch.retryLoad}</Button>
           </> : <>
             <p role="status">{items.length ? text.noMatchingItems : text.noItems}</p>
-            {items.length > 0 && <Button variant="outline" size="sm" className="mt-3" onClick={() => { setQuery(''); setSearchResult(undefined); setStatus('all'); resetPage() }}>{t.aiBatch.clearFilters}</Button>}
+            {items.length > 0 && <Button variant="outline" size="sm" className="mt-3" onClick={() => { setQuery(''); setSearchResult(undefined); setStatusFilter([]); resetPage() }}>{t.aiBatch.clearFilters}</Button>}
           </>}
       </div>}
     </div>

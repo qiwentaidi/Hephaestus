@@ -8,7 +8,7 @@ import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { MultiSelectFilter } from '@/components/ui/multi-select-filter'
 import { Badge } from '@/components/ui/badge'
 import { Spinner } from '@/components/ui/spinner'
 import { Empty, EmptyDescription } from '@/components/ui/empty'
@@ -51,7 +51,7 @@ export default function TaskManagement() {
   const planActionLock = useRef(false)
   const [selected, setSelected] = useState<string[]>([])
   const [query, setQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState<string[]>([])
   const [kindFilter, setKindFilter] = useState('all')
   const [creating, setCreating] = useState(false)
   const [copySource, setCopySource] = useState<AIBatchQueue>()
@@ -173,7 +173,7 @@ export default function TaskManagement() {
     : [task.name, task.plan?.run.objective, projectName(task.projectId)]
   const visibleTasks = unifiedTasks.filter(task => {
     if (kindFilter !== 'all' && task.kind !== kindFilter) return false
-    if (statusFilter !== 'all' && taskStatusGroup(task.kind, task.status) !== statusFilter) return false
+    if (statusFilter.length > 0 && !statusFilter.includes(taskStatusGroup(task.kind, task.status))) return false
     return !needle || task.plan?.planItemMatch || taskText(task).filter(Boolean).join(' ').toLocaleLowerCase().includes(needle)
   })
   const selectedTask = visibleTasks.find(task => task.key === selectedTaskKey) || visibleTasks[0]
@@ -338,7 +338,17 @@ export default function TaskManagement() {
       <h1 className="text-2xl font-semibold tracking-tight">{l.title}</h1>
       <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto">
         <div className="relative min-w-44 flex-1 basis-full sm:basis-auto xl:w-56"><Search className="pointer-events-none absolute left-3 top-3 size-4 text-muted-foreground" aria-hidden /><Input aria-label={l.search} placeholder={l.search} value={query} onChange={e => setQuery(e.target.value)} className="pl-9" /></div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger aria-label={l.allStates} className="w-32"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{l.allStates}</SelectItem>{Object.entries(l.taskStatus).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select>
+        <MultiSelectFilter
+          values={statusFilter}
+          options={Object.entries(l.taskStatus).map(([value, label]) => ({ value, label }))}
+          allLabel={l.allStates}
+          countLabel={t.common.selectedCount}
+          removeLabel={t.common.remove}
+          clearLabel={t.common.clear}
+          ariaLabel={l.allStates}
+          onChange={setStatusFilter}
+          className="w-32"
+        />
         <Button variant="ghost" size="icon" aria-label={l.refresh} title={l.refresh} disabled={refreshing || rowsLoading} onClick={() => void refresh(true)}><RefreshCw className={cn('size-4', (refreshing || rowsLoading) && 'motion-safe:animate-spin')} /></Button>
         <Button disabled={busy} onClick={() => openCreate()}><Plus className="size-4" />{l.newQueue}</Button>
       </div>
@@ -386,7 +396,7 @@ export default function TaskManagement() {
               {task.queue ? queueMenu(task.queue) : task.plan ? planMenu(task.plan) : null}
             </div>
           })}
-          {!visibleTasks.length && <Empty className="min-h-48"><EmptyDescription>{unifiedTasks.length ? l.noMatches : l.empty}</EmptyDescription>{unifiedTasks.length > 0 && <Button variant="outline" onClick={() => { setQuery(''); setStatusFilter('all'); setKindFilter('all') }}>{l.clearFilters}</Button>}</Empty>}
+          {!visibleTasks.length && <Empty className="min-h-48"><EmptyDescription>{unifiedTasks.length ? l.noMatches : l.empty}</EmptyDescription>{unifiedTasks.length > 0 && <Button variant="outline" onClick={() => { setQuery(''); setStatusFilter([]); setKindFilter('all') }}>{l.clearFilters}</Button>}</Empty>}
         </div>
       </section>
       <section aria-label={l.detail} ref={detailScroll} className="h-[max(28rem,calc(100dvh-17rem))] min-h-0 min-w-0 shrink-0 overflow-hidden rounded-xl border bg-card/30 md:h-[max(32rem,calc(100dvh-12rem))] xl:h-auto">
@@ -398,7 +408,7 @@ export default function TaskManagement() {
       </section>
     </div>}
     {storageProject && <ProjectStorageDialog key={storageProject.id} project={storageProject} onClose={() => setStorageProject(null)} />}
-    {creating && <TaskCreateDialog projects={projects} projectId={detail?.projectId} source={copySource} planSource={copyPlanSource} onClose={() => setCreating(false)} onCreated={queue => { setCreating(false); setQueues(prev => [queue, ...prev]); setQuery(''); setStatusFilter('all'); setKindFilter('all'); chooseQueue(queue); toast.success(l.created); void refresh(true); void refreshProjects() }} onPlanCreated={plan => { setCreating(false); setSelectedTaskKey(`plan:${plan.run.id}`); setQuery(''); setStatusFilter('all'); setKindFilter('all'); toast.success(p.createCreated); void refresh(true); void refreshProjects() }} />}
+    {creating && <TaskCreateDialog projects={projects} projectId={detail?.projectId} source={copySource} planSource={copyPlanSource} onClose={() => setCreating(false)} onCreated={queue => { setCreating(false); setQueues(prev => [queue, ...prev]); setQuery(''); setStatusFilter([]); setKindFilter('all'); chooseQueue(queue); toast.success(l.created); void refresh(true); void refreshProjects() }} onPlanCreated={plan => { setCreating(false); setSelectedTaskKey(`plan:${plan.run.id}`); setQuery(''); setStatusFilter([]); setKindFilter('all'); toast.success(p.createCreated); void refresh(true); void refreshProjects() }} />}
     <AlertDialog open={deleteIds.length > 0} onOpenChange={open => { if (!open && !busy) setDeleteIds([]) }}>
       <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{countLabel(l.deleteConfirm, deleteIds.length)}</AlertDialogTitle><AlertDialogDescription>{l.deleteScope}</AlertDialogDescription></AlertDialogHeader>
         <ul className="max-h-48 space-y-2 overflow-y-auto rounded-md border p-3 text-sm">{deleteTargets.map(queue => <li key={queue.id} className="flex items-center justify-between gap-3"><span className="break-words">{queue.name}</span>{badge(queue.status)}</li>)}</ul>

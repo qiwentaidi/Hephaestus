@@ -81,7 +81,7 @@ export function FingerprintCardView({
 }: FingerprintCardViewProps) {
   const { t } = useI18n()
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string[]>([])
   const [highRiskFilter, setHighRiskFilter] = useState<string>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -108,7 +108,7 @@ export function FingerprintCardView({
     try {
       const versionParam = version ? `&version=${version}` : ''
       const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ''
-      const statusParam = statusFilter !== 'all' ? `&status=${statusFilter}` : ''
+      const statusParam = statusFilter.length > 0 ? `&status=${statusFilter.join(',')}` : ''
       const highRiskParam = highRiskFilter !== 'all' ? `&highRisk=${highRiskFilter}` : ''
       const response = await fetchWithAuth(
         `/api/v1/webscan/task/${taskId}/fingerprints?page=${currentPage}&pageSize=${pageSize}${versionParam}${searchParam}${statusParam}${highRiskParam}`
@@ -182,8 +182,8 @@ export function FingerprintCardView({
       )
     }
 
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter((item) => matchesFingerprintStatus(item.status, statusFilter))
+    if (statusFilter.length > 0) {
+      filtered = filtered.filter((item) => statusFilter.some((filter) => matchesFingerprintStatus(item.status, filter)))
     }
 
     if (highRiskFilter === 'with_high_risk') {

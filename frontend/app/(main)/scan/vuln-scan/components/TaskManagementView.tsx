@@ -13,6 +13,7 @@ import { getStatusBadge } from '@/lib/status-badge'
 import { getRiskLevelBadgeClassName, type RiskLevel } from '@/lib/risk-level-badge'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
+import { MultiSelectFilter } from '@/components/ui/multi-select-filter'
 import {
 	Table,
 	TableBody,
@@ -23,13 +24,6 @@ import {
 } from '@/components/ui/table'
 import { PaginationPro } from '@/components/ui/pagination-pro'
 import { Plus, Trash2, Globe, Clock, Search, Target, Play, Pause, Square, Eye, RotateCcw, AlertTriangle, Server, FolderTree, Code2, FolderSearch, FileCode, Layers, Loader2, Captions, Bot, Pencil, MoreHorizontal } from 'lucide-react'
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '@/components/ui/select'
 import {
 	Tooltip,
 	TooltipContent,
@@ -103,8 +97,8 @@ export function TaskManagementView({
 	}
 	const router = useRouter()
 	const [searchQuery, setSearchQuery] = useState('')
-	const [statusFilter, setStatusFilter] = useState<string>('all')
-	const [typeFilter, setTypeFilter] = useState<string>('all')
+	const [statusFilter, setStatusFilter] = useState<string[]>([])
+	const [typeFilter, setTypeFilter] = useState<string[]>([])
 	const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
 	const [createDialogOpen, setCreateDialogOpen] = useState(false)
 	const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -187,31 +181,31 @@ export function TaskManagementView({
 		searchTimeoutRef.current = setTimeout(() => {
 			handleFilterChange({
 				search: value || undefined,
-				status: statusFilter !== 'all' ? statusFilter : undefined,
-				scanMode: typeFilter !== 'all' ? typeFilter : undefined,
+				status: statusFilter.length > 0 ? statusFilter.join(',') : undefined,
+				scanMode: typeFilter.length > 0 ? typeFilter.join(',') : undefined,
 			})
 		}, 300)
 	}
 
 	// 处理状态筛选变化
-	const handleStatusFilterChange = (value: string) => {
+	const handleStatusFilterChange = (values: string[]) => {
 		if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
-		setStatusFilter(value)
+		setStatusFilter(values)
 		handleFilterChange({
 			search: searchQuery || undefined,
-			status: value !== 'all' ? value : undefined,
-			scanMode: typeFilter !== 'all' ? typeFilter : undefined,
+			status: values.length > 0 ? values.join(',') : undefined,
+			scanMode: typeFilter.length > 0 ? typeFilter.join(',') : undefined,
 		})
 	}
 
 	// 处理类型筛选变化
-	const handleTypeFilterChange = (value: string) => {
+	const handleTypeFilterChange = (values: string[]) => {
 		if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
-		setTypeFilter(value)
+		setTypeFilter(values)
 		handleFilterChange({
 			search: searchQuery || undefined,
-			status: statusFilter !== 'all' ? statusFilter : undefined,
-			scanMode: value !== 'all' ? value : undefined,
+			status: statusFilter.length > 0 ? statusFilter.join(',') : undefined,
+			scanMode: values.length > 0 ? values.join(',') : undefined,
 		})
 	}
 
@@ -342,45 +336,47 @@ export function TaskManagementView({
 		return status === 'running' || status === 'recovering' || status === 'pausing'
 	}
 
-  const activeFilterCount = Number(Boolean(searchQuery.trim())) + Number(statusFilter !== 'all') + Number(typeFilter !== 'all')
+  const activeFilterCount = Number(Boolean(searchQuery.trim())) + Number(statusFilter.length > 0) + Number(typeFilter.length > 0)
   const filterControls = <>
-    <Select
-      value={statusFilter}
-      onValueChange={handleStatusFilterChange}
-    >
-      <SelectTrigger className={cn(isMobile ? "h-11 w-full" : "w-[140px]")}>
-        <SelectValue placeholder={t.vulnScan.taskManagement.allStatus} />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">{t.vulnScan.taskManagement.allStatus}</SelectItem>
-        <SelectItem value="pending">{t.vulnScan.statuses.pending}</SelectItem>
-        <SelectItem value="running">{t.vulnScan.statuses.running}</SelectItem>
-        <SelectItem value="paused">{t.vulnScan.statuses.paused}</SelectItem>
-        <SelectItem value="recovering">{t.vulnScan.statuses.recovering}</SelectItem>
-        <SelectItem value="deleting">{t.vulnScan.statuses.deleting}</SelectItem>
-        <SelectItem value="completed">{t.vulnScan.statuses.completed}</SelectItem>
-        <SelectItem value="failed">{t.vulnScan.statuses.failed}</SelectItem>
-        <SelectItem value="cancelled">{t.vulnScan.statuses.cancelled}</SelectItem>
-      </SelectContent>
-    </Select>
-    <Select
-      value={typeFilter}
-      onValueChange={handleTypeFilterChange}
-    >
-      <SelectTrigger className={cn(isMobile ? "h-11 w-full" : "w-[140px]")}>
-        <SelectValue placeholder={t.vulnScan.taskManagement.allTypes} />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">{t.vulnScan.taskManagement.allTypes}</SelectItem>
-        <SelectItem value={ScanType.Subdomain}>{t.vulnScan.taskManagement.subdomain}</SelectItem>
-        <SelectItem value={ScanType.WebScan}>{t.vulnScan.taskManagement.webscan}</SelectItem>
-        <SelectItem value={ScanType.PortScan}>{t.vulnScan.taskManagement.portscan}</SelectItem>
-        <SelectItem value={ScanType.Crack}>{t.vulnScan.taskManagement.crack}</SelectItem>
-        <SelectItem value={ScanType.DirScan}>{t.vulnScan.taskManagement.dirscan}</SelectItem>
-        <SelectItem value={ScanType.JsScan}>{t.vulnScan.taskManagement.jsscan}</SelectItem>
-        <SelectItem value={ScanType.Combination}>{t.vulnScan.taskManagement.combination}</SelectItem>
-      </SelectContent>
-    </Select></>
+    <MultiSelectFilter
+      values={statusFilter}
+      options={[
+        { value: 'pending', label: t.vulnScan.statuses.pending },
+        { value: 'running', label: t.vulnScan.statuses.running },
+        { value: 'paused', label: t.vulnScan.statuses.paused },
+        { value: 'recovering', label: t.vulnScan.statuses.recovering },
+        { value: 'deleting', label: t.vulnScan.statuses.deleting },
+        { value: 'completed', label: t.vulnScan.statuses.completed },
+        { value: 'failed', label: t.vulnScan.statuses.failed },
+        { value: 'cancelled', label: t.vulnScan.statuses.cancelled },
+      ]}
+      allLabel={t.vulnScan.taskManagement.allStatus}
+      countLabel={t.common.selectedCount}
+      removeLabel={t.common.remove}
+      clearLabel={t.common.clear}
+      ariaLabel={t.vulnScan.taskManagement.allStatus}
+      onChange={handleStatusFilterChange}
+      className={isMobile ? 'h-11 w-full' : 'w-[140px]'}
+    />
+    <MultiSelectFilter
+      values={typeFilter}
+      options={[
+        { value: ScanType.Subdomain, label: t.vulnScan.taskManagement.subdomain },
+        { value: ScanType.WebScan, label: t.vulnScan.taskManagement.webscan },
+        { value: ScanType.PortScan, label: t.vulnScan.taskManagement.portscan },
+        { value: ScanType.Crack, label: t.vulnScan.taskManagement.crack },
+        { value: ScanType.DirScan, label: t.vulnScan.taskManagement.dirscan },
+        { value: ScanType.JsScan, label: t.vulnScan.taskManagement.jsscan },
+        { value: ScanType.Combination, label: t.vulnScan.taskManagement.combination },
+      ]}
+      allLabel={t.vulnScan.taskManagement.allTypes}
+      countLabel={t.common.selectedCount}
+      removeLabel={t.common.remove}
+      clearLabel={t.common.clear}
+      ariaLabel={t.vulnScan.taskManagement.allTypes}
+      onChange={handleTypeFilterChange}
+      className={isMobile ? 'h-11 w-full' : 'w-[140px]'}
+    /></>
   const renderTaskName = (task: WebScanTaskSummary) => <><div className={cn('flex min-w-0 items-center gap-1', !isMobile && 'max-w-[320px] justify-center mx-auto', editingTask?.id === task.id && 'w-full')}>
       {task.createdByAI && editingTask?.id !== task.id && (
         <Tooltip>
@@ -520,7 +516,7 @@ export function TaskManagementView({
           activeFilterCount={activeFilterCount}
           onResetFilters={() => {
             if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
-            setSearchQuery(''); setStatusFilter('all'); setTypeFilter('all')
+            setSearchQuery(''); setStatusFilter([]); setTypeFilter([])
             handleFilterChange({ search: undefined, status: undefined, scanMode: undefined })
           }}
           createLabel={t.vulnScan.newTask}
