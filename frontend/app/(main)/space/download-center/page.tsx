@@ -451,6 +451,35 @@ export default function ReportManagementPage() {
   const aiSelectionKey = selectedAIProjectList.map((project) => project.id).sort().join('|')
   const aiSelectionKeyRef = useRef('')
 
+  const webscanPageSelectedCount = webscanTasks.filter((task) => Boolean(selectedWebscanTaskMap[webscanTaskKey(task)])).length
+  const allWebscanPageSelected = webscanTasks.length > 0 && webscanPageSelectedCount === webscanTasks.length
+  const someWebscanPageSelected = webscanPageSelectedCount > 0 && !allWebscanPageSelected
+  const toggleWebscanPageSelection = (checked: boolean) => {
+    setSelectedWebscanTaskMap((prev) => {
+      const next = { ...prev }
+      for (const task of webscanTasks) {
+        const key = webscanTaskKey(task)
+        if (checked) next[key] = task
+        else delete next[key]
+      }
+      return next
+    })
+  }
+
+  const companyPageSelectedCount = companyTasks.filter((task) => Boolean(selectedCompanyTaskMap[task.id])).length
+  const allCompanyPageSelected = companyTasks.length > 0 && companyPageSelectedCount === companyTasks.length
+  const someCompanyPageSelected = companyPageSelectedCount > 0 && !allCompanyPageSelected
+  const toggleCompanyPageSelection = (checked: boolean) => {
+    setSelectedCompanyTaskMap((prev) => {
+      const next = { ...prev }
+      for (const task of companyTasks) {
+        if (checked) next[task.id] = task
+        else delete next[task.id]
+      }
+      return next
+    })
+  }
+
   const canExportSelectedCompanyTask = useMemo(() => {
     if (selectedCompanyTaskList.length === 0) return false
     return selectedCompanyTaskList.every((task) => canExportReportStatus(task.status))
@@ -1082,7 +1111,14 @@ export default function ReportManagementPage() {
               <Table className={mobileTable.table}>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[56px] text-center">{t.downloadCenter.vulnScan.select}</TableHead>
+                    <TableHead className="w-[56px] text-center">
+                      <Checkbox
+                        checked={allWebscanPageSelected ? true : someWebscanPageSelected ? 'indeterminate' : false}
+                        onCheckedChange={(checked) => toggleWebscanPageSelection(checked === true)}
+                        disabled={webscanLoading || webscanTasks.length === 0}
+                        aria-label={t.downloadCenter.vulnScan.selectPage}
+                      />
+                    </TableHead>
                     <TableHead>{t.downloadCenter.vulnScan.taskName}</TableHead>
                     <TableHead className="w-[120px]">{t.downloadCenter.vulnScan.riskLevel}</TableHead>
                     <TableHead>{t.downloadCenter.vulnScan.type}</TableHead>
@@ -1252,7 +1288,14 @@ export default function ReportManagementPage() {
               <Table className={mobileTable.table}>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[56px] text-center">{t.downloadCenter.vulnScan.select}</TableHead>
+                    <TableHead className="w-[56px] text-center">
+                      <Checkbox
+                        checked={allCompanyPageSelected ? true : someCompanyPageSelected ? 'indeterminate' : false}
+                        onCheckedChange={(checked) => toggleCompanyPageSelection(checked === true)}
+                        disabled={companyLoading || companyTasks.length === 0}
+                        aria-label={t.downloadCenter.vulnScan.selectPage}
+                      />
+                    </TableHead>
                     <TableHead>任务名</TableHead>
                     <TableHead>状态</TableHead>
                     <TableHead>进度</TableHead>
@@ -1386,6 +1429,7 @@ export default function ReportManagementPage() {
                               : {},
                           )
                         }}
+                        disabled={aiLoading || aiProjects.length === 0}
                         aria-label={t.downloadCenter.aiWorkbench.selectAll}
                       />
                     </TableHead>

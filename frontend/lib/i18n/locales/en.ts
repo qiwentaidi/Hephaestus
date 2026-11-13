@@ -6394,6 +6394,7 @@ export const en: Locale = {
       pendingHint:
         "Some selected tasks are in a non-exportable status. Only completed, success, paused, and cancelled are supported.",
       select: "Select",
+      selectPage: "Select current page",
       taskName: "Task Name",
       riskLevel: "Risk Level",
       resultCount: "Results",

@@ -6246,6 +6246,7 @@ export const zh = {
       pendingHint:
         "所选任务中存在不可导出状态。仅支持 completed、success、paused、cancelled 状态。",
       select: "选择",
+      selectPage: "全选本页",
       taskName: "任务名",
       riskLevel: "风险等级",
       resultCount: "结果数",
