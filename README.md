@@ -559,13 +559,6 @@ docker exec hephaestus tail -n 100 /var/lib/hephaestus/logs/postgresql.log
 </details>
 
 <details>
-<summary><b>AI 本地命令无法执行</b></summary>
-
-AI 会话中的本地命令和交互终端以容器为隔离边界，与 ARTEX 一致，不再依赖 `bwrap`、`sandbox-exec` 或 user namespace；`Write`/`Edit` 仍限制在会话工作目录内，遗留文件可在界面里回收。命令的副作用由「工具拦截规则」和审计约束；需要隔离网络时开启 Docker 出口网关。
-
-</details>
-
-<details>
 <summary><b>TCP 发现和 SYN 权限</b></summary>
 
 当前 TCP 发现默认使用 Connect 模式。选择 SYN 时检查系统权限、抓包依赖及 SYN 能力状态，需要时通过平台授权入口启用。

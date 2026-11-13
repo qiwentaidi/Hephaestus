@@ -559,13 +559,6 @@ Screenshots require a working Chromium browser and its runtime environment. On L
 </details>
 
 <details>
-<summary><b>AI local commands cannot run</b></summary>
-
-Local commands and interactive terminals in AI sessions use the container as the isolation boundary, matching ARTEX; they no longer depend on `bwrap`, `sandbox-exec`, or user namespaces. `Write`/`Edit` still stay inside the session working directory so leftovers remain removable from the UI. Side effects are governed by tool interception rules plus auditing, and the Docker egress gateway provides network isolation when enabled.
-
-</details>
-
-<details>
 <summary><b>TCP discovery and SYN permissions</b></summary>
 
 TCP discovery uses Connect mode by default. When choosing SYN mode, check system permissions, packet capture dependencies, and SYN capability status; enable the required permissions through the platform's authorization entry point when needed.
