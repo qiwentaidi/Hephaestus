@@ -1162,13 +1162,16 @@ func saveJSScanAPIAssetsForVulnScanTask(ctx context.Context, db *gorm.DB, taskID
 		var existing database.VulnScanJSResource
 		err := db.Where("task_id = ? AND version = ? AND url = ?", taskID, version, row.URL).First(&existing).Error
 		if err == nil {
-			err = db.Model(&existing).Updates(map[string]interface{}{
-				"content":       row.Content,
-				"response_code": row.ResponseCode,
-				"headers":       row.Headers,
-				"size":          row.Size,
-				"fetched_at":    row.FetchedAt,
-			}).Error
+			// 用结构体更新，headers 才会走 serializer:json；map 形式的
+			// Updates 不应用字段 serializer，会把 map 直接传给数据库驱动。
+			err = db.Model(&existing).Select("content", "response_code", "headers", "size", "fetched_at").
+				Updates(&database.VulnScanJSResource{
+					Content:      row.Content,
+					ResponseCode: row.ResponseCode,
+					Headers:      row.Headers,
+					Size:         row.Size,
+					FetchedAt:    row.FetchedAt,
+				}).Error
 		} else if err == gorm.ErrRecordNotFound {
 			err = db.Create(&row).Error
 		}
@@ -1199,15 +1202,17 @@ func saveJSScanAPIAssetsForVulnScanTask(ctx context.Context, db *gorm.DB, taskID
 		var existing database.VulnScanJSAPIResource
 		err := db.Where("task_id = ? AND version = ? AND url = ? AND method = ?", taskID, version, row.URL, row.Method).First(&existing).Error
 		if err == nil {
-			err = db.Model(&existing).Updates(map[string]interface{}{
-				"request_headers":  row.RequestHeaders,
-				"request_body":     row.RequestBody,
-				"response_headers": row.ResponseHeaders,
-				"response_body":    row.ResponseBody,
-				"response_code":    row.ResponseCode,
-				"headers":          row.Headers,
-				"fetched_at":       row.FetchedAt,
-			}).Error
+			err = db.Model(&existing).
+				Select("request_headers", "request_body", "response_headers", "response_body", "response_code", "headers", "fetched_at").
+				Updates(&database.VulnScanJSAPIResource{
+					RequestHeaders:  row.RequestHeaders,
+					RequestBody:     row.RequestBody,
+					ResponseHeaders: row.ResponseHeaders,
+					ResponseBody:    row.ResponseBody,
+					ResponseCode:    row.ResponseCode,
+					Headers:         row.Headers,
+					FetchedAt:       row.FetchedAt,
+				}).Error
 		} else if err == gorm.ErrRecordNotFound {
 			err = db.Create(&row).Error
 		}
