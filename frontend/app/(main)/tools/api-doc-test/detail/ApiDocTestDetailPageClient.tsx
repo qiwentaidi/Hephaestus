@@ -69,7 +69,14 @@ const taskStatusLabels = {
   cancelled: '已取消',
 }
 
-type LengthSortDirection = 'none' | 'asc' | 'desc'
+type ResultSortField = 'length' | 'status'
+type ResultSortDirection = 'asc' | 'desc'
+type ResultSort = { field: ResultSortField; direction: ResultSortDirection } | null
+
+const resultSortLabels: Record<ResultSortField, string> = {
+  status: '状态码',
+  length: '响应长度',
+}
 
 const methodClassName = (method: string) => {
   switch (method.toUpperCase()) {
@@ -123,6 +130,49 @@ const formatRawRequest = (row: APIDocResultRow) => {
   }
 }
 
+const sortHint = (label: string, direction: ResultSortDirection | null) => {
+  if (direction === 'desc') return `${label}：降序，点击切换为升序`
+  if (direction === 'asc') return `${label}：升序，点击取消排序`
+  return `点击按${label}降序排序`
+}
+
+// 整个表头单元格都可点击，箭头常显、排序生效时高亮，避免排序入口看起来像普通文字。
+const SortableHead = ({
+  field,
+  sort,
+  onSort,
+}: {
+  field: ResultSortField
+  sort: ResultSort
+  onSort: (field: ResultSortField) => void
+}) => {
+  const direction = sort && sort.field === field ? sort.direction : null
+  const SortIcon = direction === 'asc' ? ArrowUp : direction === 'desc' ? ArrowDown : ArrowUpDown
+  const label = resultSortLabels[field]
+  const hint = sortHint(label, direction)
+  return (
+    <TableHead
+      aria-sort={direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : 'none'}
+      className="p-0"
+    >
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        title={hint}
+        aria-label={hint}
+        className={cn(
+          'flex h-10 w-full items-center gap-1 px-2 text-left text-sm font-medium transition-colors',
+          'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+          direction ? 'text-primary' : 'text-foreground',
+        )}
+      >
+        <span className="truncate">{label}</span>
+        <SortIcon className={cn('h-3.5 w-3.5 shrink-0', direction ? undefined : 'opacity-40')} aria-hidden="true" />
+      </button>
+    </TableHead>
+  )
+}
+
 export default function ApiDocTestDetailPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -131,28 +181,25 @@ export default function ApiDocTestDetailPage() {
   const [results, setResults] = useState<APIDocResultRow[]>([])
   const [expandedRowId, setExpandedRowId] = useState('')
   const [loading, setLoading] = useState(false)
-  const [lengthSort, setLengthSort] = useState<LengthSortDirection>('none')
+  const [sort, setSort] = useState<ResultSort>(null)
 
   const taskIsActive = useMemo(() => activeStatuses.has(task?.status || ''), [task?.status])
 
   const sortedResults = useMemo(() => {
-    if (lengthSort === 'none') return results
+    if (!sort) return results
     return [...results].sort((left, right) => {
-      const leftLength = left.responseLength ?? 0
-      const rightLength = right.responseLength ?? 0
-      return lengthSort === 'asc' ? leftLength - rightLength : rightLength - leftLength
+      const leftValue = sort.field === 'length' ? left.responseLength ?? 0 : left.statusCode ?? 0
+      const rightValue = sort.field === 'length' ? right.responseLength ?? 0 : right.statusCode ?? 0
+      return sort.direction === 'asc' ? leftValue - rightValue : rightValue - leftValue
     })
-  }, [lengthSort, results])
+  }, [results, sort])
 
-  const toggleLengthSort = () => {
-    setLengthSort((current) => {
-      if (current === 'none') return 'desc'
-      if (current === 'desc') return 'asc'
-      return 'none'
+  const toggleSort = (field: ResultSortField) => {
+    setSort((current) => {
+      if (!current || current.field !== field) return { field, direction: 'desc' }
+      return current.direction === 'desc' ? { field, direction: 'asc' } : null
     })
   }
-
-  const LengthSortIcon = lengthSort === 'desc' ? ArrowDown : lengthSort === 'asc' ? ArrowUp : ArrowUpDown
 
   const forwardToRepeater = (row: APIDocResultRow) => {
     try {
@@ -263,6 +310,30 @@ export default function ApiDocTestDetailPage() {
           </div>
         ) : null}
 
+        {results.length > 0 ? (
+          <div className="flex items-center justify-end gap-2 md:hidden">
+            {(['status', 'length'] as const).map((field) => {
+              const direction = sort && sort.field === field ? sort.direction : null
+              const Icon = direction === 'asc' ? ArrowUp : direction === 'desc' ? ArrowDown : ArrowUpDown
+              return (
+                <Button
+                  key={field}
+                  variant="outline"
+                  size="sm"
+                  className={cn('h-8 gap-1', direction && 'border-primary/50 text-primary')}
+                  onClick={() => toggleSort(field)}
+                  aria-pressed={Boolean(direction)}
+                  aria-label={sortHint(resultSortLabels[field], direction)}
+                  title={sortHint(resultSortLabels[field], direction)}
+                >
+                  {resultSortLabels[field]}
+                  <Icon className={cn('h-3.5 w-3.5', direction ? undefined : 'opacity-50')} aria-hidden="true" />
+                </Button>
+              )
+            })}
+          </div>
+        ) : null}
+
         <div className="grid gap-3 md:hidden">
           {sortedResults.map((row) => {
             const expanded = expandedRowId === row.id
@@ -286,7 +357,7 @@ export default function ApiDocTestDetailPage() {
                       <div className="mt-0.5 truncate text-sm" title={row.summary || '-'}>{row.summary || '-'}</div>
                     </div>
                     <div>
-                      <div className="text-muted-foreground">长度</div>
+                      <div className="text-muted-foreground">响应长度</div>
                       <div className="mt-0.5 font-mono">{row.responseLength ?? 0}B</div>
                     </div>
                   </div>
@@ -337,8 +408,8 @@ export default function ApiDocTestDetailPage() {
               <col className="w-[44%]" />
               <col className="w-[90px]" />
               <col className="w-[18%]" />
-              <col className="w-[90px]" />
-              <col className="w-[90px]" />
+              <col className="w-[96px]" />
+              <col className="w-[104px]" />
               <col className="w-[160px]" />
             </colgroup>
             <TableHeader>
@@ -346,18 +417,8 @@ export default function ApiDocTestDetailPage() {
                 <TableHead>URL</TableHead>
                 <TableHead>请求方式</TableHead>
                 <TableHead>描述</TableHead>
-                <TableHead>状态码</TableHead>
-                <TableHead>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="-ml-3 h-8 gap-1 px-2"
-                    onClick={toggleLengthSort}
-                  >
-                    长度
-                    <LengthSortIcon className="h-3.5 w-3.5" />
-                  </Button>
-                </TableHead>
+                <SortableHead field="status" sort={sort} onSort={toggleSort} />
+                <SortableHead field="length" sort={sort} onSort={toggleSort} />
                 <TableHead>测试标签</TableHead>
               </TableRow>
             </TableHeader>
