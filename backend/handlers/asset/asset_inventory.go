@@ -310,7 +310,11 @@ func collectAssetInventory(db *gorm.DB, detailHost string) ([]AssetInventoryItem
 		}
 		return result[i].LastSeenAt.After(result[j].LastSeenAt)
 	})
-	return result, nil
+	scopes, err := loadAssetScopeArchiveIndex(db)
+	if err != nil {
+		return nil, err
+	}
+	return filterAssetInventoryByArchivedRoots(result, scopes), nil
 }
 
 type assetInventoryFilter struct {

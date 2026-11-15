@@ -74,14 +74,19 @@ func loadLedgerArchiveAssetTypes(ctx context.Context, db *gorm.DB, ids []string)
 	return types, nil
 }
 
-// applyLedgerEntityArchive archives or restores the standalone asset behind each
-// selected ledger row. Websites aggregate URL paths per origin, so a URL asset
-// always goes through ArchiveWebsite to keep the whole origin in sync.
-func applyLedgerEntityArchive(ctx context.Context, store assetstore.Store, items []ledgerEntitySelection, archived bool) (ledgerBatchArchiveResult, error) {
+// applyLedgerEntityArchive archives or restores the row behind each selection.
+// Individual assets keep their catalog archive semantics; root and port rows
+// use view-level scope markers so derived/aggregated rows remain actionable.
+// Websites aggregate URL paths per origin, so a URL asset always goes through
+// ArchiveWebsite to keep the whole origin in sync.
+func applyLedgerEntityArchive(ctx context.Context, db *gorm.DB, store assetstore.Store, items []ledgerEntitySelection, archived bool) (ledgerBatchArchiveResult, error) {
 	result := ledgerBatchArchiveResult{Action: ledgerArchiveActionLabel(archived), Failed: []ledgerBatchArchiveFailure{}}
 	assetIDs := make([]string, 0, len(items))
 	seen := make(map[string]struct{}, len(items))
 	for _, item := range items {
+		if isScopeArchiveSelection(item) {
+			continue
+		}
 		assetID := strings.TrimSpace(item.AssetID)
 		if assetID == "" {
 			continue
@@ -97,7 +102,26 @@ func applyLedgerEntityArchive(ctx context.Context, store assetstore.Store, items
 		return result, err
 	}
 	processed := make(map[string]struct{}, len(assetIDs))
+	processedScopes := make(map[string]struct{})
 	for _, item := range items {
+		if isScopeArchiveSelection(item) {
+			key := assetScopeSelectionKey(item)
+			if _, done := processedScopes[key]; done {
+				continue
+			}
+			processedScopes[key] = struct{}{}
+			category, value, canonicalErr := canonicalAssetScopeArchive(item)
+			if canonicalErr != nil {
+				result.Failed = append(result.Failed, ledgerBatchArchiveFailure{ID: ledgerSelectionLabel(item), Error: canonicalErr.Error()})
+				continue
+			}
+			if archiveErr := setAssetScopeArchive(ctx, db, category, value, archived); archiveErr != nil {
+				result.Failed = append(result.Failed, ledgerBatchArchiveFailure{ID: ledgerSelectionLabel(item), Error: archiveErr.Error()})
+				continue
+			}
+			result.Updated++
+			continue
+		}
 		assetID := strings.TrimSpace(item.AssetID)
 		if assetID == "" {
 			result.Skipped++
@@ -125,6 +149,26 @@ func applyLedgerEntityArchive(ctx context.Context, store assetstore.Store, items
 		result.Updated++
 	}
 	return result, nil
+}
+
+func isScopeArchiveSelection(item ledgerEntitySelection) bool {
+	if !item.Scope {
+		return false
+	}
+	switch strings.ToLower(strings.TrimSpace(item.Category)) {
+	case database.AssetScopeCategoryRoot, database.AssetScopeCategoryPort:
+		return true
+	default:
+		return false
+	}
+}
+
+func assetScopeSelectionKey(item ledgerEntitySelection) string {
+	category := strings.ToLower(strings.TrimSpace(item.Category))
+	if id := strings.TrimSpace(item.ID); id != "" {
+		return category + "\x00" + id
+	}
+	return category + "\x00" + strings.TrimSpace(item.Value) + "\x00" + strings.TrimSpace(item.Transport)
 }
 
 func ledgerSelectionLabel(item ledgerEntitySelection) string {
@@ -162,7 +206,7 @@ func BatchArchiveAssetLedgerEntitiesHandler(c *gin.Context) {
 		return
 	}
 	store := assetstore.Store{DB: db.WithContext(c.Request.Context())}
-	result, err := applyLedgerEntityArchive(c.Request.Context(), store, request.Items, archived)
+	result, err := applyLedgerEntityArchive(c.Request.Context(), db, store, request.Items, archived)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "资产不存在"})

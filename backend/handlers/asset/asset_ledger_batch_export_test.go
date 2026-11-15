@@ -29,6 +29,7 @@ func newLedgerTestDB(t *testing.T) *gorm.DB {
 		&database.UnifiedAssetObservation{},
 		&database.UnifiedAssetChange{},
 		&database.UnifiedAssetRelation{},
+		&database.AssetScopeArchive{},
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -195,17 +196,18 @@ func TestApplyLedgerEntityArchiveArchivesWebsiteOriginAndRestores(t *testing.T) 
 		t.Fatal(err)
 	}
 	items := []ledgerEntitySelection{
-		{ID: "root:example.com", Category: "root", AssetID: "root", Value: "example.com"},
+		{ID: "root:example.com", Category: "root", AssetID: "root", Value: "example.com", Scope: true},
 		{ID: "website:example", Category: "website", AssetID: "url-a", Value: "https://example.com"},
-		{ID: "port:example:443", Category: "port", AssetID: "root"},
-		{ID: "root:aggregate.example.com", Category: "root", Value: "aggregate.example.com"},
+		{ID: "port:example.com:443:tcp", Category: "port", AssetID: "root", Value: "example.com:443", Host: "example.com", Port: 443, Transport: "tcp", Scope: true},
+		{ID: "root:example.org", Category: "root", Value: "example.org", Scope: true},
+		{ID: "subdomain:missing.example.com", Category: "subdomain", Value: "missing.example.com"},
 		{ID: "ip:198.51.100.9", Category: "ip", AssetID: "missing", Value: "198.51.100.9"},
 	}
-	result, err := applyLedgerEntityArchive(context.Background(), store, items, true)
+	result, err := applyLedgerEntityArchive(context.Background(), db, store, items, true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Action != "archive" || result.Updated != 2 || result.Skipped != 1 || len(result.Failed) != 1 {
+	if result.Action != "archive" || result.Updated != 4 || result.Skipped != 1 || len(result.Failed) != 1 {
 		t.Fatalf("unexpected archive result: %#v", result)
 	}
 	if result.Failed[0].ID != "198.51.100.9" || result.Failed[0].Error == "" {
@@ -218,28 +220,35 @@ func TestApplyLedgerEntityArchiveArchivesWebsiteOriginAndRestores(t *testing.T) 
 		}
 		return assetRow.ArchivedAt != nil
 	}
-	for _, id := range []string{"root", "url-a", "url-b"} {
+	for _, id := range []string{"url-a", "url-b"} {
 		if !archived(id) {
 			t.Fatalf("asset %q should be archived", id)
 		}
 	}
-	for _, id := range []string{"sub", "ip"} {
+	for _, id := range []string{"root", "sub", "ip"} {
 		if archived(id) {
 			t.Fatalf("asset %q should stay active", id)
 		}
 	}
+	var scopeCount int64
+	if err := db.Model(&database.AssetScopeArchive{}).Count(&scopeCount).Error; err != nil || scopeCount != 3 {
+		t.Fatalf("unexpected scope archive count: count=%d err=%v", scopeCount, err)
+	}
 
-	restore, err := applyLedgerEntityArchive(context.Background(), store, items[:2], false)
+	restore, err := applyLedgerEntityArchive(context.Background(), db, store, items[:3], false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if restore.Action != "restore" || restore.Updated != 2 {
+	if restore.Action != "restore" || restore.Updated != 3 {
 		t.Fatalf("unexpected restore result: %#v", restore)
 	}
-	for _, id := range []string{"root", "url-a", "url-b"} {
+	for _, id := range []string{"url-a", "url-b"} {
 		if archived(id) {
 			t.Fatalf("asset %q should be restored", id)
 		}
+	}
+	if err := db.Model(&database.AssetScopeArchive{}).Where("category = ? AND value IN ?", "root", []string{"example.com"}).Count(&scopeCount).Error; err != nil || scopeCount != 0 {
+		t.Fatalf("root scope should be restored: count=%d err=%v", scopeCount, err)
 	}
 }
 

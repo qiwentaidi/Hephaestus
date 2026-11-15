@@ -186,7 +186,11 @@ func collectAssetCenterAggregatesWithDB(db *gorm.DB) ([]AssetCenterItem, error) 
 		}
 		return items[i].LastSeenAt.After(items[j].LastSeenAt)
 	})
-	return items, nil
+	scopes, err := loadAssetScopeArchiveIndex(db)
+	if err != nil {
+		return nil, err
+	}
+	return filterAssetCenterItemsByArchivedRoots(items, scopes), nil
 }
 
 func assetCenterMatchesKeyword(item AssetCenterItem, keyword string) bool {

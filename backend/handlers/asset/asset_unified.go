@@ -249,8 +249,11 @@ func GetUnifiedAssetHandler(c *gin.Context) {
 			}
 		}
 	}
+	isRootDomain := assetRow.Type == assetstore.TypeDomain &&
+		assetTopologyRootDomain(assetRow.CanonicalValue) == assetRow.CanonicalValue
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{
 		"asset": assetRow, "observations": observations, "sourceTasks": sourceTasks, "sources": sources,
+		"isRootDomain": isRootDomain,
 	}})
 }
 

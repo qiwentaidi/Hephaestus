@@ -196,7 +196,11 @@ func collectUnifiedAssetInventoryWithDB(db *gorm.DB, detailHost string) ([]Asset
 		result = append(result, *item)
 	}
 	sort.Slice(result, func(i, j int) bool { return result[i].LastSeenAt.After(result[j].LastSeenAt) })
-	return result, true, nil
+	scopes, err := loadAssetScopeArchiveIndex(db)
+	if err != nil {
+		return nil, false, err
+	}
+	return filterAssetInventoryByArchivedRoots(result, scopes), true, nil
 }
 
 func metaScanType(tasks []database.VulnScanTask, taskID string, version int) string {

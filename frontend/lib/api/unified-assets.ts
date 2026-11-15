@@ -145,6 +145,10 @@ export interface AssetLedgerEntity {
   status: string
   verification: string
   archived?: boolean
+  scopeArchived?: boolean
+  archiveSubdomainCount?: number
+  archivePortCount?: number
+  archiveWebsiteCount?: number
 }
 
 export interface AssetLedgerEntityCounts {
@@ -197,6 +201,7 @@ export function getUnifiedAssetDetail(id: string, signal?: AbortSignal) {
     observations: UnifiedAssetObservation[]
     sourceTasks?: UnifiedAssetSourceTask[]
     sources?: string[]
+    isRootDomain?: boolean
   }>(`/${encodeURIComponent(id)}`, signal)
 }
 
@@ -288,6 +293,10 @@ export interface AssetLedgerEntityRef {
   category: string
   assetId?: string
   value?: string
+  host?: string
+  port?: number
+  transport?: string
+  scope?: boolean
 }
 
 export interface AssetLedgerBatchArchiveResult {

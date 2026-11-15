@@ -37,10 +37,16 @@ var ledgerCSVHeadersEN = []string{
 // the standalone unified asset behind the row; aggregated rows such as a root
 // domain built only from subdomains have no standalone record.
 type ledgerEntitySelection struct {
-	ID       string `json:"id"`
-	Category string `json:"category"`
-	AssetID  string `json:"assetId"`
-	Value    string `json:"value"`
+	ID        string `json:"id"`
+	Category  string `json:"category"`
+	AssetID   string `json:"assetId"`
+	Value     string `json:"value"`
+	Host      string `json:"host,omitempty"`
+	Port      int    `json:"port,omitempty"`
+	Transport string `json:"transport,omitempty"`
+	// Scope marks a view-level root/port archive rather than a catalog asset
+	// archive. The UI sets it for aggregate rows and for scope restores.
+	Scope bool `json:"scope,omitempty"`
 }
 
 func ledgerCSVHeaders(lang string) []string {

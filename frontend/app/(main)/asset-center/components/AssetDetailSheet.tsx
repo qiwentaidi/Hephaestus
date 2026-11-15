@@ -77,6 +77,7 @@ export function AssetDetailSheet({
   const [relatedAssets, setRelatedAssets] = useState<Record<string, UnifiedAsset>>({})
   const [sourceTasks, setSourceTasks] = useState<UnifiedAssetSourceTask[]>([])
   const [sources, setSources] = useState<string[]>([])
+  const [isRootDomain, setIsRootDomain] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [editing, setEditing] = useState(false)
@@ -111,6 +112,7 @@ export function AssetDetailSheet({
       setObservations(detail.observations || [])
       setSourceTasks(detail.sourceTasks || [])
       setSources(detail.sources || [])
+      setIsRootDomain(Boolean(detail.isRootDomain))
       setRelations(relationData.items || [])
       const ids = Array.from(new Set(relationData.items.flatMap((relation) => [relation.fromAssetId, relation.toAssetId]).filter((id) => id && id !== assetId)))
       const resolved = await Promise.all(ids.map(async (id) => {
@@ -367,6 +369,7 @@ export function AssetDetailSheet({
                   </DropdownMenu>
                 ) : null}
               </div>
+              {isRootDomain ? <p className="text-xs text-muted-foreground">{ledger.detailRootScopeHint}</p> : null}
             </div>
 
             <Tabs value={detailTab} onValueChange={setDetailTab} className="space-y-4">
@@ -405,11 +408,11 @@ export function AssetDetailSheet({
                 <dl className="grid grid-cols-2 gap-3 text-xs">
                   <div><dt className="text-muted-foreground">{text.firstSeen}</dt><dd className="mt-1">{formatDate(asset.firstSeenAt, locale)}</dd></div>
                   <div><dt className="text-muted-foreground">{text.lastSeen}</dt><dd className="mt-1">{formatDate(asset.lastSeenAt, locale)}</dd></div>
-                  <div><dt className="text-muted-foreground">{text.confidence}</dt><dd className="mt-1">{asset.confidence || '—'}</dd></div>
-                  <div><dt className="text-muted-foreground">{text.scope}</dt><dd className="mt-1 break-all">{asset.scopeKey || '—'}</dd></div>
-                  <div><dt className="text-muted-foreground">{ledger.group}</dt><dd className="mt-1 break-all">{asset.groupKey || '—'}</dd></div>
-                  <div className="col-span-2"><dt className="text-muted-foreground">{ledger.tags}</dt><dd className="mt-1 flex flex-wrap gap-1">{(asset.tags || []).length ? (asset.tags || []).map((tag) => <Badge key={tag} variant="outline" className="font-normal">{tag}</Badge>) : '—'}</dd></div>
-                  <div className="col-span-2"><dt className="text-muted-foreground">{ledger.notes}</dt><dd className="mt-1 whitespace-pre-wrap break-words">{asset.notes || '—'}</dd></div>
+                  {asset.groupKey ? <div><dt className="text-muted-foreground">{ledger.group}</dt><dd className="mt-1 break-all">{asset.groupKey}</dd></div> : null}
+                  {(asset.tags || []).length ? (
+                    <div className="col-span-2"><dt className="text-muted-foreground">{ledger.tags}</dt><dd className="mt-1 flex flex-wrap gap-1">{(asset.tags || []).map((tag) => <Badge key={tag} variant="outline" className="font-normal">{tag}</Badge>)}</dd></div>
+                  ) : null}
+                  {asset.notes ? <div className="col-span-2"><dt className="text-muted-foreground">{ledger.notes}</dt><dd className="mt-1 whitespace-pre-wrap break-words">{asset.notes}</dd></div> : null}
                   <div className="col-span-2"><dt className="text-muted-foreground">{ledger.sources}</dt><dd className="mt-1 flex flex-wrap gap-1">{sources.length ? sources.map((source) => <Badge key={source} variant="secondary" className="font-normal">{sourceLabel(source)}</Badge>) : '—'}</dd></div>
                 </dl>
               </TabsContent>

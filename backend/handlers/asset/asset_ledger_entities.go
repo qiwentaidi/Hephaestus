@@ -28,37 +28,41 @@ const (
 )
 
 type LedgerEntity struct {
-	ID                   string    `json:"id"`
-	Category             string    `json:"category"`
-	Value                string    `json:"value"`
-	DisplayValue         string    `json:"displayValue"`
-	Name                 string    `json:"name,omitempty"`
-	RootDomain           string    `json:"rootDomain,omitempty"`
-	Host                 string    `json:"host,omitempty"`
-	IPs                  []string  `json:"ips,omitempty"`
-	Domains              []string  `json:"domains,omitempty"`
-	Port                 int       `json:"port,omitempty"`
-	Protocol             string    `json:"protocol,omitempty"`
-	Transport            string    `json:"transport,omitempty"`
-	Service              string    `json:"service,omitempty"`
-	Title                string    `json:"title,omitempty"`
-	HTTPStatus           int       `json:"httpStatus,omitempty"`
-	Fingerprints         []string  `json:"fingerprints,omitempty"`
-	HighRiskFingerprints []string  `json:"highRiskFingerprints,omitempty"`
-	SubdomainCount       int       `json:"subdomainCount,omitempty"`
-	IPCount              int       `json:"ipCount,omitempty"`
-	PortCount            int       `json:"portCount,omitempty"`
-	WebsiteCount         int       `json:"websiteCount,omitempty"`
-	AssetID              string    `json:"assetId,omitempty"`
-	Sources              []string  `json:"sources"`
-	SourceTaskIDs        []string  `json:"sourceTaskIds"`
-	LastTaskID           string    `json:"lastTaskId,omitempty"`
-	LastTaskName         string    `json:"lastTaskName,omitempty"`
-	FirstSeenAt          time.Time `json:"firstSeenAt"`
-	LastSeenAt           time.Time `json:"lastSeenAt"`
-	Status               string    `json:"status"`
-	Verification         string    `json:"verification"`
-	Archived             bool      `json:"archived"`
+	ID                    string    `json:"id"`
+	Category              string    `json:"category"`
+	Value                 string    `json:"value"`
+	DisplayValue          string    `json:"displayValue"`
+	Name                  string    `json:"name,omitempty"`
+	RootDomain            string    `json:"rootDomain,omitempty"`
+	Host                  string    `json:"host,omitempty"`
+	IPs                   []string  `json:"ips,omitempty"`
+	Domains               []string  `json:"domains,omitempty"`
+	Port                  int       `json:"port,omitempty"`
+	Protocol              string    `json:"protocol,omitempty"`
+	Transport             string    `json:"transport,omitempty"`
+	Service               string    `json:"service,omitempty"`
+	Title                 string    `json:"title,omitempty"`
+	HTTPStatus            int       `json:"httpStatus,omitempty"`
+	Fingerprints          []string  `json:"fingerprints,omitempty"`
+	HighRiskFingerprints  []string  `json:"highRiskFingerprints,omitempty"`
+	SubdomainCount        int       `json:"subdomainCount,omitempty"`
+	IPCount               int       `json:"ipCount,omitempty"`
+	PortCount             int       `json:"portCount,omitempty"`
+	WebsiteCount          int       `json:"websiteCount,omitempty"`
+	AssetID               string    `json:"assetId,omitempty"`
+	Sources               []string  `json:"sources"`
+	SourceTaskIDs         []string  `json:"sourceTaskIds"`
+	LastTaskID            string    `json:"lastTaskId,omitempty"`
+	LastTaskName          string    `json:"lastTaskName,omitempty"`
+	FirstSeenAt           time.Time `json:"firstSeenAt"`
+	LastSeenAt            time.Time `json:"lastSeenAt"`
+	Status                string    `json:"status"`
+	Verification          string    `json:"verification"`
+	Archived              bool      `json:"archived"`
+	ScopeArchived         bool      `json:"scopeArchived,omitempty"`
+	ArchiveSubdomainCount int       `json:"archiveSubdomainCount"`
+	ArchivePortCount      int       `json:"archivePortCount"`
+	ArchiveWebsiteCount   int       `json:"archiveWebsiteCount"`
 }
 
 type LedgerEntityCounts struct {
@@ -712,10 +716,25 @@ func buildLedgerEntitySet(db *gorm.DB, includeArchived bool) (ledgerEntitySet, e
 			root.LastSeenAt = entity.LastSeenAt
 		}
 	}
+	archivePortCounts := map[string]int{}
+	for _, entity := range set.ports {
+		if isDomainScopeHost(entity.Host) && entity.RootDomain != "" {
+			archivePortCounts[entity.RootDomain]++
+		}
+	}
+	archiveWebsiteCounts := map[string]int{}
+	for _, entity := range set.websites {
+		if isDomainScopeHost(entity.Host) && entity.RootDomain != "" {
+			archiveWebsiteCounts[entity.RootDomain]++
+		}
+	}
 	for value, root := range rootMap {
 		root.IPs = uniqueStrings(root.IPs)
 		root.IPCount = len(root.IPs)
 		root.SubdomainCount = len(rootSubdomainHosts[value])
+		root.ArchiveSubdomainCount = root.SubdomainCount
+		root.ArchivePortCount = archivePortCounts[value]
+		root.ArchiveWebsiteCount = archiveWebsiteCounts[value]
 		if root.Status == "" {
 			root.Status = "active"
 		}
@@ -725,22 +744,12 @@ func buildLedgerEntitySet(db *gorm.DB, includeArchived bool) (ledgerEntitySet, e
 		set.roots = append(set.roots, *root)
 	}
 
-	sort.Slice(set.roots, func(i, j int) bool { return set.roots[i].Value < set.roots[j].Value })
-	sort.Slice(set.subdomains, func(i, j int) bool { return set.subdomains[i].Value < set.subdomains[j].Value })
-	sort.Slice(set.ips, func(i, j int) bool { return set.ips[i].Value < set.ips[j].Value })
-	sort.Slice(set.ports, func(i, j int) bool {
-		if set.ports[i].Port == set.ports[j].Port {
-			return set.ports[i].Host < set.ports[j].Host
-		}
-		return set.ports[i].Port < set.ports[j].Port
-	})
-	sort.Slice(set.websites, func(i, j int) bool {
-		if set.websites[i].LastSeenAt.Equal(set.websites[j].LastSeenAt) {
-			return set.websites[i].Value < set.websites[j].Value
-		}
-		return set.websites[i].LastSeenAt.After(set.websites[j].LastSeenAt)
-	})
-	return set, nil
+	sortLedgerEntitySet(&set)
+	scopes, err := loadAssetScopeArchiveIndex(db)
+	if err != nil {
+		return set, err
+	}
+	return applyAssetScopeArchivesToLedger(set, scopes, includeArchived), nil
 }
 
 func (set ledgerEntitySet) category(category LedgerEntityCategory) []LedgerEntity {

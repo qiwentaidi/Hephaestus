@@ -96,3 +96,24 @@ type UnifiedAssetChange struct {
 }
 
 func (UnifiedAssetChange) TableName() string { return "unified_asset_changes" }
+
+const (
+	AssetScopeCategoryRoot = "root"
+	AssetScopeCategoryPort = "port"
+)
+
+// AssetScopeArchive hides a derived ledger scope without touching the canonical
+// asset catalog. Root scopes hide a root domain's whole asset tree; port scopes
+// hide a single service endpoint. The rows are view state: deleting a source
+// task never removes them, and restoring simply deletes the marker.
+type AssetScopeArchive struct {
+	ID         string    `gorm:"primaryKey;column:id;type:varchar(80)" json:"id"`
+	ScopeKey   string    `gorm:"column:scope_key;type:varchar(255);not null;default:'global';uniqueIndex:idx_asset_scope_archive_identity,priority:1" json:"scopeKey"`
+	Category   string    `gorm:"column:category;type:varchar(20);not null;uniqueIndex:idx_asset_scope_archive_identity,priority:2" json:"category"`
+	Value      string    `gorm:"column:value;type:varchar(512);not null;uniqueIndex:idx_asset_scope_archive_identity,priority:3" json:"value"`
+	ArchivedAt time.Time `gorm:"column:archived_at;not null" json:"archivedAt"`
+	CreatedAt  time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP;index" json:"createdAt"`
+	UpdatedAt  time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP" json:"updatedAt"`
+}
+
+func (AssetScopeArchive) TableName() string { return "asset_scope_archives" }

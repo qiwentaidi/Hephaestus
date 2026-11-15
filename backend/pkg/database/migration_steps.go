@@ -194,6 +194,7 @@ func schemaModels() []any {
 		&UnifiedAssetObservation{},
 		&UnifiedAssetRelation{},
 		&UnifiedAssetChange{},
+		&AssetScopeArchive{},
 		&SecurityFinding{},
 		&FindingAssetLink{},
 		&AssetRisk{},

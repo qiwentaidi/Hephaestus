@@ -6,6 +6,7 @@ import {
   Archive,
   ChevronDown,
   Download,
+  Info,
   Plus,
   RefreshCw,
   RotateCcw,
@@ -15,6 +16,7 @@ import {
 } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -73,12 +75,28 @@ import { useI18n } from '@/lib/i18n'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import { AssetDetailSheet } from './AssetDetailSheet'
+import { SourceBadges } from './SourceBadges'
+import { AssetRootSheet } from './AssetRootSheet'
 import { AssetScanDialog } from './AssetScanDialog'
 
 const initialFilters = {
   keyword: '',
   status: 'all',
   source: 'all',
+}
+
+function scopeArchiveSummary(entities: AssetLedgerEntity[]) {
+  return entities.reduce(
+    (summary, entity) => {
+      if (entity.category !== 'root') return summary
+      summary.roots += 1
+      summary.subdomains += entity.archiveSubdomainCount ?? entity.subdomainCount ?? 0
+      summary.ports += entity.archivePortCount ?? entity.portCount ?? 0
+      summary.websites += entity.archiveWebsiteCount ?? entity.websiteCount ?? 0
+      return summary
+    },
+    { roots: 0, subdomains: 0, ports: 0, websites: 0 },
+  )
 }
 
 const assetLedgerCategories: AssetLedgerEntityCategory[] = ['root', 'ip', 'subdomain', 'port', 'website']
@@ -114,83 +132,7 @@ function AssetStatusBadge({ status }: { status: string }) {
   )
 }
 
-function VerificationBadge({ verification }: { verification?: string }) {
-  const { t } = useI18n()
-  const text = t.assetLedger
-  const value = verification || 'declared'
-  const labels: Record<string, string> = {
-    declared: text.declared,
-    observed: text.observed,
-    verified: text.verified,
-  }
-  const classes: Record<string, string> = {
-    declared: 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300',
-    observed: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-    verified: 'border-primary/30 bg-primary/10 text-primary',
-  }
-  return (
-    <Badge variant="outline" className={classes[value] || classes.declared}>
-      {labels[value] || value}
-    </Badge>
-  )
-}
 
-function SourceBadges({ sources }: { sources: string[] }) {
-  const { t } = useI18n()
-  const text = t.assetLedger
-  if (!sources.length) return <span className="text-muted-foreground">—</span>
-  const label = (source: string) => {
-    switch (source) {
-      case 'manual':
-        return text.sourceManual
-      case 'import':
-        return text.sourceImport
-      case 'portscan':
-        return text.sourcePortscan
-      case 'fingerprint':
-      case 'webscan':
-        return text.sourceFingerprint
-      case 'subdomain':
-        return text.sourceSubdomain
-      case 'dirscan':
-        return text.sourceDirscan
-      case 'jsscan':
-        return text.sourceJsscan
-      case 'jsscan-vulnerability':
-        return text.sourceJsscanVulnerability
-      case 'webscan-vulnerability':
-        return text.sourceVulnerability
-      case 'findings':
-        return text.sourceFindings
-      case 'ai':
-        return text.sourceAI
-      case 'fofa':
-        return text.sourceFofa
-      case 'hunter':
-        return text.sourceHunter
-      case 'quake':
-        return text.sourceQuake
-      case 'uncover':
-        return text.sourceUncover
-      default:
-        return source
-    }
-  }
-  return (
-    <div className="flex flex-wrap items-center gap-1">
-      {sources.slice(0, 3).map((source) => (
-        <Badge key={source} variant="secondary" className="font-normal">
-          {label(source)}
-        </Badge>
-      ))}
-      {sources.length > 3 ? (
-        <Badge variant="outline" className="font-normal" title={sources.slice(2).map(label).join(', ')}>
-          +{sources.length - 3}
-        </Badge>
-      ) : null}
-    </div>
-  )
-}
 
 export function AssetLedgerView() {
   const { t, language } = useI18n()
@@ -212,12 +154,16 @@ export function AssetLedgerView() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null)
+  const [selectedRoot, setSelectedRoot] = useState<AssetLedgerEntity | null>(null)
   const [selectedEntities, setSelectedEntities] = useState<Record<string, AssetLedgerEntity>>({})
   const [importOpen, setImportOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [scanOpen, setScanOpen] = useState(false)
   const [exporting, setExporting] = useState<'current' | 'all' | 'selected' | null>(null)
   const [batchAction, setBatchAction] = useState<'archive' | 'restore' | null>(null)
+  const [scopeDialog, setScopeDialog] = useState<{ mode: 'single' | 'batch'; entities: AssetLedgerEntity[] } | null>(null)
+  const [scopeAction, setScopeAction] = useState<'archive' | null>(null)
+  const [scopeError, setScopeError] = useState('')
 
   const updateFilter = (key: keyof typeof initialFilters, value: string) => {
     setLoading(true)
@@ -301,8 +247,73 @@ export function AssetLedgerView() {
     return counts[value]
   }
   const categories = assetLedgerCategories
+  const scopeDialogSummary = scopeDialog ? scopeArchiveSummary(scopeDialog.entities) : null
+
+  const applyScopeArchive = useCallback(async (entities: AssetLedgerEntity[], archived: boolean) => {
+    const result = await batchArchiveAssetLedger({
+      action: archived ? 'archive' : 'restore',
+      items: entities.map((entity) => ({
+        id: entity.id,
+        category: entity.category,
+        assetId: entity.assetId,
+        value: entity.value,
+        host: entity.host,
+        port: entity.port,
+        transport: entity.transport,
+        scope: true,
+      })),
+    })
+    const removed = new Set(entities.map((entity) => entity.id))
+    setSelectedEntities((previous) => {
+      const next = { ...previous }
+      for (const id of removed) delete next[id]
+      return next
+    })
+    setLoading(true)
+    setRefresh((value) => value + 1)
+    if (archived && selectedAssetId && entities.some((entity) => entity.assetId === selectedAssetId)) {
+      setSelectedAssetId(null)
+    }
+    return result
+  }, [selectedAssetId])
 
   const toggleArchive = useCallback(async (entity: AssetLedgerEntity, archived: boolean) => {
+    // Unarchived aggregate rows are archived by scope; archived scope rows are
+    // restored by scope. Root/port rows archived as part of their underlying
+    // asset (legacy host/website archive) fall through to the asset path.
+    const aggregateRow = entity.category === 'root' || entity.category === 'port'
+    if (aggregateRow && (!entity.archived || entity.scopeArchived)) {
+      if (entity.category === 'root' && archived) {
+        setScopeError('')
+        setScopeDialog({ mode: 'single', entities: [entity] })
+        return
+      }
+      try {
+        const result = await applyScopeArchive([entity], archived)
+        if (result.failed.length) {
+          toast.error(result.failed[0]?.error || t.common.updateFailed)
+          return
+        }
+        const template = entity.category === 'root'
+          ? (archived ? text.archiveRootSuccess : text.restoreRootSuccess)
+          : (archived ? text.archivePortSuccess : text.restorePortSuccess)
+        if (entity.category === 'root' && archived) {
+          const counts = scopeArchiveSummary([entity])
+          toast.success(
+            template
+              .replace('{value}', entity.value)
+              .replace('{subdomains}', String(counts.subdomains))
+              .replace('{ports}', String(counts.ports))
+              .replace('{websites}', String(counts.websites)),
+          )
+        } else {
+          toast.success(template.replace('{value}', entity.value))
+        }
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : t.common.updateFailed)
+      }
+      return
+    }
     if (!entity.assetId) return
     try {
       await updateAssetLedger(entity.assetId, { archived, website: entity.category === 'website' })
@@ -318,7 +329,7 @@ export function AssetLedgerView() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t.common.updateFailed)
     }
-  }, [selectedAssetId, t.common.updateFailed, text.archivedToast, text.restoredToast])
+  }, [applyScopeArchive, selectedAssetId, t.common.updateFailed, text])
 
   const refreshData = useCallback(() => {
     setLoading(true)
@@ -333,8 +344,8 @@ export function AssetLedgerView() {
   }
 
   const selectedList = Object.values(selectedEntities)
-  const archivableSelection = selectedList.filter((entity) => Boolean(entity.assetId) && !entity.archived)
-  const restorableSelection = selectedList.filter((entity) => Boolean(entity.assetId) && entity.archived)
+  const archivableSelection = selectedList.filter((entity) => !entity.archived)
+  const restorableSelection = selectedList.filter((entity) => entity.archived)
   const allFilteredCount = data?.filteredCounts
     ? data.filteredCounts.root + data.filteredCounts.ip + data.filteredCounts.subdomain
       + data.filteredCounts.port + data.filteredCounts.website
@@ -345,12 +356,21 @@ export function AssetLedgerView() {
     category: entity.category,
     assetId: entity.assetId,
     value: entity.value,
+    host: entity.host,
+    port: entity.port,
+    transport: entity.transport,
+    scope: Boolean(entity.scopeArchived) || (!entity.archived && (entity.category === 'root' || entity.category === 'port')),
   }))
 
   const batchArchiveSelection = async (archived: boolean) => {
     if (batchAction) return
     const targets = archived ? archivableSelection : restorableSelection
     if (!targets.length) return
+    if (archived && targets.some((entity) => entity.category === 'root')) {
+      setScopeError('')
+      setScopeDialog({ mode: 'batch', entities: targets })
+      return
+    }
     setBatchAction(archived ? 'archive' : 'restore')
     try {
       const result = await batchArchiveAssetLedger({
@@ -378,6 +398,42 @@ export function AssetLedgerView() {
       toast.error(err instanceof Error ? err.message : t.common.updateFailed)
     } finally {
       setBatchAction(null)
+    }
+  }
+
+  const confirmScopeArchive = async () => {
+    if (!scopeDialog || scopeAction) return
+    const targets = scopeDialog.entities
+    setScopeAction('archive')
+    setScopeError('')
+    try {
+      const result = await applyScopeArchive(targets, true)
+      const summary = text.batchResult
+        .replace('{updated}', String(result.updated))
+        .replace('{skipped}', String(result.skipped))
+      if (result.failed.length) {
+        setScopeError(text.batchFailed.replace('{count}', String(result.failed.length)))
+        toast.error(`${summary} · ${text.batchFailed.replace('{count}', String(result.failed.length))}`)
+        return
+      }
+      if (scopeDialog.mode === 'single') {
+        const entity = targets[0]
+        const counts = scopeArchiveSummary(targets)
+        toast.success(
+          text.archiveRootSuccess
+            .replace('{value}', entity.value)
+            .replace('{subdomains}', String(counts.subdomains))
+            .replace('{ports}', String(counts.ports))
+            .replace('{websites}', String(counts.websites)),
+        )
+      } else {
+        toast.success(summary)
+      }
+      setScopeDialog(null)
+    } catch (err) {
+      setScopeError(err instanceof Error ? err.message : t.common.updateFailed)
+    } finally {
+      setScopeAction(null)
     }
   }
 
@@ -527,36 +583,71 @@ export function AssetLedgerView() {
     </TableCell>
   )
 
+  const isEntityClickable = (entity: AssetLedgerEntity) => Boolean(entity.assetId) || entity.category === 'root'
+
+  const openEntity = (entity: AssetLedgerEntity) => {
+    if (entity.assetId) {
+      setSelectedAssetId(entity.assetId)
+      return
+    }
+    if (entity.category === 'root') {
+      setSelectedRoot(entity)
+    }
+  }
+
+  const viewRootSubdomains = (entity: AssetLedgerEntity) => {
+    setSelectedRoot(null)
+    setLoading(true)
+    setCategory('subdomain')
+    setFilters({ ...initialFilters, keyword: entity.value })
+    setPage(1)
+  }
+
+  const archiveRootFromSheet = (entity: AssetLedgerEntity) => {
+    setSelectedRoot(null)
+    void toggleArchive(entity, !entity.archived)
+  }
+
   const actionCell = (entity: AssetLedgerEntity) => {
-    const enabled = Boolean(entity.assetId)
-    const label = enabled ? (entity.archived ? text.restore : text.archive) : text.archiveUnavailable
-    const button = (
+    const label = entity.scopeArchived
+      ? (entity.category === 'root' ? text.restoreRoot : text.restorePort)
+      : entity.category === 'root'
+        ? (entity.archived ? text.restore : text.archiveRoot)
+        : entity.category === 'port'
+          ? (entity.archived ? text.restore : text.archivePort)
+          : (entity.archived ? text.restore : text.archive)
+    return (
       <Button
         variant="ghost"
         size="icon-sm"
-        disabled={!enabled}
-        title={enabled ? label : undefined}
-        aria-label={label}
+        title={label}
+        aria-label={`${label} ${entity.value}`}
         onClick={(event) => { event.stopPropagation(); void toggleArchive(entity, !entity.archived) }}
       >
         {entity.archived ? <RotateCcw className="size-4" /> : <Archive className="size-4" />}
       </Button>
     )
-    if (enabled) return button
+  }
+
+  const scopeBadge = (entity: AssetLedgerEntity) => {
+    if (!entity.scopeArchived) return null
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="inline-flex cursor-not-allowed" tabIndex={0}>{button}</span>
-        </TooltipTrigger>
-        <TooltipContent>{text.archiveUnavailable}</TooltipContent>
-      </Tooltip>
+      <Badge
+        variant="outline"
+        className="border-dashed border-muted-foreground/40 bg-transparent text-muted-foreground"
+      >
+        {entity.category === 'root' ? text.scopeBadgeRoot : text.scopeBadgePort}
+      </Badge>
     )
   }
 
   const valueCell = (entity: AssetLedgerEntity) => (
     <div className="min-w-0">
       {entity.name ? <p className="truncate text-sm font-medium">{entity.name}</p> : null}
-      <p className="break-all font-mono text-sm">{entity.displayValue || entity.value}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="break-all font-mono text-sm">{entity.displayValue || entity.value}</p>
+        {scopeBadge(entity)}
+      </div>
       {category !== 'port' && category !== 'website' && entity.host && entity.host !== entity.value ? <p className="mt-1 break-all text-xs text-muted-foreground">{entity.host}</p> : null}
     </div>
   )
@@ -650,7 +741,7 @@ export function AssetLedgerView() {
               variant="outline"
               size="sm"
               disabled={batchAction !== null || !archivableSelection.length}
-              title={archivableSelection.length ? text.batchArchiveHint : text.batchUnavailableHint}
+              title={text.batchArchiveHint}
               onClick={() => { void batchArchiveSelection(true) }}
             >
               {batchAction === 'archive' ? <Spinner className="size-3.5" /> : <Archive className="size-3.5" />}
@@ -741,6 +832,12 @@ export function AssetLedgerView() {
             {text.total} {data?.total.toLocaleString() ?? '—'}
           </span>
         </div>
+        {includeArchived ? (
+          <div className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
+            <Info className="mt-0.5 size-3.5 shrink-0" />
+            <span>{text.archivedHint}</span>
+          </div>
+        ) : null}
       </div>
 
       <div className="relative rounded-lg border bg-card">
@@ -784,14 +881,14 @@ export function AssetLedgerView() {
               {items.map((entity) => (
                 <article
                   key={entity.id}
-                  className={cn('min-w-0 space-y-3 p-4', entity.assetId && 'cursor-pointer', entity.archived && 'opacity-70', isSelected(entity) && 'bg-muted/40')}
-                  role={entity.assetId ? 'button' : undefined}
-                  tabIndex={entity.assetId ? 0 : undefined}
-                  onClick={() => entity.assetId && setSelectedAssetId(entity.assetId)}
+                  className={cn('min-w-0 space-y-3 p-4', isEntityClickable(entity) && 'cursor-pointer', entity.archived && 'opacity-70', isSelected(entity) && 'bg-muted/40')}
+                  role={isEntityClickable(entity) ? 'button' : undefined}
+                  tabIndex={isEntityClickable(entity) ? 0 : undefined}
+                  onClick={() => openEntity(entity)}
                   onKeyDown={(event) => {
-                    if (entity.assetId && (event.key === 'Enter' || event.key === ' ')) {
+                    if (isEntityClickable(entity) && (event.key === 'Enter' || event.key === ' ')) {
                       event.preventDefault()
-                      setSelectedAssetId(entity.assetId)
+                      openEntity(entity)
                     }
                   }}
                 >
@@ -811,7 +908,6 @@ export function AssetLedgerView() {
                     <AssetStatusBadge status={entity.status} />
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <VerificationBadge verification={entity.verification} />
                     <SourceBadges sources={entity.sources} />
                   </div>
                   <dl className="grid grid-cols-[6rem_minmax(0,1fr)] gap-x-3 gap-y-2 text-xs">
@@ -903,13 +999,13 @@ export function AssetLedgerView() {
                     <TableRow
                       key={entity.id}
                       data-state={isSelected(entity) ? 'selected' : undefined}
-                      className={cn(entity.assetId && 'cursor-pointer', entity.archived && 'opacity-70')}
-                      tabIndex={entity.assetId ? 0 : undefined}
-                      onClick={() => entity.assetId && setSelectedAssetId(entity.assetId)}
+                      className={cn(isEntityClickable(entity) && 'cursor-pointer', entity.archived && 'opacity-70')}
+                      tabIndex={isEntityClickable(entity) ? 0 : undefined}
+                      onClick={() => openEntity(entity)}
                       onKeyDown={(event) => {
-                        if (entity.assetId && (event.key === 'Enter' || event.key === ' ')) {
+                        if (isEntityClickable(entity) && (event.key === 'Enter' || event.key === ' ')) {
                           event.preventDefault()
-                          setSelectedAssetId(entity.assetId)
+                          openEntity(entity)
                         }
                       }}
                     >
@@ -999,6 +1095,75 @@ export function AssetLedgerView() {
         onOpenChange={(open) => { if (!open) setSelectedAssetId(null) }}
         onChanged={refreshData}
       />
+      <AssetRootSheet
+        entity={selectedRoot}
+        open={Boolean(selectedRoot)}
+        onOpenChange={(open) => { if (!open) setSelectedRoot(null) }}
+        onArchive={archiveRootFromSheet}
+        onViewSubdomains={viewRootSubdomains}
+      />
+
+      <AlertDialog
+        open={scopeDialog !== null}
+        onOpenChange={(open) => {
+          if (!open && !scopeAction) {
+            setScopeDialog(null)
+            setScopeError('')
+          }
+        }}
+      >
+        <AlertDialogContent className="sm:max-w-[460px]">
+          {scopeDialog ? (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {scopeDialog.mode === 'single'
+                    ? text.archiveRootTitle
+                    : text.batchArchiveTitle.replace('{count}', String(scopeDialog.entities.length))}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {scopeDialog.mode === 'single'
+                    ? text.archiveRootDescription
+                    : text.batchScopeSummary.replace('{count}', String(scopeDialogSummary?.roots ?? 0))}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              {scopeDialog.mode === 'single' ? (
+                <p className="break-all font-mono text-sm">{scopeDialog.entities[0]?.value}</p>
+              ) : null}
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: text.subdomains, value: scopeDialogSummary?.subdomains ?? 0 },
+                  { label: text.ports, value: scopeDialogSummary?.ports ?? 0 },
+                  { label: text.websites, value: scopeDialogSummary?.websites ?? 0 },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-md border bg-muted/40 px-2 py-1 text-center">
+                    <p className="text-xs text-muted-foreground">{item.label}</p>
+                    <p className="text-sm font-medium tabular-nums">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-1 text-xs text-muted-foreground">
+                <p>{scopeDialog.mode === 'single' ? text.archiveRootNewHint : text.archiveScopeNewHint}</p>
+                <p>{text.archiveIpUnaffected}</p>
+              </div>
+              {scopeError ? <p className="text-xs text-destructive">{scopeError}</p> : null}
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={scopeAction !== null}>{t.common.cancel}</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={scopeAction !== null}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    void confirmScopeArchive()
+                  }}
+                >
+                  {scopeAction ? <Spinner className="size-4" /> : <Archive className="size-4" />}
+                  {scopeDialog.mode === 'single' ? text.archiveRoot : text.batchArchive}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          ) : null}
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
@@ -1179,7 +1344,7 @@ function AssetLedgerCreateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>{text.createTitle}</DialogTitle>
         </DialogHeader>

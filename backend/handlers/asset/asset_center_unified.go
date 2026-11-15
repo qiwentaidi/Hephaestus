@@ -115,7 +115,12 @@ func collectUnifiedAssetCenterAggregatesWithDB(db *gorm.DB) ([]AssetCenterItem, 
 		addAssetCenterDomainIPs(aggregates, domain, ips)
 	}
 
-	return finalizeAssetCenterAggregates(aggregates), true, nil
+	items := finalizeAssetCenterAggregates(aggregates)
+	scopes, err := loadAssetScopeArchiveIndex(db)
+	if err != nil {
+		return nil, false, err
+	}
+	return filterAssetCenterItemsByArchivedRoots(items, scopes), true, nil
 }
 
 // An empty entry marks an asset supported only by excluded observations.
