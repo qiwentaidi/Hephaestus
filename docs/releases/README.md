@@ -1,6 +1,6 @@
 # 版本更新日志
 
-发布时 `v*` tag 会触发 `.github/workflows/release.yml`，其中 `publish` 作业按以下顺序取更新日志，写入官网 `client` 与 `desktop` 两条发布记录：
+CI 只发 GitHub Release，不再写官网记录。手动运行 `publish_website.py` 补写记录时，按以下顺序取更新日志：
 
 1. 附注 tag 的消息：`git tag -a v4.0.1 -F notes.md`
 2. 本目录下的 `<version>.md`，例如 `docs/releases/v4.0.1.md`

@@ -21,7 +21,7 @@ git tag -a v4.0.1 -F notes.md
 git push origin v4.0.1
 ```
 
-更新日志的读取顺序：附注 tag 的消息 → `docs/releases/<version>.md` → 刚发布的 GitHub Release 正文 → 留空（更新已有官网记录时后端保留原文），详见 [docs/releases/README.md](releases/README.md)。
+CI 只负责产出 Release，不再写官网记录。手动补写时 `publish_website.py` 的更新日志按这个顺序取：附注 tag 的消息 → `docs/releases/<version>.md` → 刚发布的 GitHub Release 正文 → 留空（后端保留原文），详见 [docs/releases/README.md](releases/README.md)。
 
 ## 产物清单
 
@@ -45,7 +45,7 @@ git push origin v4.0.1
 | `macos` | macos-14 | Web darwin 两个 zip + 桌面端两个 dmg（签名、公证）+ 桌面端 Windows zip（mingw 交叉编译） |
 | `linux` ×2 | ubuntu-24.04 / ubuntu-24.04-arm | 每台产出 Web 与桌面端各一个 zip；桌面端在 `Dockerfile.linux-cross` 内构建，保持 bookworm 的 glibc 下限 |
 | `windows` | ubuntu-24.04 | Web Windows zip（`CGO_ENABLED=0` 交叉编译） |
-| `publish` | ubuntu-24.04 | 复用 `publish-release.yml`：取回产物 → 拍平路径 → 校验 10 个文件名 → 写 `SHA256SUMS` → 发布 GitHub Release →（可选）写官网记录 |
+| `publish` | ubuntu-24.04 | 复用 `publish-release.yml`：取回产物 → 拍平路径 → 校验 10 个文件名 → 写 `SHA256SUMS` → 发布 GitHub Release |
 
 构建步骤全部复用仓库脚本，不在 YAML 里重复：
 
@@ -62,17 +62,13 @@ git push origin v4.0.1
 | --- | --- | --- |
 | Variable | `RELEASE_REPO` | 发布目标仓，例如 `qiwentaidi/Hephaestus`；不设则发回当前仓库 |
 | Secret | `RELEASE_TOKEN` | fine-grained PAT，对目标仓 `Contents: write`（源码仓私有，`GITHUB_TOKEN` 不能跨仓） |
-| Variable | `WEBSITE_API_BASE` | 官网后台地址，例如 `http://47.97.59.120:9090` |
-| Secret | `WEBSITE_ADMIN_USERNAME` / `WEBSITE_ADMIN_PASSWORD` | 官网管理员账号 |
-| Variable（可选） | `WEBSITE_PRIMARY_BASE`、`WEBSITE_MIRROR_BASE_CLIENT`、`WEBSITE_MIRROR_BASE_DESKTOP` | 下载源前缀，缺省为 `<RELEASE_REPO>` 的 GitHub Release |
 
-未配置官网凭据时该步骤输出 notice 并跳过，不影响 GitHub Release。
 
 macOS 签名与公证沿用既有的一组 secret：`APPLE_CERTIFICATE_BASE64`、`APPLE_CERTIFICATE_PASSWORD`、`APPLE_SIGN_IDENTITY`、`APPLE_ID`、`APPLE_APP_SPECIFIC_PASSWORD`、`APPLE_TEAM_ID`、`APPLE_KEYCHAIN_PASSWORD`。缺省时 dmg 会做 ad-hoc 签名并在日志里给出 warning，用户首次打开会被 Gatekeeper 拦下。
 
 ## 发布与分发
 
-- CI 产出的 10 个文件全部挂在**同一个 GitHub Release** 下，官网更新记录里的下载地址也指向它（`WEBSITE_PRIMARY_BASE` 缺省就是 `<RELEASE_REPO>` 的 Release 下载前缀）。
+- CI 产出的 10 个文件全部挂在**同一个 GitHub Release** 下，这是唯一的产物来源。
 - 官网与客户端更新记录只指向 GitHub：`publish_website.py` 不再下发 `*_mirror_url`（除非显式传 `--mirror-base-*`），Gitee 链接已从官网移除并停止维护。
 - CI 负责 GitHub 一侧；发布完成后 Actions 页面可以直接下载全部产物，或用 `gh release download <tag> --repo <RELEASE_REPO>`。
 - 以后若要再减少上传，可在 `WEBSITE_PRIMARY_BASE` 指向新的国内源并在 `trustedUpdateDownloadHosts` 里加入该域名；白名单编译在客户端里，新域名必须比下载地址提前一个版本生效。
@@ -80,7 +76,7 @@ macOS 签名与公证沿用既有的一组 secret：`APPLE_CERTIFICATE_BASE64`�
 
 ## 重试与排障
 
-- `prepare` 会先跑一遍发布器离线测试（`python3 -B -m unittest discover -s scripts -p 'test_publish_*.py'`），URL 拼装或官网字段映射改坏时直接卡在发布前。
+- `prepare` 会跑一遍脚本离线测试（`python3 -B -m unittest discover -s scripts -p 'test_publish_*.py'`）。
 - 发布环节出错时不要重新打 tag。`publish-release.yml` 支持手动指定构建 run 补跑发布，产物直接从该 run 的 artifacts 取回，不重新编译：
 
   ```bash
@@ -89,7 +85,6 @@ macOS 签名与公证沿用既有的一组 secret：`APPLE_CERTIFICATE_BASE64`�
   ```
 - `upload-artifact` 会按公共父目录保留相对路径（桌面端产物落在 `desktop/` 下），发布工作流会先拍平再校验，改产物路径时注意这一点。
 - 只想验证构建：手动触发 `release` 工作流（`workflow_dispatch`），`publish` 作业只在 tag 构建时执行。
-- 官网凭据缺失时该步骤输出 notice 并跳过。
 
 ## 常用操作
 
@@ -99,7 +94,7 @@ macOS 签名与公证沿用既有的一组 secret：`APPLE_CERTIFICATE_BASE64`�
 ./scripts/build.sh all
 ./scripts/build-desktop-release.sh
 
-# 单独补写官网记录
+# 单独补写官网记录（内部工具，不在仓库里）
 python3 scripts/publish_website.py --version v4.0.1 --sha256-file SHA256SUMS \
   --changelog-file notes.md --primary-base https://github.com/qiwentaidi/Hephaestus/releases/download
 
