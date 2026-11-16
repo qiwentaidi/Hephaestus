@@ -86,3 +86,14 @@ backend/outputs
 /.hephaestus-updater/
 
 /.hephaestus-updater-bin
+
+# Python
+__pycache__/
+*.pyc
+
+# 内部发布/推送脚本，不随源码推送
+scripts/publish_agent.py
+scripts/publish-agent.sh
+scripts/test_publish_agent.py
+scripts/publish_website.py
+scripts/test_publish_website.py

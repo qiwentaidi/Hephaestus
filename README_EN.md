@@ -129,7 +129,7 @@ Build and run from the repository root:
 
 ```bash
 ./scripts/build.sh current
-./dist/hephaestus-darwin-arm64   # macOS ARM64 example
+./dist/Hephaestus-darwin-arm64-web   # macOS ARM64 example
 ```
 
 Prebuilt archives for supported platforms are available in [Releases](https://github.com/qiwentaidi/Hephaestus/releases).
@@ -141,7 +141,7 @@ By default, it listens on `http://localhost:18181`. For production, set an expli
 ```bash
 HEPHAESTUS_CONFIG_DIR=/opt/hephaestus \
 HEPHAESTUS_JWT_SECRET='replace-with-a-long-random-secret' \
-./dist/hephaestus-darwin-arm64
+./dist/Hephaestus-darwin-arm64-web
 ```
 
 <details>
@@ -161,6 +161,11 @@ Linux targets are built through Docker Buildx and require a local Docker service
 
 The official image is published at `ghcr.io/qiwentaidi/hephaestus` for `linux/amd64` and `linux/arm64`, so you can pull and run it without building. It ships with PostgreSQL 17 and starts a single `hephaestus` container. It requires Docker 24+ with Compose V2. We recommend at least 2 GB of memory. For screenshots or headless browser interaction, [install Chromium on demand](docs/docker-deployment.md#按需安装-chromium).
 
+| Deployment | In-app upgrade | Upgrade method |
+| --- | --- | --- |
+| `docker run` | ❌ | Pull and recreate the container |
+| Compose + host updater | ✅ | Upgrade from Settings or the user card |
+
 **Option 1: Use the official image (no build required)**
 
 Cloning the repository is not required: pull the image and run it.
@@ -176,26 +181,47 @@ docker run -d --name hephaestus \
   ghcr.io/qiwentaidi/hephaestus:latest
 ```
 
-Tags match the [Releases](https://github.com/qiwentaidi/Hephaestus/releases) version (for example `v0.5.7`), plus a floating `latest`. For production, replace `latest` above with a specific version. The package is public and can be pulled anonymously; run `docker login ghcr.io` first on networks that require authentication. To upgrade, `docker pull` again and recreate the container with the same arguments; the `hephaestus-data` volume keeps your data.
+Tags match the [Releases](https://github.com/qiwentaidi/Hephaestus/releases) version (for example `v4.0.0`), plus a floating `latest`. For production, replace `latest` above with a specific version. The package is public and can be pulled anonymously; run `docker login ghcr.io` first on networks that require authentication.
 
-If you use Compose, layer `docker-compose.ghcr.yml` on top of the default file in the repository root to replace the local build with the published image:
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
-
-# Pin a version
-HEPHAESTUS_IMAGE=ghcr.io/qiwentaidi/hephaestus:v0.5.7 \
-  docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
-```
-
-Upgrade a Compose deployment:
+A `docker run` deployment **does not support in-app upgrades**. Pull the new image and recreate the container with the same arguments; the `hephaestus-data` volume keeps your data:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.ghcr.yml pull
-docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+docker pull ghcr.io/qiwentaidi/hephaestus:latest
+docker stop hephaestus
+docker rm hephaestus
+
+docker run -d --name hephaestus \
+  -p 18181:18181 \
+  -v hephaestus-data:/var/lib/hephaestus \
+  --shm-size=256m \
+  --restart unless-stopped \
+  ghcr.io/qiwentaidi/hephaestus:latest
 ```
 
-**Option 2: Build from source**
+**Option 2: Compose with the host updater (in-app upgrades)**
+
+A release-image Compose deployment can attach a host updater, after which Settings → System Update and the user card can check and upgrade directly. The updater pulls the GHCR image, recreates the Compose container, and verifies the new version.
+
+Requirements: Linux or macOS, Go 1.26.3, Docker Compose V2 with `!reset` and `up --wait`, and host access to GHCR.
+
+Run this in the Compose deployment directory:
+
+```bash
+# 1. Confirm the project name (for example hephaestus)
+docker compose ls
+
+# 2. Build the host updater in the repository root
+(cd backend && go build -o ../.hephaestus-updater-bin ./cmd/docker-updater)
+
+# 3. First activation in the Compose deployment directory (copy the binary there first if needed)
+./.hephaestus-updater-bin -project-name hephaestus -activate
+```
+
+`-activate` uses `docker-compose.yml` and `docker-compose.release.yml`, recreates the container, and mounts `.hephaestus-updater/ipc`. Keep the updater process running afterwards; use systemd or launchd in production, with `-activate` removed from the service command.
+
+To migrate an existing `docker run` deployment, keep the existing `hephaestus-data` volume and make Compose use it as an external volume. See [Docker upgrades](docs/docker-deployment.md#升级) for the full migration and updater workflow.
+
+**Option 3: Build from source**
 
 ```bash
 cp .env.example .env   # Optional: adjust ports and database settings
@@ -206,7 +232,7 @@ curl -fsS http://localhost:18181/healthz
 
 Open `http://localhost:18181`; the first visit guides you through creating an administrator account.
 
-Release-image deployments can upgrade from the UI after you enable the host updater. See [Docker upgrades](docs/docker-deployment.md#升级).
+Source-built deployments can rebuild the image on the host; to enable in-app upgrades, attach the host updater as described above.
 
 <details>
 <summary><b>Data persistence and common operations</b></summary>
@@ -287,7 +313,7 @@ docker logs -f hephaestus
 
 ### 3. Desktop Client
 
-The desktop client is built on Wails 3, bundles a local service, uses SQLite by default, and runs its local backend on port `38456`. Download installers from the [Hephaestus-Desktop](https://github.com/qiwentaidi/Hephaestus-Desktop) repository.
+The desktop client is built on Wails 3, bundles a local service, uses SQLite by default, and runs its local backend on port `38456`. Installers ship in the same [Releases](https://github.com/qiwentaidi/Hephaestus/releases) as the web build; both share one version number starting with `v4.0.0`.
 
 Each platform needs its native toolchain: Xcode Command Line Tools on macOS, WebView2 on Windows, and GTK/WebKit development libraries on Linux.
 
@@ -502,7 +528,7 @@ By default, `toolguard` only performs pre-call rule checks and does not depend o
 
 ```bash
 ./deploy/egress/build.sh
-HEPHAESTUS_AI_ENFORCE_EGRESS=1 ./dist/hephaestus-darwin-arm64
+HEPHAESTUS_AI_ENFORCE_EGRESS=1 ./dist/Hephaestus-darwin-arm64-web
 ```
 
 During execution, use `docker ps --filter label=hephaestus.egress=1` to see temporary gateway and Worker containers; they are cleaned up afterward. The egress image ships only Python, pip, and requests by default; add more tools in [deploy/egress/Dockerfile](deploy/egress/Dockerfile). See the "Optional AI Tool Egress Gateway" section in [Local Development and Native Runs](docs/local-development.md).

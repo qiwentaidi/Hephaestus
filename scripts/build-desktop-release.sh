@@ -31,11 +31,11 @@ MINGW_AMD64_CXX="${MINGW_AMD64_CXX:-/opt/homebrew/bin/x86_64-w64-mingw32-g++}"
 MINGW_ARM64_CC="${MINGW_ARM64_CC:-/opt/homebrew/bin/aarch64-w64-mingw32-gcc}"
 MINGW_ARM64_CXX="${MINGW_ARM64_CXX:-/opt/homebrew/bin/aarch64-w64-mingw32-g++}"
 
-WINDOWS_AMD64_ZIP="${DIST_DIR}/${APP_NAME}-desktop-windows-amd64.zip"
-LINUX_AMD64_ZIP="${DIST_DIR}/${APP_NAME}-desktop-linux-amd64.zip"
-LINUX_ARM64_ZIP="${DIST_DIR}/${APP_NAME}-desktop-linux-arm64.zip"
-DARWIN_AMD64_DMG="${DIST_DIR}/${APP_NAME}-desktop-darwin-amd64.dmg"
-DARWIN_ARM64_DMG="${DIST_DIR}/${APP_NAME}-desktop-darwin-arm64.dmg"
+WINDOWS_AMD64_ZIP="${DIST_DIR}/${APP_NAME}-windows-amd64-desktop.zip"
+LINUX_AMD64_ZIP="${DIST_DIR}/${APP_NAME}-linux-amd64-desktop.zip"
+LINUX_ARM64_ZIP="${DIST_DIR}/${APP_NAME}-linux-arm64-desktop.zip"
+DARWIN_AMD64_DMG="${DIST_DIR}/${APP_NAME}-darwin-amd64-desktop.dmg"
+DARWIN_ARM64_DMG="${DIST_DIR}/${APP_NAME}-darwin-arm64-desktop.dmg"
 
 MACOS_SIGN_IDENTITY="${MACOS_SIGN_IDENTITY:-${SIGN_IDENTITY:-}}"
 MACOS_NOTARY_KEYCHAIN_PROFILE="${MACOS_NOTARY_KEYCHAIN_PROFILE:-${KEYCHAIN_PROFILE:-}}"
@@ -46,6 +46,143 @@ MACOS_NOTARIZE="${MACOS_NOTARIZE:-1}"
 MACOS_LIBPCAP_PATH="${MACOS_LIBPCAP_PATH:-}"
 MACOS_LIBPCAP_AMD64_PATH="${MACOS_LIBPCAP_AMD64_PATH:-}"
 MACOS_LIBPCAP_ARM64_PATH="${MACOS_LIBPCAP_ARM64_PATH:-}"
+
+# Target/architecture selection. Empty lists mean "build everything", which
+# keeps the no-argument behaviour identical to a full local release.
+TARGETS=""
+ARCHES=""
+DRY_RUN=0
+SKIP_FRONTEND=0
+SKIP_ICONS=0
+
+usage() {
+  cat <<'EOF'
+Usage: build-desktop-release.sh [options]
+
+Options:
+  --target <darwin|windows|linux>[,..]  Restrict the build to these targets.
+  --arch <amd64|arm64>[,..]             Restrict the build to these architectures.
+  --skip-frontend                       Assume backend/webassets/dist is already built.
+  --skip-icons                          Skip icon generation (not needed for Linux zips).
+  --dry-run                             Print the selected artifacts and exit.
+  -h, --help                            Show this help.
+
+Without options the script builds every release artifact: macOS DMGs, the
+Windows zip and both Linux zips (Linux is built inside Docker so the runtime
+glibc floor matches the published release).
+EOF
+}
+
+append_list_item() {
+  local current="$1"
+  local item="$2"
+
+  if [[ -z "${current}" ]]; then
+    printf '%s' "${item}"
+  else
+    printf '%s,%s' "${current}" "${item}"
+  fi
+}
+
+validate_list_values() {
+  local name="$1"
+  local list="$2"
+  local allowed
+  local item
+  local values
+
+  case "${name}" in
+    target)
+      allowed="darwin windows linux"
+      ;;
+    arch)
+      allowed="amd64 arm64"
+      ;;
+    *)
+      echo "unknown option: --${name}" >&2
+      exit 2
+      ;;
+  esac
+
+  IFS=',' read -r -a values <<< "${list}"
+  for item in "${values[@]}"; do
+    [[ -n "${item}" ]] || continue
+    case " ${allowed} " in
+      *" ${item} "*) ;;
+      *)
+        echo "invalid --${name} value '${item}' (allowed: ${allowed})" >&2
+        exit 2
+        ;;
+    esac
+  done
+}
+
+parse_args() {
+  local name
+  local value
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --target|--arch)
+        if [[ $# -lt 2 ]]; then
+          echo "missing value for $1" >&2
+          usage >&2
+          exit 2
+        fi
+        name="${1#--}"
+        value="$2"
+        shift 2
+        ;;
+      --target=*|--arch=*)
+        name="${1%%=*}"
+        name="${name#--}"
+        value="${1#*=}"
+        shift
+        ;;
+      --dry-run)
+        DRY_RUN=1
+        shift
+        continue
+        ;;
+      --skip-frontend)
+        SKIP_FRONTEND=1
+        shift
+        continue
+        ;;
+      --skip-icons)
+        SKIP_ICONS=1
+        shift
+        continue
+        ;;
+      -h|--help)
+        usage
+        exit 0
+        ;;
+      *)
+        echo "unknown argument: $1" >&2
+        usage >&2
+        exit 2
+        ;;
+    esac
+
+    validate_list_values "${name}" "${value}"
+    if [[ "${name}" == "target" ]]; then
+      TARGETS="$(append_list_item "${TARGETS}" "${value}")"
+    else
+      ARCHES="$(append_list_item "${ARCHES}" "${value}")"
+    fi
+  done
+}
+
+selected_target() {
+  [[ -z "${TARGETS}" ]] && return 0
+  [[ ",${TARGETS}," == *",$1,"* ]]
+}
+
+selected_arch() {
+  [[ -z "${ARCHES}" ]] && return 0
+  [[ ",${ARCHES}," == *",$1,"* ]]
+}
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -206,6 +343,9 @@ cleanup() {
 build_frontend() {
   echo "==> Building desktop frontend assets"
   cd "${DESKTOP_DIR}"
+  # The task is skipped when node_modules already exists, so local release runs
+  # keep their current cost while a fresh CI checkout still gets its deps.
+  wails3 task common:install:frontend:deps
   wails3 task common:build:frontend
 }
 
@@ -217,12 +357,18 @@ generate_icons() {
 
 prepare_dirs() {
   mkdir -p "${BIN_DIR}" "${DIST_DIR}" "${STAGING_DIR}"
-  rm -f \
-    "${WINDOWS_AMD64_ZIP}" \
-    "${LINUX_AMD64_ZIP}" \
-    "${LINUX_ARM64_ZIP}" \
-    "${DARWIN_AMD64_DMG}" \
-    "${DARWIN_ARM64_DMG}"
+  if selected_target windows && selected_arch amd64; then
+    rm -f "${WINDOWS_AMD64_ZIP}"
+  fi
+  if selected_target linux; then
+    selected_arch amd64 && rm -f "${LINUX_AMD64_ZIP}"
+    selected_arch arm64 && rm -f "${LINUX_ARM64_ZIP}"
+  fi
+  if selected_target darwin; then
+    selected_arch amd64 && rm -f "${DARWIN_AMD64_DMG}"
+    selected_arch arm64 && rm -f "${DARWIN_ARM64_DMG}"
+  fi
+  return 0
 }
 
 create_zip_from_file() {
@@ -232,10 +378,17 @@ create_zip_from_file() {
   local temp_dir
 
   temp_dir="$(mktemp -d "${STAGING_DIR}/zip.XXXXXX")"
+  mkdir -p "$(dirname "${archive_path}")"
   cp "${source_path}" "${temp_dir}/${entry_name}"
   (
     cd "${temp_dir}"
-    ditto -c -k --sequesterRsrc "${entry_name}" "${archive_path}"
+    if has_cmd python3; then
+      # One archive layout for every host: a single top-level entry, no
+      # __MACOSX sidecars and no build-host metadata.
+      python3 "${SCRIPT_DIR}/release_zip.py" "${entry_name}" "${archive_path}"
+    else
+      ditto -c -k "${entry_name}" "${archive_path}"
+    fi
   )
   rm -rf "${temp_dir}"
 }
@@ -362,8 +515,15 @@ build_linux_zip() {
     -e GOMAXPROCS="${LINUX_GOMAXPROCS}" \
     "${image}" \
     "${arch}"
+  # 容器以 root 写入宿主目录，runner 用户既不能 chmod 也不能保证可执行位，
+  # 先用一次性容器把产物交回给当前用户。
+  docker run --rm \
+    -v "${BIN_DIR}:/release-out" \
+    alpine \
+    sh -c "chown $(id -u):$(id -g) /release-out/${APP_NAME}-linux-${arch} && chmod 0755 /release-out/${APP_NAME}-linux-${arch}"
+
   mv "${BIN_DIR}/${APP_NAME}-linux-${arch}" "${output_binary}"
-  chmod +x "${output_binary}"
+  chmod 0755 "${output_binary}" 2>/dev/null || true
   create_zip_from_file "${output_binary}" "${archive_path}" "${APP_NAME}"
 }
 
@@ -647,58 +807,133 @@ build_darwin_dmg() {
 }
 
 print_outputs() {
-  cat <<EOF
+  echo
+  echo "Build complete:"
+  if selected_target darwin; then
+    if selected_arch amd64; then
+      echo "  macOS amd64 DMG:"
+      echo "    ${DARWIN_AMD64_DMG}"
+    fi
+    if selected_arch arm64; then
+      echo "  macOS arm64 DMG:"
+      echo "    ${DARWIN_ARM64_DMG}"
+    fi
+  fi
+  if selected_target windows && selected_arch amd64; then
+    echo "  Windows amd64 ZIP:"
+    echo "    ${WINDOWS_AMD64_ZIP}"
+  fi
+  if selected_target linux; then
+    if selected_arch amd64; then
+      echo "  Linux amd64 ZIP:"
+      echo "    ${LINUX_AMD64_ZIP}"
+    fi
+    if selected_arch arm64; then
+      echo "  Linux arm64 ZIP:"
+      echo "    ${LINUX_ARM64_ZIP}"
+    fi
+  fi
+  if selected_target darwin; then
+    echo "  Common macOS \"app is damaged\" repair script:"
+    echo "    ${DESKTOP_DIR}/scripts/macos-damage-fix.sh \"/Applications/${APP_NAME}.app\""
+  fi
+  echo
+}
 
-Build complete:
-  macOS amd64 DMG:
-    ${DARWIN_AMD64_DMG}
+dry_run_outputs() {
+  echo "Dry run: no build steps will run."
+  if selected_target darwin; then
+    selected_arch amd64 && echo "  darwin amd64 -> ${DARWIN_AMD64_DMG}"
+    selected_arch arm64 && echo "  darwin arm64 -> ${DARWIN_ARM64_DMG}"
+  fi
+  if selected_target windows && selected_arch amd64; then
+    echo "  windows amd64 -> ${WINDOWS_AMD64_ZIP}"
+  fi
+  if selected_target linux; then
+    selected_arch amd64 && echo "  linux amd64 -> ${LINUX_AMD64_ZIP}"
+    selected_arch arm64 && echo "  linux arm64 -> ${LINUX_ARM64_ZIP}"
+  fi
+  return 0
+}
 
-  macOS arm64 DMG:
-    ${DARWIN_ARM64_DMG}
+require_prereqs() {
+  require_cmd go
 
-  Windows amd64 ZIP:
-    ${WINDOWS_AMD64_ZIP}
+  # Linux zips are built inside Docker from the prebuilt frontend assets, so a
+  # host without the wails3 CLI (which needs GTK/WebKit headers to compile on
+  # Linux) can still produce them.
+  if [ "${SKIP_FRONTEND}" = "0" ] || [ "${SKIP_ICONS}" = "0" ]; then
+    require_cmd wails3
+  fi
 
-  Linux amd64 ZIP:
-    ${LINUX_AMD64_ZIP}
+  if ! has_cmd python3 && ! has_cmd ditto; then
+    echo "Release archives need python3 (preferred) or macOS ditto." >&2
+    exit 1
+  fi
 
-  Linux arm64 ZIP:
-    ${LINUX_ARM64_ZIP}
+  if selected_target darwin; then
+    require_cmd ditto
+    require_cmd create-dmg
+    require_cmd codesign
+    require_cmd hdiutil
+    require_cmd install_name_tool
+    require_cmd lipo
+    require_cmd otool
+    require_file "${DMG_README_SOURCE}"
+    validate_macos_signing_config
+    if macos_notarization_enabled; then
+      require_cmd xcrun
+    fi
+  fi
 
-Common macOS "app is damaged" repair script:
-  ${DESKTOP_DIR}/scripts/macos-damage-fix.sh "/Applications/${APP_NAME}.app"
+  if selected_target linux; then
+    if ! has_cmd docker; then
+      echo "Docker is required to build the Linux release archives." >&2
+      exit 1
+    fi
+  fi
 
-EOF
+  if selected_target windows && selected_arch amd64; then
+    if ! has_cmd docker && ! has_file "$(windows_mingw_for_arch amd64 | cut -d'|' -f1)"; then
+      echo "Windows amd64 needs either Docker (wails-cross image) or the mingw toolchain at ${MINGW_AMD64_CC}." >&2
+      exit 1
+    fi
+  fi
 }
 
 main() {
+  parse_args "$@"
   trap cleanup EXIT
 
-  require_cmd go
-  require_cmd wails3
-  require_cmd ditto
-  require_cmd create-dmg
-  require_cmd codesign
-  require_cmd hdiutil
-  require_cmd install_name_tool
-  require_cmd lipo
-  require_cmd otool
-  if [[ "${OSTYPE}" == darwin* ]] && macos_notarization_enabled; then
-    require_cmd xcrun
+  if [[ "${DRY_RUN}" == "1" ]]; then
+    dry_run_outputs
+    return 0
   fi
-  require_file "${DMG_README_SOURCE}"
-  validate_macos_signing_config
+
+  require_prereqs
 
   prepare_dirs
-  cleanup_docker_build_cache
-  build_frontend
-  generate_icons
+  if selected_target linux || selected_target windows; then
+    cleanup_docker_build_cache
+  fi
+  if [ "${SKIP_FRONTEND}" = "0" ]; then
+    build_frontend
+  fi
+  if [ "${SKIP_ICONS}" = "0" ]; then
+    generate_icons
+  fi
 
-  build_windows_zip amd64 "${WINDOWS_AMD64_ZIP}"
-  build_linux_zip amd64 "${LINUX_AMD64_ZIP}"
-  build_linux_zip arm64 "${LINUX_ARM64_ZIP}"
-  build_darwin_dmg amd64 "${DARWIN_AMD64_DMG}"
-  build_darwin_dmg arm64 "${DARWIN_ARM64_DMG}"
+  if selected_target windows && selected_arch amd64; then
+    build_windows_zip amd64 "${WINDOWS_AMD64_ZIP}"
+  fi
+  if selected_target linux; then
+    selected_arch amd64 && build_linux_zip amd64 "${LINUX_AMD64_ZIP}"
+    selected_arch arm64 && build_linux_zip arm64 "${LINUX_ARM64_ZIP}"
+  fi
+  if selected_target darwin; then
+    selected_arch amd64 && build_darwin_dmg amd64 "${DARWIN_AMD64_DMG}"
+    selected_arch arm64 && build_darwin_dmg arm64 "${DARWIN_ARM64_DMG}"
+  fi
 
   print_outputs
 }

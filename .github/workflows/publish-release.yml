@@ -1,0 +1,159 @@
+name: publish-release
+
+# 发布实现：从一个已完成的构建 run 取回产物，校验后发布 GitHub Release。
+# 既被 release.yml 在 tag 构建结束后调用（同一 run），也可以手动指定
+# run_id 补跑发布——发布环节出错时不必重新编译 40 分钟。
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'Release version, must match backend/pkg/version/version.go'
+        required: true
+        type: string
+      run_id:
+        description: 'Actions run id that produced the build artifacts'
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version, e.g. v4.0.0'
+        required: true
+      run_id:
+        description: 'Actions run id whose artifacts should be published'
+        required: true
+
+permissions:
+  contents: write
+  actions: read
+
+env:
+  RELEASE_REPO: ${{ vars.RELEASE_REPO || github.repository }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check release destination
+        env:
+          PRIVATE_REPO: ${{ github.event.repository.private }}
+        run: |
+          set -euo pipefail
+          if [ "${RELEASE_REPO}" = "${GITHUB_REPOSITORY}" ] && [ "${PRIVATE_REPO}" = "true" ]; then
+            echo "::warning::RELEASE_REPO is unset, so the release lands in the private source repository and users cannot download it."
+          fi
+          echo "release destination: ${RELEASE_REPO}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # upload-artifact 按公共父目录保留相对路径，桌面端产物会落在 desktop/
+      # 子目录里；先拍平再按固定文件名校验。
+      - name: Verify artifact set
+        run: |
+          set -euo pipefail
+          find release-assets -mindepth 2 -type f -exec mv -f {} release-assets/ \;
+          find release-assets -mindepth 1 -type d -empty -delete
+
+          expected=(
+            Hephaestus-darwin-amd64-web.zip
+            Hephaestus-darwin-amd64-desktop.dmg
+            Hephaestus-darwin-arm64-web.zip
+            Hephaestus-darwin-arm64-desktop.dmg
+            Hephaestus-linux-amd64-web.zip
+            Hephaestus-linux-amd64-desktop.zip
+            Hephaestus-linux-arm64-web.zip
+            Hephaestus-linux-arm64-desktop.zip
+            Hephaestus-windows-amd64-web.zip
+            Hephaestus-windows-amd64-desktop.zip
+          )
+          for name in "${expected[@]}"; do
+            if [ ! -f "release-assets/${name}" ]; then
+              echo "missing release artifact: ${name}" >&2
+              find release-assets -type f | sort >&2
+              exit 1
+            fi
+          done
+          (cd release-assets && sha256sum "${expected[@]}" > SHA256SUMS)
+          cat release-assets/SHA256SUMS
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: ${{ env.RELEASE_REPO }}
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          tag_name: ${{ inputs.version }}
+          name: ${{ inputs.version }}
+          files: |
+            release-assets/*.zip
+            release-assets/*.dmg
+            release-assets/SHA256SUMS
+          generate_release_notes: true
+
+      # 官网后台同时驱动「更新日志」页面和客户端更新检查，写完不用再手填 URL。
+      - name: Detect website configuration
+        id: website
+        env:
+          WEBSITE_ADMIN_USERNAME: ${{ secrets.WEBSITE_ADMIN_USERNAME }}
+        run: |
+          set -euo pipefail
+          if [ -n "${WEBSITE_ADMIN_USERNAME}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Website admin credentials are not configured; skipping the release record update."
+          fi
+
+      - name: Publish website release records
+        if: steps.website.outputs.enabled == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          WEBSITE_API_BASE: ${{ vars.WEBSITE_API_BASE }}
+          WEBSITE_ADMIN_USERNAME: ${{ secrets.WEBSITE_ADMIN_USERNAME }}
+          WEBSITE_ADMIN_PASSWORD: ${{ secrets.WEBSITE_ADMIN_PASSWORD }}
+          WEBSITE_PRIMARY_BASE: ${{ vars.WEBSITE_PRIMARY_BASE }}
+          WEBSITE_MIRROR_BASE_CLIENT: ${{ vars.WEBSITE_MIRROR_BASE_CLIENT }}
+          WEBSITE_MIRROR_BASE_DESKTOP: ${{ vars.WEBSITE_MIRROR_BASE_DESKTOP }}
+        run: |
+          set -euo pipefail
+          notes="${RUNNER_TEMP}/changelog.md"
+          : > "${notes}"
+          if tag_notes="$(git tag -l --format='%(contents)' "${{ inputs.version }}")" && [ -n "${tag_notes}" ]; then
+            printf '%s\n' "${tag_notes}" > "${notes}"
+          elif [ -f "docs/releases/${{ inputs.version }}.md" ]; then
+            cp "docs/releases/${{ inputs.version }}.md" "${notes}"
+          elif body="$(gh api "repos/${RELEASE_REPO}/releases/tags/${{ inputs.version }}" --jq '.body' 2>/dev/null)" && [ -n "${body}" ]; then
+            printf '%s\n' "${body}" > "${notes}"
+          else
+            echo "::warning::No changelog found; the existing website changelog will be kept."
+          fi
+
+          primary="${WEBSITE_PRIMARY_BASE:-https://github.com/${RELEASE_REPO}/releases/download}"
+
+          # 官网已不再维护 Gitee 镜像：只有显式配置了镜像前缀才下发 mirror 字段。
+          mirror_args=()
+          if [ -n "${WEBSITE_MIRROR_BASE_CLIENT}" ]; then
+            mirror_args+=(--mirror-base-client "${WEBSITE_MIRROR_BASE_CLIENT}")
+          fi
+          if [ -n "${WEBSITE_MIRROR_BASE_DESKTOP}" ]; then
+            mirror_args+=(--mirror-base-desktop "${WEBSITE_MIRROR_BASE_DESKTOP}")
+          fi
+
+          python3 scripts/publish_website.py \
+            --version "${{ inputs.version }}" \
+            --sha256-file release-assets/SHA256SUMS \
+            --changelog-file "${notes}" \
+            --primary-base "${primary}" \
+            "${mirror_args[@]}"

@@ -129,7 +129,7 @@ flowchart TB
 
 ```bash
 ./scripts/build.sh current
-./dist/hephaestus-darwin-arm64   # 以 macOS ARM64 为例
+./dist/Hephaestus-darwin-arm64-web   # 以 macOS ARM64 为例
 ```
 
 也可以从 [Releases](https://github.com/qiwentaidi/Hephaestus/releases) 下载对应平台的预编译压缩包。
@@ -141,7 +141,7 @@ flowchart TB
 ```bash
 HEPHAESTUS_CONFIG_DIR=/opt/hephaestus \
 HEPHAESTUS_JWT_SECRET='固定的随机长字符串' \
-./dist/hephaestus-darwin-arm64
+./dist/Hephaestus-darwin-arm64-web
 ```
 
 <details>
@@ -161,6 +161,11 @@ Linux 目标通过 Docker Buildx 构建，需要本机 Docker 服务。
 
 官方镜像发布在 `ghcr.io/qiwentaidi/hephaestus`，提供 `linux/amd64` 与 `linux/arm64`，可以不编译直接拉取运行。镜像默认内置 PostgreSQL 17，启动后只有一个 `hephaestus` 容器。需要 Docker 24+（含 Compose V2），建议预留 2 GB 以上内存。截图和无头浏览器交互可[按需安装 Chromium](docs/docker-deployment.md#按需安装-chromium)。
 
+| 部署方式 | 页面内一键升级 | 升级方式 |
+| --- | --- | --- |
+| `docker run` | ❌ | 手动 `pull` 后重建容器 |
+| Compose + 宿主机更新器 | ✅ | 系统设置或用户卡片内升级 |
+
 **方式一：直接使用官方镜像（无需编译）**
 
 不需要克隆仓库，先拉取再运行：
@@ -176,26 +181,47 @@ docker run -d --name hephaestus \
   ghcr.io/qiwentaidi/hephaestus:latest
 ```
 
-包内 tag 与 [Releases](https://github.com/qiwentaidi/Hephaestus/releases) 的版本号一致（如 `v0.5.7`），另有浮动的 `latest`；生产环境建议把上面的 `latest` 换成具体版本。公开包可直接匿名拉取，需要登录的网络环境先执行 `docker login ghcr.io`。升级时重新 `docker pull`，再用相同参数重建容器，数据卷 `hephaestus-data` 会保留数据。
+包内 tag 与 [Releases](https://github.com/qiwentaidi/Hephaestus/releases) 的版本号一致（如 `v4.0.0`），另有浮动的 `latest`；生产环境建议把上面的 `latest` 换成具体版本。公开包可直接匿名拉取，需要登录的网络环境先执行 `docker login ghcr.io`。
 
-用 Compose 管理时，在本仓库根目录叠加 `docker-compose.ghcr.yml`，把本地构建替换为已发布镜像：
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
-
-# 固定版本
-HEPHAESTUS_IMAGE=ghcr.io/qiwentaidi/hephaestus:v0.5.7 \
-  docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
-```
-
-Compose 部署的升级方式：
+`docker run` 部署**不支持页面内一键升级**。升级时重新拉取镜像，再用相同参数重建容器，数据卷 `hephaestus-data` 会保留数据：
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.ghcr.yml pull
-docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+docker pull ghcr.io/qiwentaidi/hephaestus:latest
+docker stop hephaestus
+docker rm hephaestus
+
+docker run -d --name hephaestus \
+  -p 18181:18181 \
+  -v hephaestus-data:/var/lib/hephaestus \
+  --shm-size=256m \
+  --restart unless-stopped \
+  ghcr.io/qiwentaidi/hephaestus:latest
 ```
 
-**方式二：从源码构建**
+**方式二：Compose + 宿主机更新器（页面内升级）**
+
+发布版 Compose 部署可以接入宿主机更新器，之后在「系统设置 → 系统更新」或用户卡片中直接检查并升级。更新器负责拉取 GHCR 镜像、重建 Compose 容器并确认新版本就绪。
+
+前置条件：Linux 或 macOS、Go 1.26.3、支持 `!reset` 和 `up --wait` 的 Docker Compose V2，宿主机可访问 GHCR。
+
+在 Compose 部署目录执行：
+
+```bash
+# 1. 确认项目名（例如 hephaestus）
+docker compose ls
+
+# 2. 在仓库根目录构建宿主机更新器
+(cd backend && go build -o ../.hephaestus-updater-bin ./cmd/docker-updater)
+
+# 3. 在 Compose 部署目录首次接入（部署目录不是仓库根目录时，先复制二进制）
+./.hephaestus-updater-bin -project-name hephaestus -activate
+```
+
+`-activate` 会使用 `docker-compose.yml` 和 `docker-compose.release.yml` 重建容器，并挂载 `.hephaestus-updater/ipc`。执行完成后更新器进程必须继续运行；生产环境请用 systemd 或 launchd 托管，启动命令去掉 `-activate`。
+
+从 `docker run` 迁移到 Compose 时，需要保留原来的 `hephaestus-data` 卷，并让 Compose 使用外部卷。完整迁移与更新器说明见 [Docker 升级](docs/docker-deployment.md#升级)。
+
+**方式三：从源码构建**
 
 ```bash
 cp .env.example .env   # 可选：调整端口与数据库
@@ -206,7 +232,7 @@ curl -fsS http://localhost:18181/healthz
 
 打开 `http://localhost:18181`，首次访问会引导创建管理员账号。
 
-发布版 Compose 部署接入宿主机更新器后，可在页面内升级。详见 [Docker 升级](docs/docker-deployment.md#升级)。
+源码构建部署可在宿主机重建镜像；需要页面内升级时，同样按上面的宿主机更新器流程接入。
 
 <details>
 <summary><b>数据持久化与常用操作</b></summary>
@@ -287,7 +313,7 @@ docker logs -f hephaestus
 
 ### 3. 桌面客户端
 
-桌面端基于 Wails 3，内置本地服务，默认使用 SQLite，本地后端端口为 `38456`。安装包从 [Hephaestus-Desktop](https://github.com/qiwentaidi/Hephaestus-Desktop) 获取。
+桌面端基于 Wails 3，内置本地服务，默认使用 SQLite，本地后端端口为 `38456`。安装包与 Web 版一起发布在 [Releases](https://github.com/qiwentaidi/Hephaestus/releases)，从 `v4.0.0` 起两者共用同一个版本号。
 
 各平台需要对应的原生工具链：macOS 的 Xcode Command Line Tools、Windows 的 WebView2、Linux 的 GTK/WebKit 开发库。
 
@@ -502,7 +528,7 @@ AGENT_ROLES=ai,scan \
 
 ```bash
 ./deploy/egress/build.sh
-HEPHAESTUS_AI_ENFORCE_EGRESS=1 ./dist/hephaestus-darwin-arm64
+HEPHAESTUS_AI_ENFORCE_EGRESS=1 ./dist/Hephaestus-darwin-arm64-web
 ```
 
 执行期间可用 `docker ps --filter label=hephaestus.egress=1` 查看临时网关与 Worker 容器；结束后自动清理。出口镜像默认只预装 Python、pip 和 requests，可在 [deploy/egress/Dockerfile](deploy/egress/Dockerfile) 中补充工具。详见 [本地开发与原生运行](docs/local-development.md) 的「可选的 AI 工具出口网关」一节。
@@ -586,6 +612,7 @@ docker-compose.yml       单容器 Compose 部署
 | [本地开发与原生运行](docs/local-development.md) | 前后端开发、单二进制、桌面端与出口网关 |
 | [Agent 下载、安装与更新](docs/agent-installation.md) | 五平台安装、systemd、批量更新与回滚 |
 | [构建与发布脚本](scripts/README.md) | Web、Agent、桌面端构建与发布入口 |
+| [发布流水线](docs/release.md) | 统一版本号、单 tag 发布与产物清单 |
 | [授权测试与风险条款](docs/authorized-testing.md) | 测试前、中、后的授权与数据要求 |
 
 ## 参与贡献

@@ -1,0 +1,298 @@
+name: release
+
+# 统一发布流水线：一个 v* tag 同时产出 Web 与桌面端的全部产物，并发布到同一个
+# GitHub Release。构建步骤全部复用仓库脚本（scripts/build.sh、
+# scripts/build-desktop-release.sh），CI 不再复制一份构建逻辑。
+#
+# 产物（10 个）：
+# 产物按平台优先命名，GitHub Release 页面会自动按系统分组：
+#   Hephaestus-{darwin,linux,windows}-{amd64,arm64}-web.zip       Web 端
+#   Hephaestus-{darwin,linux}-{amd64,arm64}-desktop.zip|.dmg      桌面端
+#   Hephaestus-windows-amd64-desktop.zip
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GO_VERSION: '1.26.3'
+  NODE_VERSION: '22'
+  WAILS_VERSION: 'v3.0.0-alpha.78'
+  APPLE_NOTARY_KEYCHAIN_PROFILE: 'hephaestus-notary'
+  # 宿主机不要清空 Docker 层缓存。
+  DOCKER_BUILD_CACHE_PRUNE: '0'
+  # hosted runner 上 brew 的自动更新只浪费时间。
+  HOMEBREW_NO_AUTO_UPDATE: '1'
+  HOMEBREW_NO_INSTALL_CLEANUP: '1'
+  # 发布目标仓库。默认当前仓库；设置仓库变量 RELEASE_REPO（例如
+  # qiwentaidi/Hephaestus）并配置 RELEASE_TOKEN，即可从私有源码仓发布到公开仓。
+  RELEASE_REPO: ${{ vars.RELEASE_REPO || github.repository }}
+
+jobs:
+  prepare:
+    name: Validate release tag
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            version="${GITHUB_REF_NAME}"
+            if ! printf '%s' "${version}" | grep -Eq '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'; then
+              echo "release tag must look like vMAJOR.MINOR.PATCH, got '${version}'" >&2
+              exit 1
+            fi
+          else
+            # Manual dry run: build everything but never publish.
+            version="v0.0.0-${GITHUB_SHA::7}"
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "resolved version: ${version}"
+
+      - name: Verify version constants
+        if: github.ref_type == 'tag'
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          grep -Fx "const Version = \"${RELEASE_VERSION}\"" backend/pkg/version/version.go
+          grep -Fx "const DesktopVersion = \"${RELEASE_VERSION}\"" backend/pkg/version/version.go
+
+      # 发布器的 URL 拼装、官网字段映射、OSS 上传参数都有离线测试，
+      # 放在发布前跑，避免带着坏的发布逻辑发版。
+      - name: Run publisher tests
+        run: python3 -B -m unittest discover -s scripts -p 'test_publish_*.py'
+
+  macos:
+    name: Build macOS and Windows artifacts
+    needs: prepare
+    # macos-14 在这个账号下会解析成付费的 XL 配置而无法调度；macos-15 是
+    # 标准 arm64 镜像（macOS 15.x / Apple Silicon）。
+    runs-on: macos-15
+    timeout-minutes: 150
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: backend/go.sum
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install release toolchain
+        run: |
+          set -euo pipefail
+          brew install libpcap create-dmg mingw-w64
+          go install github.com/wailsapp/wails/v3/cmd/wails3@${WAILS_VERSION}
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Configure Apple signing
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGN_IDENTITY: ${{ secrets.APPLE_SIGN_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          KEYCHAIN_PASSWORD: ${{ secrets.APPLE_KEYCHAIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${APPLE_CERTIFICATE_BASE64}" ]; then
+            echo "::warning::APPLE_CERTIFICATE_BASE64 is not configured; macOS artifacts will be ad-hoc signed and Gatekeeper will reject them by default."
+            exit 0
+          fi
+
+          CERTIFICATE_PATH="${RUNNER_TEMP}/developer-id.p12"
+          KEYCHAIN_PATH="${RUNNER_TEMP}/app-signing.keychain-db"
+          KEYCHAIN_PASSWORD="${KEYCHAIN_PASSWORD:-$(uuidgen)}"
+
+          echo "${APPLE_CERTIFICATE_BASE64}" | base64 -d > "${CERTIFICATE_PATH}"
+          security create-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          security set-keychain-settings -lut 21600 "${KEYCHAIN_PATH}"
+          security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          security import "${CERTIFICATE_PATH}" -P "${APPLE_CERTIFICATE_PASSWORD}" -A -t cert -f pkcs12 -k "${KEYCHAIN_PATH}"
+          security list-keychain -d user -s "${KEYCHAIN_PATH}" $(security list-keychains -d user | sed 's/[ "]//g')
+          security set-key-partition-list -S apple-tool:,apple: -s -k "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+
+          if [ -z "${APPLE_SIGN_IDENTITY}" ]; then
+            APPLE_SIGN_IDENTITY="$(security find-identity -v -p codesigning "${KEYCHAIN_PATH}" | awk -F '"' '/Developer ID Application/ { print $2; exit }')"
+          fi
+          if [ -z "${APPLE_SIGN_IDENTITY}" ]; then
+            echo "No Developer ID Application identity found in imported certificate." >&2
+            exit 1
+          fi
+
+          if [ -z "${APPLE_ID}" ] || [ -z "${APPLE_APP_SPECIFIC_PASSWORD}" ] || [ -z "${APPLE_TEAM_ID}" ]; then
+            echo "Notarization credentials are required when Apple signing is configured." >&2
+            exit 1
+          fi
+
+          xcrun notarytool store-credentials "${APPLE_NOTARY_KEYCHAIN_PROFILE}" \
+            --apple-id "${APPLE_ID}" \
+            --team-id "${APPLE_TEAM_ID}" \
+            --password "${APPLE_APP_SPECIFIC_PASSWORD}"
+
+          echo "MACOS_SIGN_IDENTITY=${APPLE_SIGN_IDENTITY}" >> "${GITHUB_ENV}"
+          echo "MACOS_NOTARY_KEYCHAIN_PROFILE=${APPLE_NOTARY_KEYCHAIN_PROFILE}" >> "${GITHUB_ENV}"
+
+      - name: Build Web macOS zips
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: ./scripts/build.sh all --platform darwin/arm64,darwin/amd64
+
+      - name: Build Desktop macOS DMGs and Windows zip
+        run: ./scripts/build-desktop-release.sh --target darwin,windows
+
+      - name: Upload macOS and Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-windows
+          path: |
+            dist/Hephaestus-darwin-amd64-web.zip
+            dist/Hephaestus-darwin-arm64-web.zip
+            dist/desktop/Hephaestus-darwin-amd64-desktop.dmg
+            dist/desktop/Hephaestus-darwin-arm64-desktop.dmg
+            dist/desktop/Hephaestus-windows-amd64-desktop.zip
+          if-no-files-found: error
+
+  linux:
+    name: Build Linux ${{ matrix.arch }} artifacts
+    needs: prepare
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: backend/go.sum
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # 这里不装 wails3：Linux 产物在 Docker 内构建，前端由 build.sh 直接
+      # 用 npm 构建，而 wails3 CLI 在裸 Linux runner 上需要 GTK/WebKit 头文件。
+
+      # scripts/build.sh 通过 docker buildx --output type=local 取回二进制，
+      # 需要 docker-container 驱动的 builder（runner 默认的 docker 驱动不保证支持）。
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Web Linux zip
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: ./scripts/build.sh all --platform linux/${{ matrix.arch }}
+
+      # 桌面端 Linux 在 Dockerfile.linux-cross 里构建，保住 bookworm 的 glibc 下限。
+      - name: Build Desktop Linux zip
+        env:
+          DEBIAN_MIRROR: https://deb.debian.org/debian
+          DEBIAN_SECURITY_MIRROR: https://deb.debian.org/debian-security
+          LINUX_GO_BUILD_P: '4'
+        run: ./scripts/build-desktop-release.sh --target linux --arch ${{ matrix.arch }} --skip-frontend --skip-icons
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}
+          path: |
+            dist/Hephaestus-linux-${{ matrix.arch }}-web.zip
+            dist/desktop/Hephaestus-linux-${{ matrix.arch }}-desktop.zip
+          if-no-files-found: error
+
+  windows:
+    name: Build Windows artifacts
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: backend/go.sum
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build Web Windows zip
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: ./scripts/build.sh all --platform windows/amd64
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/Hephaestus-windows-amd64-web.zip
+          if-no-files-found: error
+
+  publish:
+    name: Publish release
+    if: github.ref_type == 'tag'
+    needs:
+      - prepare
+      - macos
+      - linux
+      - windows
+    uses: ./.github/workflows/publish-release.yml
+    with:
+      version: ${{ needs.prepare.outputs.version }}
+      run_id: ${{ github.run_id }}
+    secrets: inherit

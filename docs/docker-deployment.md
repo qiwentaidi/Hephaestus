@@ -21,27 +21,24 @@ docker run -d --name hephaestus \
   ghcr.io/qiwentaidi/hephaestus:latest
 ```
 
-用 Compose 管理时，在本仓库根目录叠加 `docker-compose.ghcr.yml`（只需要 `docker-compose.yml` 和这个覆盖文件），把本地构建换成已发布镜像：
+用 Compose 管理时，在仓库根目录使用 `docker-compose.yml` 和发布版 `docker-compose.release.yml`，并接入宿主机更新器后启用页面内升级；具体见下文「升级」。
+
+镜像 tag 与 Release 版本号一致（如 `v4.0.0`），另有浮动的 `latest`。生产环境建议固定版本。
+
+单容器升级时重新拉取镜像，再用相同参数重建 `hephaestus` 容器，数据卷不变：
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+docker pull ghcr.io/qiwentaidi/hephaestus:latest
+docker stop hephaestus
+docker rm hephaestus
+
+docker run -d --name hephaestus \
+  -p 18181:18181 \
+  -v hephaestus-data:/var/lib/hephaestus \
+  --restart unless-stopped \
+  --shm-size=256m \
+  ghcr.io/qiwentaidi/hephaestus:latest
 ```
-
-镜像 tag 与 Release 版本号一致（如 `v0.5.7`），另有浮动的 `latest`。生产环境建议固定版本：
-
-```bash
-HEPHAESTUS_IMAGE=ghcr.io/qiwentaidi/hephaestus:v0.5.7 \
-  docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
-```
-
-升级时重新拉取镜像并重建容器，数据卷不变：
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.ghcr.yml pull
-docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
-```
-
-单容器部署同理：重新 `docker pull` 后，用相同参数重建 `hephaestus` 容器。
 
 ### 方式二：从源码构建
 
@@ -218,19 +215,67 @@ Dockerfile 和 Compose 都配置了健康检查，`docker ps` 中会显示 `heal
 `!reset` 和 `up --wait` 的 Docker Compose V2。发布镜像位于
 `ghcr.io/qiwentaidi/hephaestus`，使用版本号 tag 和 `latest`。宿主机需要有该镜像的拉取权限。
 
-在原部署目录执行以下命令。已有部署请将 `项目名` 替换为原项目名，可用
-`docker compose ls` 查看。新部署可以自行指定项目名。首次激活会切换到已发布的镜像。
+在仓库根目录构建更新器，然后把二进制放到原部署目录（部署目录就是仓库根目录时可跳过复制）：
 
 ```bash
 (cd backend && go build -o ../.hephaestus-updater-bin ./cmd/docker-updater)
+```
+
+在部署目录首次激活。已有部署请将 `项目名` 替换为原项目名，可用 `docker compose ls` 查看；新部署可以自行指定项目名。首次激活会切换到已发布的镜像。
+
+```bash
 ./.hephaestus-updater-bin -project-name 项目名 -activate
 ```
+
+仅使用 `docker-compose.yml` 的普通 Compose 部署不会注入更新器，页面仍会显示“尚未接入 Docker 更新器”；要启用页面升级，必须使用本节的 `docker-compose.release.yml` 和宿主机更新器。
 
 激活后让更新器随宿主机常驻。使用 systemd 或 launchd 托管时，启动命令去掉
 `-activate`，工作目录设为原部署目录，并使用同一个能访问 Docker 的账号。
 macOS 默认使用本机端口 18182，端口冲突时可以通过 `-desktop-port` 指定，
 激活和后续启动需使用相同端口。运行状态和镜像引用保存在部署目录的
 `.hephaestus-updater/` 中。
+
+### 从 docker run 迁移
+
+`docker-updater` 管理的是 Compose 项目，不能直接接管 `docker run` 创建的容器。迁移时保留原来的 `hephaestus-data` 卷，只替换容器管理方式。
+
+先备份数据卷：
+
+```bash
+docker run --rm \
+  -v hephaestus-data:/data:ro \
+  -v "$PWD":/backup \
+  alpine tar czf /backup/hephaestus-data-$(date +%F).tgz -C /data .
+```
+
+在部署目录准备 `docker-compose.yml` 和 `docker-compose.release.yml`，并新增 `docker-compose.override.yml`，让 Compose 继续使用现有卷：
+
+```yaml
+volumes:
+  hephaestus-data:
+    external: true
+    name: hephaestus-data
+```
+
+删除旧容器（不要删除卷）：
+
+```bash
+docker stop hephaestus
+docker rm hephaestus
+```
+
+在部署目录运行更新器。更新器二进制可以在仓库的 `backend` 中构建，也可以在其他位置构建后复制过来：
+
+```bash
+(cd /path/to/Hephaestus/backend && go build -o /path/to/deploy/.hephaestus-updater-bin ./cmd/docker-updater)
+
+cd /path/to/deploy
+./.hephaestus-updater-bin -project-name 项目名 -activate
+```
+
+`-activate` 会使用 `docker-compose.yml`、`docker-compose.release.yml` 和 `docker-compose.override.yml` 重建容器，并注入更新器 IPC。迁移后数据卷仍为 `hephaestus-data`。
+
+如果迁移失败，删除新容器，用原来的 `docker run` 命令和同一个 `hephaestus-data` 卷恢复即可。
 
 如需手动管理已接入更新器的容器，使用同一个项目和发布版 Compose 配置：
 

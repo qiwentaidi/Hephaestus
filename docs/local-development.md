@@ -54,7 +54,7 @@ npm run dev
 以 macOS ARM64 为例，从仓库根目录运行。
 
 ```bash
-./dist/hephaestus-darwin-arm64
+./dist/Hephaestus-darwin-arm64-web
 ```
 
 默认访问 [http://localhost:18181](http://localhost:18181)。原生二进制从 `config.yaml` 的 `web.port` 读取端口，并使用其中的数据库连接配置。多平台构建和产物路径见[构建与发布脚本](../scripts/README.md)。
@@ -80,7 +80,7 @@ wails3 task dev
 docker image inspect hephaestus-egress:local
 
 # 以 macOS ARM64 为例
-HEPHAESTUS_AI_ENFORCE_EGRESS=1 ./dist/hephaestus-darwin-arm64
+HEPHAESTUS_AI_ENFORCE_EGRESS=1 ./dist/Hephaestus-darwin-arm64-web
 ```
 
 执行期间可用 `docker ps --filter label=hephaestus.egress=1` 查看临时网关和 Worker 容器。工具结束后会清理容器。出口镜像内的工具依赖在 [deploy/egress/Dockerfile](../deploy/egress/Dockerfile) 中管理。

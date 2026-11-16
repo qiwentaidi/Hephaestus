@@ -12,6 +12,16 @@
 
 脚本根据自身位置定位项目，可以通过绝对路径从其他工作目录调用。原根目录和桌面模块下的旧构建入口已迁移，不保留副本。
 
+桌面端打包脚本是本地与 CI 共用的唯一实现（`.github/workflows/desktop-build.yml` 直接调用它），支持按目标/架构裁剪：
+
+```bash
+./scripts/build-desktop-release.sh --dry-run                          # 只列出将要产出的文件
+./scripts/build-desktop-release.sh --target darwin,windows            # macOS runner 上的任务
+./scripts/build-desktop-release.sh --target linux --arch amd64        # Linux runner 上的任务
+```
+
+Linux 包始终在 `Dockerfile.linux-cross` 镜像内构建，保证与本地发版相同的 Debian bookworm glibc 下限。压缩包由 `release_zip.py` 生成，保证所有平台的产物都是单一顶层条目、没有 `__MACOSX` 元数据。
+
 Web 与 Agent 构建支持 `help`、`current`、`all` 等命令；Agent 发布支持 `--help`、`--check`、`--version`、`--notes-file`。例如：
 
 ```bash
@@ -24,7 +34,9 @@ Web 与 Agent 构建支持 `help`、`current`、`all` 等命令；Agent 发布�
 `publish_agent.py` 是 Agent 发布实现，`test_publish_agent.py` 是其离线回归测试：
 
 ```bash
-python3 -B -m unittest discover -s scripts -p test_publish_agent.py
+python3 -B -m unittest discover -s scripts -p 'test_publish_*.py'
 ```
+
+该模式同时覆盖 `test_publish_agent.py` 与 `test_publish_website.py`（官网 payload 字段映射、下载/镜像地址拼接、SHA256SUMS 解析，以及用本地假服务端验证登录、创建、409 回退更新与 set-latest）。
 
 详细要求见 [Agent 发布说明](../docs/agent-installation.md#发布者操作) 和 [桌面打包说明](../backend/cmd/desktop/scripts/README.md)。Wails 的 Taskfile、生成的底层构建资源及安装包生命周期脚本保留在 `backend/cmd/desktop/build/`，由工具链管理。`install-scan-agent.sh` 是源码安装便利入口。

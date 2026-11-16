@@ -2,6 +2,8 @@ name: docker-release
 on:
   push:
     tags: ["v*", "docker-v*"]
+  # 支持在已有 tag 上手动补建镜像（例如某次只发了 Release 没发镜像）。
+  workflow_dispatch:
 
 permissions:
   contents: read
