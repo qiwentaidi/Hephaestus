@@ -199,3 +199,10 @@ export async function resumeAIPlanRun(id: string): Promise<{ id: string; status:
   const response = await fetchWithAuth(`/api/v1/ai/plan-runs/${encodeURIComponent(id)}/resume`, { method: 'POST' })
   return parse<{ id: string; status: string; projectionPending?: boolean }>(response)
 }
+
+export async function deleteAIPlanRun(id: string): Promise<void> {
+  const response = await fetchWithAuth(`/api/v1/ai/plan-runs/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  })
+  await parse<null>(response)
+}

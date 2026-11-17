@@ -150,7 +150,7 @@ export function PlanTaskDetail({ item, rows, error, refreshing, onRefresh, proje
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 ref={titleRef} tabIndex={-1} className="min-w-0 text-xl font-semibold tracking-tight outline-none"><Link href={`/ai/workbench/project?project=${encodeURIComponent(run.projectId)}&tab=plan`} className="line-clamp-2 break-words hover:underline">{name}</Link></h2>
+            <h2 ref={titleRef} tabIndex={-1} className="min-w-0 text-lg font-semibold tracking-tight outline-none"><Link href={`/ai/workbench/project?project=${encodeURIComponent(run.projectId)}&tab=plan`} className="line-clamp-2 break-words hover:underline">{name}</Link></h2>
             <PlanStatusBadge status={run.status} />
             {run.wakePending && active ? <Badge variant="outline" className="border-amber-500/30 text-amber-700 dark:text-amber-300">wake pending</Badge> : null}
           </div>

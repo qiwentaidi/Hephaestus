@@ -62,3 +62,9 @@ export function canPausePlanRun(run: AIPlanRun): boolean {
 export function canResumePlanRun(run: AIPlanRun): boolean {
   return !run.readOnly && isOrchestrationRunId(run.id) && run.status === 'paused'
 }
+
+/** An orchestration run can only be removed after it has fully stopped. */
+export function canDeletePlanRun(run: AIPlanRun): boolean {
+  return !run.readOnly && isOrchestrationRunId(run.id) &&
+    !['planning', 'waiting', 'pausing', 'running', 'pending'].includes(run.status)
+}

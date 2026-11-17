@@ -217,6 +217,7 @@ func SetupRoutes(r *gin.Engine) {
 			aiGroup.GET("/plan-runs", ai.ListAIPlanRunsHandler)
 			aiGroup.POST("/plan-runs", ai.CreateAIPlanRunHandler)
 			aiGroup.GET("/plan-runs/:id", ai.GetAIPlanRunHandler)
+			aiGroup.DELETE("/plan-runs/:id", ai.DeleteAIPlanRunHandler)
 			aiGroup.GET("/plan-runs/:id/items", ai.ListAIPlanItemRowsHandler)
 			aiGroup.GET("/plan-runs/:id/items/:itemId", ai.GetAIPlanItemHandler)
 			aiGroup.POST("/plan-runs/:id/controller", ai.EnsureAIPlanRunControllerHandler)

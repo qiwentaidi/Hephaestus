@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { Copy, FileText, ListTodo, MessageSquare, MoreHorizontal, Pause, Play, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
+import { Copy, FileText, MessageSquare, MoreHorizontal, Pause, Play, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,9 +20,9 @@ import { PlanStatusBadge } from '@/components/plan-status-badge'
 import { useI18n } from '@/lib/i18n'
 import { listAllAIWorkbenchPenTestProjects, type AIWorkbenchProject } from '@/lib/api/ai-workbench'
 import { actionAIBatchQueues, deleteAIBatchQueue, listAIBatchQueues, retryAIBatchItem, type AIBatchQueue, type BatchStatus } from '@/lib/api/ai-batch'
-import { pauseAIPlanRun, resumeAIPlanRun, listAIPlanRunSummaries, listAIPlanItemRows, type AIPlanItemRows, type AIPlanRunSummary, type AIPlanRunListItem } from '@/lib/api/ai-plan'
+import { deleteAIPlanRun, pauseAIPlanRun, resumeAIPlanRun, listAIPlanRunSummaries, listAIPlanItemRows, type AIPlanItemRows, type AIPlanRunSummary, type AIPlanRunListItem } from '@/lib/api/ai-plan'
 import { batchDetailHref, canPauseQueue, canResumeQueue, canRetryQueue, deleteQueueSelection, isActiveQueue, summarizeBatch } from '@/lib/ai-batch-view'
-import { canPausePlanRun, canResumePlanRun } from '@/lib/ai-plan-view'
+import { canDeletePlanRun, canPausePlanRun, canResumePlanRun } from '@/lib/ai-plan-view'
 import { cn } from '@/lib/utils'
 import { BatchTaskDetail } from './BatchTaskDetail'
 import { TaskCreateDialog } from './TaskCreateDialog'
@@ -30,6 +30,8 @@ import { PlanTaskDetail, EmptyPlanDetail } from './PlanTaskDetail'
 import { ProjectStorageDialog } from './ProjectStorageDialog'
 
 type UnifiedTask = { kind: 'batch' | 'plan'; key: string; id: string; name: string; projectId: string; status: string; updatedAt: string; queue?: AIBatchQueue; plan?: AIPlanRunSummary }
+type DeleteTarget = { key: string; kind: 'batch' | 'plan'; id: string; name: string; status: string; active: boolean }
+type PlanDeleteResult = { key: string; name: string; error?: string }
 
 const taskRefreshIntervalMs = 5000
 
@@ -67,7 +69,7 @@ export default function TaskManagement() {
   const [refreshing, setRefreshing] = useState(false)
   const [loadError, setLoadError] = useState('')
   const [error, setError] = useState('')
-  const [deleteIds, setDeleteIds] = useState<string[]>([])
+  const [deleteKeys, setDeleteKeys] = useState<string[]>([])
   const [actionErrors, setActionErrors] = useState<string[]>([])
   const [storageProject, setStorageProject] = useState<{ id: string; name: string } | null>(null)
   const mounted = useRef(true)
@@ -103,7 +105,6 @@ export default function TaskManagement() {
       if (signal.aborted) return
       if (batch.status === 'fulfilled') {
         setQueues(batch.value)
-        setSelected(previous => previous.filter(id => batch.value.some(queue => queue.id === id)))
       }
       if (plan.status === 'fulfilled') {
         setPlans(plan.value)
@@ -216,13 +217,39 @@ export default function TaskManagement() {
   if (firstViewReady && !layoutReady) setLayoutReady(true)
   const showLayout = layoutReady || firstViewReady
   const firstLoadError = !showLayout && (loadError || planRowsError)
-  const selectedQueues = queues.filter(q => selected.includes(q.id))
-  const pauseIds = selectedQueues.filter(canPauseQueue).map(q => q.id)
-  const resumeIds = selectedQueues.filter(canResumeQueue).map(q => q.id)
-  const retryIds = selectedQueues.filter(canRetryQueue).map(q => q.id)
-  const deletableIds = selectedQueues.filter(q => !isActiveQueue(q)).map(q => q.id)
-  const deleteTargets = queues.filter(q => deleteIds.includes(q.id))
-  const activeDeleteTargets = deleteTargets.some(isActiveQueue)
+  const validSelection = selected.filter(key => key.startsWith('batch:')
+    ? queues.some(queue => `batch:${queue.id}` === key)
+    : plans.some(plan => `plan:${plan.run.id}` === key))
+  const selectedKeySet = new Set(validSelection)
+  const selectedQueues = queues.filter(q => selectedKeySet.has(`batch:${q.id}`))
+  const selectedPlans = plans.filter(p => selectedKeySet.has(`plan:${p.run.id}`))
+  const deletableQueues = selectedQueues.filter(q => !isActiveQueue(q))
+  const deletablePlans = selectedPlans.filter(p => canDeletePlanRun(p.run))
+  const deletableKeys = [
+    ...deletableQueues.map(q => `batch:${q.id}`),
+    ...deletablePlans.map(p => `plan:${p.run.id}`),
+  ]
+  const deleteTargets: DeleteTarget[] = []
+  for (const key of deleteKeys) {
+    if (key.startsWith('batch:')) {
+      const queue = queues.find(q => `batch:${q.id}` === key)
+      if (!queue) continue
+      deleteTargets.push({ key, kind: 'batch', id: queue.id, name: queue.name, status: queue.status, active: isActiveQueue(queue) })
+    } else if (key.startsWith('plan:')) {
+      const plan = plans.find(p => `plan:${p.run.id}` === key)
+      if (!plan) continue
+      deleteTargets.push({ key, kind: 'plan', id: plan.run.id, name: plan.project?.name || projectName(plan.run.projectId), status: plan.run.status, active: !canDeletePlanRun(plan.run) })
+    }
+  }
+  const activeDeleteTargets = deleteTargets.some(target => target.active)
+  const visibleTaskKeys = visibleTasks.map(task => task.key)
+  const allVisibleSelected = visibleTaskKeys.length > 0 && visibleTaskKeys.every(key => validSelection.includes(key))
+  const toggleVisibleSelection = (checked: boolean | 'indeterminate') => {
+    setSelected(previous => {
+      if (checked === true) return [...new Set([...previous, ...visibleTaskKeys])]
+      return previous.filter(key => !visibleTaskKeys.includes(key))
+    })
+  }
   const date = (value?: string) => value ? new Date(value).toLocaleString(language === 'zh' ? 'zh-CN' : 'en-US', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'
   const countLabel = (label: string, count: number) => label.replace('{count}', String(count))
   const navigate = (queueId: string) => {
@@ -273,13 +300,35 @@ export default function TaskManagement() {
     finally { setBusy(false) }
   }
   const remove = async () => {
-    if (busy || !deleteIds.length || activeDeleteTargets) return
+    if (busy || !deleteKeys.length || activeDeleteTargets || !deleteTargets.length) return
     setBusy(true)
-    const results = await deleteQueueSelection(queues, deleteIds, deleteAIBatchQueue, l.deleteStopped)
-    const removed = results.filter(result => !result.error).map(result => result.id)
-    const failures = results.filter(result => result.error)
+    const currentSelectedKey = selectedTask?.key
+    const batchTargets = deleteTargets.filter(target => target.kind === 'batch')
+    const planTargets = deleteTargets.filter(target => target.kind === 'plan')
+    const batchResults = await deleteQueueSelection(
+      queues,
+      batchTargets.map(target => target.id),
+      deleteAIBatchQueue,
+      l.deleteStopped,
+    )
+    const planResults = await Promise.all(planTargets.map(async (target): Promise<PlanDeleteResult> => {
+      try {
+        await deleteAIPlanRun(target.id)
+        return { key: target.key, name: target.name }
+      } catch (error) {
+        return { key: target.key, name: target.name, error: error instanceof Error ? error.message : String(error) }
+      }
+    }))
+    const removedKeys = [
+      ...batchResults.filter(result => !result.error).map(result => `batch:${result.id}`),
+      ...planResults.filter(result => !result.error).map(result => result.key),
+    ]
+    const failures = [
+      ...batchResults.filter(result => result.error).map(result => ({ name: result.name, error: result.error || '' })),
+      ...planResults.filter(result => result.error).map(result => ({ name: result.name, error: result.error || '' })),
+    ]
     const summary = [
-      removed.length > 0 && countLabel(l.deleteSuccessCount, removed.length),
+      removedKeys.length > 0 && countLabel(l.deleteSuccessCount, removedKeys.length),
       failures.length > 0 && countLabel(l.deleteFailureCount, failures.length),
     ].filter(Boolean).join(' · ')
     if (failures.length) {
@@ -288,16 +337,19 @@ export default function TaskManagement() {
     } else {
       toast.success(summary)
     }
-    setDeleteIds([])
-    setQueues(prev => prev.filter(q => !removed.includes(q.id)))
-    setSelected(prev => prev.filter(value => !removed.includes(value)))
-    if (detail && removed.includes(detail.id)) {
-      const next = new URLSearchParams(params.toString()); next.delete('queue'); next.delete('item'); next.delete('items')
+    setDeleteKeys([])
+    setQueues(prev => prev.filter(queue => !removedKeys.includes(`batch:${queue.id}`)))
+    setPlans(prev => prev.filter(plan => !removedKeys.includes(`plan:${plan.run.id}`)))
+    setSelected(prev => prev.filter(key => !removedKeys.includes(key)))
+    if (currentSelectedKey && removedKeys.includes(currentSelectedKey)) {
+      const next = new URLSearchParams(params.toString())
+      next.delete('run'); next.delete('queue'); next.delete('item'); next.delete('items'); next.delete('view')
       window.history.replaceState(null, '', `${pathname}${next.size ? `?${next}` : ''}`)
     }
     await refresh(true)
     setBusy(false)
   }
+
   const retryItem = async (queueId: string, itemId: string) => {
     if (busy) return
     setBusy(true)
@@ -316,7 +368,7 @@ export default function TaskManagement() {
       {canResumeQueue(queue) && <DropdownMenuItem onSelect={() => void act([queue.id], 'resume')}><Play />{queue.status === 'pending' ? l.start : l.resume}</DropdownMenuItem>}
       {canRetryQueue(queue) && <DropdownMenuItem onSelect={() => void act([queue.id], 'retry_failed')}><RefreshCw />{l.retryFailed}</DropdownMenuItem>}
       <DropdownMenuSeparator />
-      <DropdownMenuItem variant="destructive" disabled={isActiveQueue(queue)} onSelect={() => setDeleteIds([queue.id])}><Trash2 />{l.delete}</DropdownMenuItem>
+      <DropdownMenuItem variant="destructive" disabled={isActiveQueue(queue)} onSelect={() => setDeleteKeys([`batch:${queue.id}`])}><Trash2 />{l.delete}</DropdownMenuItem>
       {isActiveQueue(queue) && <p className="max-w-60 px-2 py-1.5 text-xs leading-5 text-muted-foreground">{l.deleteStopped}</p>}
     </DropdownMenuContent>
   </DropdownMenu>
@@ -330,14 +382,19 @@ export default function TaskManagement() {
       {canPausePlanRun(plan.run) && <><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => void actOnPlan(plan.run.id, 'pause')} disabled={Boolean(planAction)}><Pause />{planAction?.id === plan.run.id ? p.statuses.pausing : p.pause}</DropdownMenuItem></>}
       {canResumePlanRun(plan.run) && <><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => void actOnPlan(plan.run.id, 'resume')} disabled={Boolean(planAction)}><Play />{planAction?.id === plan.run.id ? p.resuming : p.resume}</DropdownMenuItem></>}
       {plan.run.status === 'pausing' && <DropdownMenuItem disabled><Pause />{p.statuses.pausing}</DropdownMenuItem>}
+      <DropdownMenuSeparator />
+      <DropdownMenuItem variant="destructive" disabled={busy || !canDeletePlanRun(plan.run)} onSelect={() => setDeleteKeys([`plan:${plan.run.id}`])}><Trash2 />{p.delete}</DropdownMenuItem>
+      {!canDeletePlanRun(plan.run) && <p className="max-w-60 px-2 py-1.5 text-xs leading-5 text-muted-foreground">{p.deleteActive}</p>}
     </DropdownMenuContent>
   </DropdownMenu>
 
   return <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-hidden p-4 md:p-5" data-testid="task-management">
-    <header className="flex shrink-0 flex-wrap items-center justify-between gap-4">
-      <h1 className="text-2xl font-semibold tracking-tight">{l.title}</h1>
-      <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto">
-        <div className="relative min-w-44 flex-1 basis-full sm:basis-auto xl:w-56"><Search className="pointer-events-none absolute left-3 top-3 size-4 text-muted-foreground" aria-hidden /><Input aria-label={l.search} placeholder={l.search} value={query} onChange={e => setQuery(e.target.value)} className="pl-9" /></div>
+    <header className="flex shrink-0 flex-wrap items-center gap-2">
+      <div className="mr-auto flex min-w-0 items-baseline gap-2">
+        <h1 className="text-lg font-semibold tracking-tight">{l.title}</h1>
+      </div>
+      <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
+        <div className="relative w-full min-w-0 sm:w-56 xl:w-60"><Search className="pointer-events-none absolute left-3 top-3 size-4 text-muted-foreground" aria-hidden /><Input aria-label={l.search} placeholder={l.search} value={query} onChange={e => setQuery(e.target.value)} className="pl-9" /></div>
         <MultiSelectFilter
           values={statusFilter}
           options={Object.entries(l.taskStatus).map(([value, label]) => ({ value, label }))}
@@ -364,36 +421,38 @@ export default function TaskManagement() {
     </div> : <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto xl:grid xl:grid-cols-[minmax(260px,300px)_minmax(0,1fr)] xl:overflow-hidden">
       <section aria-label={l.listTitle} className="flex min-h-0 shrink-0 flex-col rounded-xl border bg-card/30 xl:overflow-hidden">
         <div className="shrink-0 border-b p-3">
-          <h2 className="flex items-center gap-2 font-semibold">{l.listTitle}<Badge variant="secondary" className="tabular-nums">{visibleTasks.length}</Badge></h2>
+          <div className="flex min-h-8 flex-wrap items-center gap-2">
+            {validSelection.length > 0 ? (
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2" data-testid="task-bulk-actions">
+                <Checkbox checked={allVisibleSelected} onCheckedChange={toggleVisibleSelection} aria-label={l.selectVisible} />
+                <span className="text-xs font-medium text-foreground">{countLabel(l.selected, validSelection.length)}</span>
+                <Button size="icon-sm" variant="outline" className="text-destructive" disabled={busy || !deletableKeys.length} aria-label={countLabel(l.deleteSelected, deletableKeys.length)} title={countLabel(l.deleteSelected, deletableKeys.length)} onClick={() => setDeleteKeys(deletableKeys)}><Trash2 className="size-4" /></Button>
+                {deletableKeys.length < validSelection.length && <span className="min-w-0 text-[10px] leading-4 text-muted-foreground">{countLabel(l.deleteSkipped, validSelection.length - deletableKeys.length)}</span>}
+                <Button size="icon-sm" variant="ghost" className="ml-auto" aria-label={l.clearSelection} title={l.clearSelection} disabled={busy} onClick={() => setSelected([])}><X className="size-4" /></Button>
+              </div>
+            ) : <>
+              <h2 className="flex items-center gap-2 text-sm font-semibold">{l.listTitle}<Badge variant="secondary" className="tabular-nums">{visibleTasks.length}</Badge></h2>
+              <Checkbox className="ml-auto" checked={allVisibleSelected} onCheckedChange={toggleVisibleSelection} aria-label={l.selectVisible} />
+            </>}
+          </div>
           <div role="group" aria-label={l.listTitle} className="mt-3 flex rounded-md border p-0.5">
             {(['all', 'batch', 'plan'] as const).map(kind => <button key={kind} type="button" aria-pressed={kindFilter === kind} className={cn('min-w-0 flex-1 rounded px-2 py-1.5 text-xs focus-visible:outline-2 focus-visible:outline-foreground', kindFilter === kind ? 'bg-muted font-medium text-foreground' : 'text-muted-foreground hover:text-foreground')} onClick={() => setKindFilter(kind)}>{kind === 'all' ? l.all : kind === 'batch' ? l.batchTab : p.tab}</button>)}
           </div>
         </div>
-        {selected.length > 0 && <div className="flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2" data-testid="task-bulk-actions">
-          <span className="text-sm">{countLabel(l.selected, selected.length)}</span>
-          <Button size="sm" variant="outline" className="text-destructive" disabled={busy || !deletableIds.length} onClick={() => setDeleteIds(deletableIds)}><Trash2 className="size-4" />{countLabel(l.deleteSelected, deletableIds.length)}</Button>
-          <Button size="icon" variant="ghost" className="ml-auto size-7" aria-label={l.clearSelection} disabled={busy} onClick={() => setSelected([])}><X className="size-4" /></Button>
-          <div className="flex w-full flex-wrap gap-2">
-            {pauseIds.length > 0 && <Button variant="outline" size="sm" disabled={busy} title={countLabel(l.eligible, pauseIds.length)} onClick={() => void act(pauseIds, 'pause')}>{l.pauseSelected} ({pauseIds.length})</Button>}
-            {resumeIds.length > 0 && <Button variant="outline" size="sm" disabled={busy} title={countLabel(l.eligible, resumeIds.length)} onClick={() => void act(resumeIds, 'resume')}>{l.resumeSelected} ({resumeIds.length})</Button>}
-            {retryIds.length > 0 && <Button variant="outline" size="sm" disabled={busy} title={countLabel(l.eligible, retryIds.length)} onClick={() => void act(retryIds, 'retry_failed')}>{l.retryFailed} ({retryIds.length})</Button>}
-          </div>
-          {deletableIds.length < selected.length && <p className="text-xs leading-5 text-muted-foreground">{countLabel(l.deleteSkipped, selected.length - deletableIds.length)}</p>}
-        </div>}
         <div className="max-h-[28dvh] min-h-0 flex-1 overflow-y-auto xl:max-h-none">
           {visibleTasks.map(task => {
             const isBatch = task.kind === 'batch'
             const summary = task.queue ? summarizeBatch(task.queue) : null
             const planCompleted = task.plan?.itemCounts.completed || 0
             const active = selectedTask?.key === task.key
-            return <div key={task.key} className={cn('group flex items-start gap-2 border-b border-l-2 border-l-transparent px-3 py-3 last:border-b-0 hover:bg-muted/30', active && 'border-l-foreground bg-muted/50', task.queue && selected.includes(task.queue.id) && 'bg-muted/30')}>
-              {task.queue ? <Checkbox className="mt-1" disabled={busy} aria-label={`${l.selectQueue}: ${task.queue.name}`} checked={selected.includes(task.queue.id)} onCheckedChange={checked => setSelected(prev => checked === true ? [...new Set([...prev, task.queue!.id])] : prev.filter(value => value !== task.queue!.id))} /> : <span className="mt-1 flex size-4 shrink-0 items-center justify-center"><ListTodo className="size-4 text-muted-foreground" /></span>}
+            return <div key={task.key} className={cn('group relative flex items-start gap-2 border-b border-l-2 border-l-transparent px-3 py-3 last:border-b-0 hover:bg-muted/30', active && 'border-l-foreground bg-muted/50', selected.includes(task.key) && 'bg-muted/30')}>
+              <Checkbox className="mt-1" disabled={busy} aria-label={`${l.selectQueue}: ${task.name}`} checked={selected.includes(task.key)} onCheckedChange={checked => setSelected(prev => checked === true ? [...new Set([...prev, task.key])] : prev.filter(value => value !== task.key))} />
               <button type="button" aria-current={active ? 'true' : undefined} className="min-w-0 flex-1 rounded-sm text-left focus-visible:outline-2 focus-visible:outline-foreground" onClick={() => task.queue ? chooseQueue(task.queue) : task.plan ? choosePlan(task.plan) : undefined}>
-                <span className="flex min-w-0 items-center gap-2"><Badge variant="outline" className="h-5 shrink-0 rounded px-1 text-[10px]">{isBatch ? l.batchTab : p.tab}</Badge><span className="min-w-0 flex-1 truncate text-sm font-semibold" title={task.name}>{task.name}</span></span>
-                <span className="mt-2 flex flex-wrap items-center gap-2">{isBatch ? badge(task.status as BatchStatus) : <PlanStatusBadge status={task.status} />}<span className="text-xs tabular-nums text-muted-foreground">{isBatch ? `${l.processed} ${summary?.processed || 0}/${summary?.total || 0}` : `${p.total.replace('{count}', String(task.plan?.itemTotal || 0))} · ${p.completed.replace('{count}', String(planCompleted))}`}</span></span>
+                <span className="flex min-w-0 items-center gap-2 pr-8"><Badge variant="outline" className="h-5 shrink-0 rounded px-1 text-[10px]">{isBatch ? l.batchTab : p.tab}</Badge><span className="min-w-0 flex-1 truncate text-sm font-semibold" title={task.name}>{task.name}</span></span>
+                <span className="mt-2 flex flex-wrap items-center gap-2 pr-8">{isBatch ? badge(task.status as BatchStatus) : <PlanStatusBadge status={task.status} />}<span className="text-xs tabular-nums text-muted-foreground">{isBatch ? `${l.processed} ${summary?.processed || 0}/${summary?.total || 0}` : `${p.total.replace('{count}', String(task.plan?.itemTotal || 0))} · ${p.completed.replace('{count}', String(planCompleted))}`}</span></span>
                 <span className="mt-1.5 flex justify-between gap-2 text-[11px] leading-5 text-muted-foreground">{task.queue && projectName(task.projectId) !== task.name && <span className="min-w-0 truncate">{projectName(task.projectId)}</span>}<time className="ml-auto shrink-0">{date(task.updatedAt)}</time></span>
               </button>
-              {task.queue ? queueMenu(task.queue) : task.plan ? planMenu(task.plan) : null}
+              <div className="absolute right-3 top-3">{task.queue ? queueMenu(task.queue) : task.plan ? planMenu(task.plan) : null}</div>
             </div>
           })}
           {!visibleTasks.length && <Empty className="min-h-48"><EmptyDescription>{unifiedTasks.length ? l.noMatches : l.empty}</EmptyDescription>{unifiedTasks.length > 0 && <Button variant="outline" onClick={() => { setQuery(''); setStatusFilter([]); setKindFilter('all') }}>{l.clearFilters}</Button>}</Empty>}
@@ -409,11 +468,11 @@ export default function TaskManagement() {
     </div>}
     {storageProject && <ProjectStorageDialog key={storageProject.id} project={storageProject} onClose={() => setStorageProject(null)} />}
     {creating && <TaskCreateDialog projects={projects} projectId={detail?.projectId} source={copySource} planSource={copyPlanSource} onClose={() => setCreating(false)} onCreated={queue => { setCreating(false); setQueues(prev => [queue, ...prev]); setQuery(''); setStatusFilter([]); setKindFilter('all'); chooseQueue(queue); toast.success(l.created); void refresh(true); void refreshProjects() }} onPlanCreated={plan => { setCreating(false); setSelectedTaskKey(`plan:${plan.run.id}`); setQuery(''); setStatusFilter([]); setKindFilter('all'); toast.success(p.createCreated); void refresh(true); void refreshProjects() }} />}
-    <AlertDialog open={deleteIds.length > 0} onOpenChange={open => { if (!open && !busy) setDeleteIds([]) }}>
-      <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{countLabel(l.deleteConfirm, deleteIds.length)}</AlertDialogTitle><AlertDialogDescription>{l.deleteScope}</AlertDialogDescription></AlertDialogHeader>
-        <ul className="max-h-48 space-y-2 overflow-y-auto rounded-md border p-3 text-sm">{deleteTargets.map(queue => <li key={queue.id} className="flex items-center justify-between gap-3"><span className="break-words">{queue.name}</span>{badge(queue.status)}</li>)}</ul>
+    <AlertDialog open={deleteTargets.length > 0} onOpenChange={open => { if (!open && !busy) setDeleteKeys([]) }}>
+      <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{countLabel(l.deleteConfirmMixed, deleteTargets.length)}</AlertDialogTitle><AlertDialogDescription>{l.deleteScopeMixed}</AlertDialogDescription></AlertDialogHeader>
+        <ul className="max-h-48 space-y-2 overflow-y-auto rounded-md border p-3 text-sm">{deleteTargets.map(target => <li key={target.key} className="flex items-center justify-between gap-3"><span className="flex min-w-0 items-center gap-2"><Badge variant="outline" className="h-5 shrink-0 rounded px-1 text-[10px]">{target.kind === 'batch' ? l.batchTab : p.tab}</Badge><span className="break-words">{target.name}</span></span>{target.kind === 'batch' ? badge(target.status as BatchStatus) : <PlanStatusBadge status={target.status} />}</li>)}</ul>
         {activeDeleteTargets && <p role="alert" className="text-sm text-tone-amber">{l.deleteStopped}</p>}
-        <AlertDialogFooter><AlertDialogCancel disabled={busy}>{l.cancel}</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={busy || activeDeleteTargets || !deleteTargets.length} onClick={event => { event.preventDefault(); void remove() }}>{busy ? l.loading : countLabel(l.deleteSelected, deleteIds.length)}</AlertDialogAction></AlertDialogFooter>
+        <AlertDialogFooter><AlertDialogCancel disabled={busy}>{l.cancel}</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={busy || activeDeleteTargets || !deleteTargets.length} onClick={event => { event.preventDefault(); void remove() }}>{busy ? l.loading : countLabel(l.deleteSelected, deleteTargets.length)}</AlertDialogAction></AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   </div>
