@@ -41,8 +41,8 @@ func CreateFindingHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "请求参数无效: " + err.Error()})
 		return
 	}
-	if strings.TrimSpace(request.Source) == "" || strings.TrimSpace(request.Target) == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "source 和 target 不能为空"})
+	if strings.TrimSpace(request.Source) == "" || strings.TrimSpace(request.Target) == "" || strings.TrimSpace(request.Title) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "source、target 和 title 不能为空"})
 		return
 	}
 	db, err := database.GetDB()

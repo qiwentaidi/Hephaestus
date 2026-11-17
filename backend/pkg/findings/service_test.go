@@ -324,3 +324,10 @@ func TestIsValidDomainNameRejectsCredentialLikeValues(t *testing.T) {
 		t.Fatal("valid domain rejected")
 	}
 }
+
+func TestIngestRequiresTitle(t *testing.T) {
+	db := newTestFindingsDB(t)
+	if _, err := Ingest(db, Input{Source: "ai", Target: "https://api.example.com", Severity: "high"}); err == nil {
+		t.Fatal("expected a title-less finding to be rejected")
+	}
+}

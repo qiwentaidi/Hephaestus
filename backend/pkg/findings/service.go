@@ -148,6 +148,9 @@ func Ingest(db *gorm.DB, input Input) (database.SecurityFinding, error) {
 	if db == nil {
 		return database.SecurityFinding{}, errors.New("finding ingestion requires a database")
 	}
+	if strings.TrimSpace(input.Title) == "" {
+		return database.SecurityFinding{}, errors.New("finding title is required")
+	}
 	if !db.Migrator().HasTable(&database.SecurityFinding{}) {
 		if err := db.Migrator().AutoMigrate(&database.SecurityFinding{}, &database.FindingAssetLink{}, &database.AssetRisk{}); err != nil {
 			return database.SecurityFinding{}, err
