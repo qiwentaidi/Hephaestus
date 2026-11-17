@@ -61,6 +61,7 @@ func migrationSteps() []migrations.Step {
 		{ID: "0010_unified_asset_ledger", Name: "回填统一资产台账字段", Up: once(backfillUnifiedAssetLedgerFields)},
 		{ID: "0011_collect_data", Name: "合并采集结果为结构化数据", Up: migrateCollectDataStep},
 		{ID: "0015_cancelled_combination_status", Name: "同步已取消组合任务状态", Up: once(syncCancelledCombinationStatus)},
+		{ID: "0016_reconcile_combination_status", Name: "收敛组合任务与父任务状态", Up: once(reconcileCombinationStatus)},
 	}...)
 	return steps
 }

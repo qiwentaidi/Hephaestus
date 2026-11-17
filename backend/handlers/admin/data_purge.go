@@ -227,10 +227,23 @@ func collectActivePurgeTasks(db *gorm.DB) ([]dataPurgeActiveTask, error) {
 			counts["scan"] = count
 		}
 	}
-	if db.Migrator().HasTable(&database.CombinationTask{}) {
+	if db.Migrator().HasTable(&database.CombinationTask{}) && db.Migrator().HasTable(&database.VulnScanTask{}) {
 		var count int64
-		if err := db.Model(&database.CombinationTask{}).
-			Where("status NOT IN ?", terminal).
+		// Only count combination rows that still have a visible, non-terminal
+		// parent task. Orphan rows and rows whose parent is already terminal are
+		// not shown in the task list and must not block cleanup forever.
+		if err := db.Table("combination_task AS c").
+			Where("c.status NOT IN ?", terminal).
+			Where(`EXISTS (
+				SELECT 1 FROM vul_scan_task t
+				WHERE t.parent_combination_id = c.id
+					AND t.scan_type = ?
+					AND t.version = (
+						SELECT MAX(q.version) FROM vul_scan_task q
+						WHERE q.parent_combination_id = c.id AND q.scan_type = ?
+					)
+					AND t.status NOT IN ?
+			)`, "combination", "combination", terminal).
 			Count(&count).Error; err != nil {
 			return nil, err
 		}

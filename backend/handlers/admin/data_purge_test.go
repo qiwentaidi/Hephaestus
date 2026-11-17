@@ -51,6 +51,36 @@ func TestCollectActivePurgeTasksReportsRunningWork(t *testing.T) {
 	}).Error; err != nil {
 		t.Fatal(err)
 	}
+	if err := db.Create(&database.VulnScanTask{
+		ID: "combo-parent", Version: 1, ScanType: "combination", Status: "running", ParentCombinationID: "combo-running",
+	}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&database.CombinationTask{
+		ID: "combo-orphan", Name: "orphan combo", Targets: "[]", Nodes: "[]", Status: "running",
+	}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&database.CombinationTask{
+		ID: "combo-terminal-parent", Name: "terminal parent combo", Targets: "[]", Nodes: "[]", Status: "running",
+	}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&database.VulnScanTask{
+		ID: "combo-terminal-parent-task", Version: 1, ScanType: "combination", Status: "cancelled", ParentCombinationID: "combo-terminal-parent",
+	}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&database.CombinationTask{
+		ID: "combo-child-only", Name: "child-only combo", Targets: "[]", Nodes: "[]", Status: "running",
+	}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&database.VulnScanTask{
+		ID: "combo-child-only-scan", Version: 1, ScanType: "webscan", Status: "cancelled", ParentCombinationID: "combo-child-only",
+	}).Error; err != nil {
+		t.Fatal(err)
+	}
 	if err := db.Create(&database.CombinationTask{
 		ID: "combo-paused", Name: "paused combo", Targets: "[]", Nodes: "[]", Status: "paused",
 	}).Error; err != nil {
@@ -78,7 +108,7 @@ func TestCollectActivePurgeTasksReportsRunningWork(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := map[string]int64{
-		"scan": 2, "combination": 1, "company_info": 1,
+		"scan": 3, "combination": 1, "company_info": 1,
 		"api_doc_test": 1, "space_export": 1, "ai_worker": 3,
 	}
 	if len(groups) != len(want) {

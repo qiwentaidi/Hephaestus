@@ -70,6 +70,14 @@ func TestAutoMigrateIsVersionedAndIdempotent(t *testing.T) {
 		t.Fatalf("combination status step recorded %d times, want 1", combinationStatusRows)
 	}
 
+	var reconcileRows int64
+	if err := db.Table("schema_migrations").Where("version = ?", "0016_reconcile_combination_status").Count(&reconcileRows).Error; err != nil {
+		t.Fatalf("read combination reconcile step: %v", err)
+	}
+	if reconcileRows != 1 {
+		t.Fatalf("combination reconcile step recorded %d times, want 1", reconcileRows)
+	}
+
 	var before int64
 	if err := db.Table("schema_migrations").Count(&before).Error; err != nil {
 		t.Fatalf("count before: %v", err)
