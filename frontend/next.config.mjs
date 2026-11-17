@@ -11,6 +11,10 @@ const localDevOrigins = Object.values(os.networkInterfaces())
 const nextConfig = {
   allowedDevOrigins: localDevOrigins,
 
+  experimental: {
+    agentUpgrade: 'security',
+  },
+
   typescript: {
     ignoreBuildErrors: true,
   },
