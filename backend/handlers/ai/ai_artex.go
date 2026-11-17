@@ -78,6 +78,27 @@ func artexProfile(providerID, model string) (artexdb.LLMProfile, error) {
 	return p, nil
 }
 
+// artexFallbackProfile reuses the AI Workbench backup provider as the
+// orchestration task-wide backup. It is opt-in through the same setting, and a
+// broken backup configuration must not block creating the primary task.
+func artexFallbackProfile() (artexdb.LLMProfile, bool, error) {
+	cfg, err := config.GetAIConfig()
+	if err != nil {
+		return artexdb.LLMProfile{}, false, err
+	}
+	cfg = config.NormalizeAIConfig(cfg)
+	providerID := strings.TrimSpace(cfg.Routing.WorkbenchFallback)
+	if !cfg.Routing.WorkbenchFallbackEnabled || providerID == "" {
+		return artexdb.LLMProfile{}, false, nil
+	}
+	profile, err := artexProfile(providerID, "")
+	if err != nil {
+		return artexdb.LLMProfile{}, false, err
+	}
+	profile.Name += " fallback"
+	return profile, true, nil
+}
+
 func createARTEXPlan(c *gin.Context) {
 	var req createPlanRunRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -138,7 +159,13 @@ func createARTEXPlan(c *gin.Context) {
 		workers = defaultOrchestrationWorkers
 	}
 	workers = min(workers, 8)
-	t, err := rt.Engine.PrepareHostTask(taskengine.HostTaskOptions{Name: project.Name, Description: "目标资产：" + strings.Join(targets, "\n") + "\n授权范围：" + strings.Join(scope, "\n"), Goal: objective, Planner: planner, Worker: worker, Workers: workers})
+	var fallbackProfile *artexdb.LLMProfile
+	if fallback, ok, fallbackErr := artexFallbackProfile(); fallbackErr != nil {
+		log.Printf("[orchestration] 备用模型配置不可用，本次任务不启用主备切换: %v", fallbackErr)
+	} else if ok {
+		fallbackProfile = &fallback
+	}
+	t, err := rt.Engine.PrepareHostTask(taskengine.HostTaskOptions{Name: project.Name, Description: "目标资产：" + strings.Join(targets, "\n") + "\n授权范围：" + strings.Join(scope, "\n"), Goal: objective, Planner: planner, Worker: worker, Fallback: fallbackProfile, Workers: workers})
 	if err != nil {
 		nativeError(c, 500, err)
 		return
