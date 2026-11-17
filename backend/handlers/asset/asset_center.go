@@ -239,6 +239,12 @@ type assetIPMetadata struct {
 
 var assetIPMetadataResolver = ipmetadata.NewResolver(config.GetDataDir())
 
+// StartIPMetadataWarmup fetches the optional IP metadata databases in the
+// background so the first asset-center request does not wait on a download.
+func StartIPMetadataWarmup() {
+	assetIPMetadataResolver.StartWarmup()
+}
+
 func lookupAssetIPMetadata(value string) assetIPMetadata {
 	metadata := assetIPMetadataResolver.Lookup(value)
 	return assetIPMetadata{Operator: metadata.Operator, Location: metadata.Location, ASN: metadata.ASN}

@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"net/netip"
@@ -22,6 +23,8 @@ import (
 const (
 	geoLiteASNURL = "https://github.com/P3TERX/GeoLite.mmdb/releases/download/2026.07.16/GeoLite2-ASN.mmdb"
 	qqwryIPDBURL  = "https://cdn.jsdelivr.net/npm/qqwry.ipdb/qqwry.ipdb"
+
+	databaseDownloadTimeout = 2 * time.Minute
 
 	StateIdle             = "idle"
 	StateDownloadingQQWry = "downloading_qqwry"
@@ -48,14 +51,20 @@ type Status struct {
 	GeoLiteASNURL string `json:"geoLiteAsnUrl"`
 }
 
-// Resolver downloads the two public databases once when missing, then keeps
-// their readers in memory for the process lifetime.
+// Resolver loads the two public databases from the local data directory and
+// downloads any missing file in the background. Lookups never wait for a
+// download: they use whichever database is already open.
 type Resolver struct {
-	once     sync.Once
+	mu       sync.Mutex
 	statusMu sync.RWMutex
 	status   Status
 	cityDB   *ipdb.City
 	asnDB    *geoip2.Reader
+
+	loading  bool
+	qqwryURL string
+	asnURL   string
+	client   *http.Client
 }
 
 func NewResolver(dataDir string) *Resolver {
@@ -67,6 +76,9 @@ func NewResolver(dataDir string) *Resolver {
 			QQWryURL:      qqwryIPDBURL,
 			GeoLiteASNURL: geoLiteASNURL,
 		},
+		qqwryURL: qqwryIPDBURL,
+		asnURL:   geoLiteASNURL,
+		client:   &http.Client{Timeout: databaseDownloadTimeout},
 	}
 }
 
@@ -77,25 +89,30 @@ func (r *Resolver) Status() Status {
 	return r.status
 }
 
-// Lookup returns data only for routable public IP addresses. A missing or
-// temporarily unreachable database leaves the corresponding field blank.
+// Lookup returns data only for routable public IP addresses. It never starts
+// or waits for a download: StartWarmup loads the databases in the background,
+// and a missing database leaves the corresponding field blank.
 func (r *Resolver) Lookup(value string) Metadata {
 	ip := net.ParseIP(strings.TrimSpace(value))
 	if !isPublicIP(ip) {
 		return Metadata{}
 	}
 
-	r.once.Do(r.load)
+	r.mu.Lock()
+	city := r.cityDB
+	asn := r.asnDB
+	r.mu.Unlock()
+
 	metadata := Metadata{}
-	if r.cityDB != nil {
-		if info, err := r.cityDB.FindInfo(ip.String(), "CN"); err == nil && info != nil {
+	if city != nil {
+		if info, err := city.FindInfo(ip.String(), "CN"); err == nil && info != nil {
 			metadata.Location = MergeLocation(info.CountryName, info.RegionName, info.CityName, info.DistrictName)
 			metadata.Operator = NormalizeISP(info.IspDomain)
 		}
 	}
-	if r.asnDB != nil {
+	if asn != nil {
 		if address, err := netip.ParseAddr(ip.String()); err == nil {
-			if record, err := r.asnDB.ASN(address); err == nil && record != nil && record.HasData() {
+			if record, err := asn.ASN(address); err == nil && record != nil && record.HasData() {
 				metadata.ASN = fmt.Sprintf("AS%d", record.AutonomousSystemNumber)
 			}
 		}
@@ -103,40 +120,108 @@ func (r *Resolver) Lookup(value string) Metadata {
 	return metadata
 }
 
+// StartWarmup loads the databases in a background goroutine at application
+// startup, so asset requests never wait for a download. Failures are logged
+// with the manual download URL and target directory.
+func (r *Resolver) StartWarmup() {
+	r.mu.Lock()
+	if r.loading || (r.cityDB != nil && r.asnDB != nil) {
+		r.mu.Unlock()
+		return
+	}
+	r.loading = true
+	r.mu.Unlock()
+
+	go r.load()
+}
+
 func (r *Resolver) load() {
+	defer func() {
+		r.mu.Lock()
+		r.loading = false
+		r.mu.Unlock()
+	}()
+
 	databaseDir := r.Status().DatabaseDir
 	if err := os.MkdirAll(databaseDir, 0755); err != nil {
+		log.Printf("[IP元数据] 创建数据库目录失败: %v", err)
 		r.setStatus(StateFailed)
 		return
 	}
 
-	qqwryPath := filepath.Join(databaseDir, "qqwry.ipdb")
-	if databaseFileExists(qqwryPath) {
-		r.setStatus(StateLoading)
-	} else {
-		r.setStatus(StateDownloadingQQWry)
-	}
-	if path, err := ensureDatabaseFile(databaseDir, "qqwry.ipdb", qqwryIPDBURL); err == nil {
-		r.setStatus(StateLoading)
-		r.cityDB, _ = ipdb.NewCity(path)
+	r.mu.Lock()
+	city := r.cityDB
+	asn := r.asnDB
+	r.mu.Unlock()
+
+	if city == nil {
+		qqwryPath := filepath.Join(databaseDir, "qqwry.ipdb")
+		if databaseFileExists(qqwryPath) {
+			r.setStatus(StateLoading)
+		} else {
+			r.setStatus(StateDownloadingQQWry)
+		}
+		path, err := r.ensureDatabaseFile(databaseDir, "qqwry.ipdb", r.qqwryURL)
+		if err != nil {
+			r.logManualInstall("qqwry.ipdb", r.qqwryURL, err)
+		} else {
+			r.setStatus(StateLoading)
+			opened, openErr := ipdb.NewCity(path)
+			if openErr != nil {
+				r.logCorruptDatabase("qqwry.ipdb", path, openErr)
+			} else {
+				city = opened
+				r.mu.Lock()
+				r.cityDB = opened
+				r.mu.Unlock()
+			}
+		}
 	}
 
-	asnPath := filepath.Join(databaseDir, "GeoLite2-ASN.mmdb")
-	if databaseFileExists(asnPath) {
-		r.setStatus(StateLoading)
-	} else {
-		r.setStatus(StateDownloadingASN)
-	}
-	if path, err := ensureDatabaseFile(databaseDir, "GeoLite2-ASN.mmdb", geoLiteASNURL); err == nil {
-		r.setStatus(StateLoading)
-		r.asnDB, _ = geoip2.Open(path)
+	if asn == nil {
+		asnPath := filepath.Join(databaseDir, "GeoLite2-ASN.mmdb")
+		if databaseFileExists(asnPath) {
+			r.setStatus(StateLoading)
+		} else {
+			r.setStatus(StateDownloadingASN)
+		}
+		path, err := r.ensureDatabaseFile(databaseDir, "GeoLite2-ASN.mmdb", r.asnURL)
+		if err != nil {
+			r.logManualInstall("GeoLite2-ASN.mmdb", r.asnURL, err)
+		} else {
+			r.setStatus(StateLoading)
+			opened, openErr := geoip2.Open(path)
+			if openErr != nil {
+				r.logCorruptDatabase("GeoLite2-ASN.mmdb", path, openErr)
+			} else {
+				asn = opened
+				r.mu.Lock()
+				r.asnDB = opened
+				r.mu.Unlock()
+			}
+		}
 	}
 
-	if r.cityDB != nil && r.asnDB != nil {
+	if city != nil && asn != nil {
 		r.setStatus(StateReady)
+		log.Printf("[IP元数据] IP 归属地库已加载: %s", databaseDir)
 		return
 	}
 	r.setStatus(StateFailed)
+}
+
+// logManualInstall tells operators how to supply a database file when the
+// automatic download fails, which is common on intranet deployments.
+func (r *Resolver) logManualInstall(filename, sourceURL string, cause error) {
+	target := filepath.Join(r.Status().DatabaseDir, filename)
+	log.Printf("[IP元数据] 下载 %s 失败: %v", filename, cause)
+	log.Printf("[IP元数据] 请手动下载 %s 并放到: %s（放好后重启服务生效）", filename, target)
+	log.Printf("[IP元数据] 下载地址: %s", sourceURL)
+}
+
+func (r *Resolver) logCorruptDatabase(filename, path string, cause error) {
+	log.Printf("[IP元数据] 打开 %s 失败（文件可能损坏）: %v", filename, cause)
+	log.Printf("[IP元数据] 请删除 %s 后重启服务重新下载，或手动替换该文件", path)
 }
 
 func (r *Resolver) setStatus(state string) {
@@ -151,20 +236,24 @@ func databaseFileExists(path string) bool {
 	return err == nil && info.Size() > 0
 }
 
-func ensureDatabaseFile(directory, filename, sourceURL string) (string, error) {
+func (r *Resolver) ensureDatabaseFile(directory, filename, sourceURL string) (string, error) {
 	path := filepath.Join(directory, filename)
 	if databaseFileExists(path) {
 		return path, nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), databaseDownloadTimeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, sourceURL, nil)
 	if err != nil {
 		return "", err
 	}
 	req.Header.Set("User-Agent", "Hephaestus-IP-Metadata/1.0")
-	response, err := (&http.Client{}).Do(req)
+	client := r.client
+	if client == nil {
+		client = &http.Client{Timeout: databaseDownloadTimeout}
+	}
+	response, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}

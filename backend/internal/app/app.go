@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"hephaestus-backend/handlers/ai"
+	"hephaestus-backend/handlers/asset"
 	"hephaestus-backend/handlers/scan"
 	"hephaestus-backend/internal/mcptooling"
 	mcpserver "hephaestus-backend/mcp"
@@ -143,6 +144,8 @@ func (a *App) Bootstrap() error {
 	}
 	// 模板索引在后台预热：窗口不必等待 5795 个模板文件被逐个读取解析。
 	webscan.StartPOCTemplateCacheWarmup()
+	// IP 归属地库同样后台预热：资产接口不能被外网下载阻塞。
+	asset.StartIPMetadataWarmup()
 	if err := ai.StartUnifiedLocalAgent(context.Background(), scanRuntimeConfig.MaxConcurrentTasks); err != nil {
 		return fmt.Errorf("start unified local Agent: %w", err)
 	}
