@@ -1597,8 +1597,21 @@ function CompoundComposer({ composerRef, bootstrap, projects, selectedProjectId,
   }, [toolMenuOpen, toolCatalogRevision])
   const commandMenuRef = useRef<ComposerCommandMenuHandle>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const commandPointerDownRef = useRef(false)
-  const dismissCommands = () => { setCommand(null); setReferenceTask(null); setToolCatalog(null); setToolCatalogError('') }
+  const dismissCommands = useCallback(() => { setCommand(null); setReferenceTask(null); setToolCatalog(null); setToolCatalogError('') }, [])
+  // The command popup floats above the composer and lives inside it, so focus
+  // moving around the popup (page buttons, task rows, checkboxes, scrollbars)
+  // must not be treated as an outside click. Dismiss only when a pointer
+  // gesture starts outside the composer and its portaled menus.
+  useEffect(() => {
+    if (!command) return
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target
+      if (target instanceof Element && target.closest('[data-slot="ai-workbench-composer"], [data-composer-command-portal]')) return
+      dismissCommands()
+    }
+    document.addEventListener('pointerdown', handlePointerDown, true)
+    return () => document.removeEventListener('pointerdown', handlePointerDown, true)
+  }, [command, dismissCommands])
   const focusComposer = () => requestAnimationFrame(() => textareaRef.current?.focus())
   const consumeCommand = () => {
     if (!command) return
@@ -1672,18 +1685,14 @@ function CompoundComposer({ composerRef, bootstrap, projects, selectedProjectId,
     onQueuedMessageEdit(id)
     requestAnimationFrame(() => textareaRef.current?.focus())
   }
-  return <div ref={composerRef} onBlurCapture={(event) => {
-    const composer = event.currentTarget
+  return <div ref={composerRef} data-slot="ai-workbench-composer" onBlurCapture={(event) => {
+    // Keyboard focus moving to another control dismisses the popup; a dropped
+    // focus (relatedTarget null) is handled by the outside pointerdown above.
     const relatedTarget = event.relatedTarget as Node | null
-    if (composer.contains(relatedTarget) || (relatedTarget instanceof Element && relatedTarget.closest('[data-composer-command-portal]'))) return
-    requestAnimationFrame(() => {
-      if (commandPointerDownRef.current) return
-      const activeElement = document.activeElement
-      if (composer.contains(activeElement) || (activeElement instanceof Element && activeElement.closest('[data-composer-command-portal]'))) return
-      dismissCommands()
-    })
+    if (!relatedTarget || event.currentTarget.contains(relatedTarget) || (relatedTarget instanceof Element && relatedTarget.closest('[data-composer-command-portal]'))) return
+    dismissCommands()
   }} className={cn('pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-background via-background/95 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:px-5 md:pb-4', hasSession ? 'pt-2 md:pt-4' : 'pt-2 md:pt-12')}>
-    {command && !disabled ? <div className="pointer-events-auto absolute inset-x-3 bottom-full z-40 mb-2 md:inset-x-5" data-slot="composer-command-popup" data-composer-command-portal onPointerDownCapture={() => { commandPointerDownRef.current = true }} onPointerUpCapture={() => { requestAnimationFrame(() => { commandPointerDownRef.current = false }) }} onPointerCancelCapture={() => { commandPointerDownRef.current = false }}>
+    {command && !disabled ? <div className="pointer-events-auto absolute inset-x-3 bottom-full z-40 mb-2 md:inset-x-5" data-slot="composer-command-popup" data-composer-command-portal>
       {referenceTask ? <AssetReferencePicker inline initialTask={referenceTask} open onOpenChange={(open) => { if (!open) { dismissCommands(); focusComposer() } }} onSelect={(reference) => { onAssetReferencesChange([...assetReferences, reference]); consumeCommand() }} /> : <ComposerCommandMenu key={`${command.kind}:${command.start}:${command.query}`} ref={commandMenuRef} command={command} onMode={chooseMode} onTask={setReferenceTask} tools={toolCatalog} toolError={toolCatalogError} onTool={chooseTool} onReloadTools={() => { setToolCatalog(null); setToolCatalogError(''); setToolCatalogRevision(revision => revision + 1) }} onDismiss={dismissCommands} />}
     </div> : null}
     {!hasSession ? <div data-slot="ai-workbench-project-strip" className="pointer-events-auto mx-auto flex w-[calc(100%-1rem)] md:w-[calc(100%-3rem)] max-w-none items-center gap-2 overflow-hidden rounded-t-2xl border border-b-0 border-[var(--input-panel-border)] bg-[var(--input-panel-bg)] px-2 py-1 text-sm md:px-4 md:py-2.5 shadow-[0_10px_34px_rgba(0,0,0,0.16)] backdrop-blur-xl">
