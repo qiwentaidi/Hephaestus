@@ -481,7 +481,7 @@ export function CustomThemeEditor({
   return (
     <>
       <div className="flex h-full min-h-0 flex-col bg-background">
-        <header className="flex flex-wrap items-start gap-3 border-b border-border bg-background px-4 py-3 md:px-6">
+        <header className="flex flex-wrap items-center gap-3 border-b border-border bg-background px-4 py-3 md:px-6">
           <Button
             type="button"
             variant="ghost"
