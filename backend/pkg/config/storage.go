@@ -244,6 +244,7 @@ type AIConfig struct {
 	API                     string             `yaml:"api" json:"api"`
 	Key                     string             `yaml:"key" json:"key"`
 	Model                   string             `yaml:"model" json:"model"`
+	Headers                 []AIProviderHeader `yaml:"headers,omitempty" json:"headers,omitempty"`
 	DefaultProviderID       string             `yaml:"defaultProviderId,omitempty" json:"defaultProviderId,omitempty"`
 	Providers               []AIProviderConfig `yaml:"providers,omitempty" json:"providers,omitempty"`
 	Routing                 AIRoutingConfig    `yaml:"routing,omitempty" json:"routing,omitempty"`
@@ -263,16 +264,17 @@ type AIProviderConfig struct {
 	MaxTotalTokens int `yaml:"maxTotalTokens,omitempty" json:"maxTotalTokens,omitempty"`
 	// MaxOutputTokens 单次模型回复的输出上限（max_tokens）；
 	// 0 使用运行时默认 4096。
-	MaxOutputTokens   int    `yaml:"maxOutputTokens,omitempty" json:"maxOutputTokens,omitempty"`
-	ID                string `yaml:"id" json:"id"`
-	Name              string `yaml:"name" json:"name"`
-	Protocol          string `yaml:"protocol" json:"protocol"`
-	Enabled           bool   `yaml:"enabled" json:"enabled"`
-	API               string `yaml:"api" json:"api"`
-	Key               string `yaml:"key" json:"key"`
-	Model             string `yaml:"model" json:"model"`
-	SupportsTools     bool   `yaml:"supportsTools" json:"supportsTools"`
-	SupportsStreaming bool   `yaml:"supportsStreaming" json:"supportsStreaming"`
+	MaxOutputTokens   int                `yaml:"maxOutputTokens,omitempty" json:"maxOutputTokens,omitempty"`
+	ID                string             `yaml:"id" json:"id"`
+	Name              string             `yaml:"name" json:"name"`
+	Protocol          string             `yaml:"protocol" json:"protocol"`
+	Enabled           bool               `yaml:"enabled" json:"enabled"`
+	API               string             `yaml:"api" json:"api"`
+	Key               string             `yaml:"key" json:"key"`
+	Model             string             `yaml:"model" json:"model"`
+	Headers           []AIProviderHeader `yaml:"headers,omitempty" json:"headers,omitempty"`
+	SupportsTools     bool               `yaml:"supportsTools" json:"supportsTools"`
+	SupportsStreaming bool               `yaml:"supportsStreaming" json:"supportsStreaming"`
 }
 
 // AIRoutingConfig 按功能选择AI供应商
@@ -1185,6 +1187,9 @@ func UpdateAIConfig(aiConfig AIConfig) error {
 	if err := ValidateAIRequestTimeouts(aiConfig); err != nil {
 		return err
 	}
+	if err := ValidateAIProviderHeaders(aiConfig); err != nil {
+		return err
+	}
 	aiConfigMu.Lock()
 	defer aiConfigMu.Unlock()
 
@@ -1293,6 +1298,7 @@ func NormalizeAIConfig(aiConfig AIConfig) AIConfig {
 			API:                   firstNonEmpty(aiConfig.API, defaultAIAPIAddr),
 			Key:                   aiConfig.Key,
 			Model:                 firstNonEmpty(aiConfig.Model, defaultAIModel),
+			Headers:               aiConfig.Headers,
 			SupportsTools:         true,
 			SupportsStreaming:     true,
 		}
@@ -1335,6 +1341,7 @@ func NormalizeAIConfig(aiConfig AIConfig) AIConfig {
 		aiConfig.API = provider.API
 		aiConfig.Key = provider.Key
 		aiConfig.Model = provider.Model
+		aiConfig.Headers = provider.Headers
 	} else {
 		aiConfig.Protocol = AIProtocolOpenAICompatible
 		aiConfig.API = defaultAIAPIAddr
@@ -1368,6 +1375,7 @@ func ResolveAIRequestConfig(aiConfig AIConfig) AIConfig {
 	aiConfig.API = provider.API
 	aiConfig.Key = provider.Key
 	aiConfig.Model = provider.Model
+	aiConfig.Headers = provider.Headers
 	return aiConfig
 }
 
@@ -1396,6 +1404,7 @@ func ResolveAIRequestConfigForRoute(aiConfig AIConfig, route string) AIConfig {
 		aiConfig.API = provider.API
 		aiConfig.Key = provider.Key
 		aiConfig.Model = provider.Model
+		aiConfig.Headers = provider.Headers
 		return aiConfig
 	}
 
@@ -1434,6 +1443,7 @@ func normalizeAIProvider(provider AIProviderConfig, index int) AIProviderConfig 
 	}
 	provider.Key = strings.TrimSpace(provider.Key)
 	provider.Model = strings.TrimSpace(provider.Model)
+	provider.Headers = NormalizeAIProviderHeaders(provider.Headers)
 	if provider.Model == "" {
 		if provider.Protocol == AIProtocolAnthropic {
 			provider.Model = "claude-3-5-sonnet-latest"
