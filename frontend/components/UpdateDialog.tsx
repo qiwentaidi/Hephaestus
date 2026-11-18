@@ -439,9 +439,10 @@ export function UpdateDialog({
     const clientDownloadTarget =
       section.target === 'client' && (await isDesktopRuntime()) ? 'desktop' : 'client'
 
+    // 顺序：镜像优先，失败再回退到主源；界面上不再展示来源名称。
     const downloadSources = [
-      { name: i18n.sourceGitee, url: section.updateInfo.mirrorUrl },
-      { name: i18n.sourceGithub, url: section.updateInfo.downloadUrl },
+      { url: section.updateInfo.mirrorUrl },
+      { url: section.updateInfo.downloadUrl },
     ]
 
     for (const source of downloadSources) {
@@ -502,14 +503,14 @@ export function UpdateDialog({
           return next
         })
         if (section.target === 'config') {
-          toast.success(i18n.messages.downloadConfigComplete.replace('{source}', source.name))
+          toast.success(i18n.messages.downloadConfigComplete)
           activeTargetRef.current = null
           setActiveTarget(null)
           onUpdateComplete?.(section.target, section.updateInfo.version)
           return
         }
 
-        toast.success(i18n.messages.downloadComplete.replace('{source}', source.name))
+        toast.success(i18n.messages.downloadComplete)
         activeTargetRef.current = null
         setActiveTarget(null)
         onUpdateComplete?.(section.target, section.updateInfo.version)

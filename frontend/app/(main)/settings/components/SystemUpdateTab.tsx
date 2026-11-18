@@ -588,9 +588,10 @@ export function SystemUpdateTab() {
       return
     }
 
+    // 镜像优先，失败回退主源；界面上不再展示来源名称。
     const downloadSources = [
-      { name: i18n.sourceGitee, url: updateInfo.mirrorUrl },
-      { name: i18n.sourceGithub, url: updateInfo.downloadUrl },
+      { url: updateInfo.mirrorUrl },
+      { url: updateInfo.downloadUrl },
     ]
     const clientDownloadTarget = (await isDesktopRuntime()) ? 'desktop' : 'client'
 
@@ -600,7 +601,7 @@ export function SystemUpdateTab() {
       if (!source.url) continue
 
       try {
-        toast.loading(i18n.messages.downloadFrom.replace('{source}', source.name), { id: toastId })
+        toast.loading(i18n.messages.downloadFrom, { id: toastId })
 
         const apiBaseURL = getApiBaseURL()
         const token = getToken()
@@ -640,7 +641,7 @@ export function SystemUpdateTab() {
           eventSource.addEventListener('error', (e: any) => {
             eventSource.close()
             const errorData = e.data ? JSON.parse(e.data) : {}
-            console.error(`从 ${source.name} 下载失败:`, errorData.message)
+            console.error('下载更新失败:', errorData.message)
             reject(new Error(errorData.message || '下载失败'))
           })
 
@@ -650,12 +651,12 @@ export function SystemUpdateTab() {
           }
         })
 
-        toast.success(i18n.messages.downloadComplete.replace('{source}', source.name), { id: toastId })
+        toast.success(i18n.messages.downloadComplete, { id: toastId })
         setDownloading(false)
         await finishClientUpdate(shouldAutoInstallDesktopDMG ? 'install' : 'restart')
         return
       } catch (error: any) {
-        console.error(`从 ${source.name} 下载失败:`, error)
+        console.error('下载更新失败:', error)
         if (source === downloadSources[downloadSources.length - 1]) {
           toast.error(i18n.messages.allSourcesFailed.replace('{message}', error.message), { id: toastId })
         }
@@ -735,7 +736,7 @@ export function SystemUpdateTab() {
 
     const downloadSources = Array.from(
       new Set([configUpdateInfo.mirrorUrl, configUpdateInfo.downloadUrl].filter(Boolean))
-    ).map((url) => ({ name: i18n.sourceGitee, url }))
+    ).map((url) => ({ url }))
 
     let downloadSuccess = false
 
@@ -743,7 +744,7 @@ export function SystemUpdateTab() {
       if (!source.url) continue
 
       try {
-        toast.loading(i18n.messages.downloadConfigFrom.replace('{source}', source.name), { id: toastId })
+        toast.loading(i18n.messages.downloadConfigFrom, { id: toastId })
 
         const apiBaseURL = getApiBaseURL()
         const token = getToken()
@@ -773,7 +774,7 @@ export function SystemUpdateTab() {
 
           eventSource.addEventListener('complete', () => {
             eventSource.close()
-            toast.success(i18n.messages.downloadConfigComplete.replace('{source}', source.name), { id: toastId })
+            toast.success(i18n.messages.downloadConfigComplete, { id: toastId })
             downloadSuccess = true
             setConfigStatus('up-to-date')
             setConfigHasUpdate(false)
@@ -792,7 +793,7 @@ export function SystemUpdateTab() {
           eventSource.addEventListener('error', (e: any) => {
             eventSource.close()
             const errorData = e.data ? JSON.parse(e.data) : {}
-            console.error(`从 ${source.name} 下载配置失败:`, errorData.message)
+            console.error('下载配置失败:', errorData.message)
             reject(new Error(errorData.message || '下载失败'))
           })
 
@@ -806,7 +807,7 @@ export function SystemUpdateTab() {
           break
         }
       } catch (error: any) {
-        console.error(`从 ${source.name} 下载配置失败:`, error)
+        console.error('下载配置失败:', error)
         if (source === downloadSources[downloadSources.length - 1]) {
           toast.error(i18n.messages.allConfigSourcesFailed.replace('{message}', error.message), { id: toastId })
         }
