@@ -60,6 +60,10 @@ var trustedUpdateDownloadHosts = []string{
 	"githubusercontent.com",
 	"gitee.com",
 	"giteeusercontent.com",
+	// 阿里云 OSS 国内下载源（华东1 杭州）。只放行这个 bucket 的默认域名，
+	// 不要放宽到 aliyuncs.com，否则任何阿里云 bucket 都能伪装成更新源。
+	// 接入自定义下载域名后在这里追加该域名。
+	"hephaestus-download.oss-cn-hangzhou.aliyuncs.com",
 }
 
 func validateUpdateDownloadURL(raw string) (string, error) {

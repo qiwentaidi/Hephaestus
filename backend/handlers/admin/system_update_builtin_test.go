@@ -14,6 +14,7 @@ func TestValidateUpdateDownloadURL(t *testing.T) {
 		"https://github.com/example/project/releases/download/v1/app.zip",
 		"https://objects.githubusercontent.com/example/app.zip",
 		"https://gitee.com/example/project/releases/download/v1/app.zip",
+		"https://hephaestus-download.oss-cn-hangzhou.aliyuncs.com/releases/v4.0.0/Hephaestus-linux-amd64-web.zip",
 	} {
 		if _, err := validateUpdateDownloadURL(raw); err != nil {
 			t.Errorf("trusted URL %q rejected: %v", raw, err)
@@ -24,6 +25,7 @@ func TestValidateUpdateDownloadURL(t *testing.T) {
 		"http://169.254.169.254/latest/meta-data/",
 		"http://attacker.invalid/update.zip",
 		"file:///etc/passwd",
+		"https://another-bucket.oss-cn-hangzhou.aliyuncs.com/releases/v4.0.0/Hephaestus-linux-amd64-web.zip",
 	} {
 		if _, err := validateUpdateDownloadURL(raw); err == nil {
 			t.Errorf("untrusted URL %q was accepted", raw)
