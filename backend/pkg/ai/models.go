@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"hephaestus-backend/pkg/config"
+	"hephaestus-backend/pkg/modelrequest"
 )
 
 // ModelOption contains only public model metadata, never provider credentials.
@@ -58,7 +59,7 @@ func ListModels(ctx context.Context, provider config.AIProviderConfig) ([]ModelO
 	}
 	endpoints := modelListEndpoints(base)
 	for index, endpoint := range endpoints {
-		models, fallback, err := fetchModelPages(ctx, client, endpoint, protocol, strings.TrimSpace(provider.Key))
+		models, fallback, err := fetchModelPages(ctx, client, endpoint, provider)
 		if err == nil {
 			return models, nil
 		}
@@ -86,7 +87,7 @@ func modelListEndpoints(base *url.URL) []string {
 	return endpoints
 }
 
-func fetchModelPages(ctx context.Context, client *http.Client, endpoint, protocol, key string) ([]ModelOption, bool, error) {
+func fetchModelPages(ctx context.Context, client *http.Client, endpoint string, provider config.AIProviderConfig) ([]ModelOption, bool, error) {
 	models := make([]ModelOption, 0)
 	seen := make(map[string]bool)
 	cursors := make(map[string]bool)
@@ -97,12 +98,14 @@ func fetchModelPages(ctx context.Context, client *http.Client, endpoint, protoco
 			return nil, false, modelListError("invalid_config")
 		}
 		req.Header.Set("Accept", "application/json")
-		if protocol == config.AIProtocolAnthropic {
+		key := strings.TrimSpace(provider.Key)
+		if provider.Protocol == config.AIProtocolAnthropic {
 			req.Header.Set("x-api-key", key)
 			req.Header.Set("anthropic-version", anthropicVersion)
 		} else {
 			req.Header.Set("Authorization", "Bearer "+key)
 		}
+		modelrequest.ApplyProviderHeaders(req, provider.Headers, provider.ID, provider.API, "")
 		resp, err := client.Do(req)
 		if err != nil {
 			if ctx.Err() != nil {

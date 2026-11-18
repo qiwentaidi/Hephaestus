@@ -12,5 +12,5 @@ func newModelRequestTransport(cfg config.AIConfig) http.RoundTripper {
 	// Generation may take minutes before response headers arrive. Connection and
 	// TLS limits remain separate; the channel deadline bounds the full response.
 	transport.ResponseHeaderTimeout = 0
-	return modelrequest.ForProvider(transport, cfg.DefaultProviderID, cfg.API, cfg.Key, cfg.Model, cfg.RequestTimeoutMinutes)
+	return modelrequest.ForProviderWithHeaders(transport, cfg.DefaultProviderID, cfg.API, cfg.Key, cfg.Model, cfg.RequestTimeoutMinutes, cfg.Headers)
 }

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"hephaestus-backend/pkg/config"
+	"hephaestus-backend/pkg/modelrequest"
 )
 
 const testRequestTimeout = 15 * time.Second
@@ -56,7 +57,7 @@ func TestAvailability(ctx context.Context, cfg config.AIConfig) error {
 
 	client := &http.Client{
 		Timeout:   testRequestTimeout,
-		Transport: newSafeTransport(true),
+		Transport: modelrequest.ForProviderWithHeaders(newSafeTransport(true), cfg.DefaultProviderID, cfg.API, cfg.Key, cfg.Model, cfg.RequestTimeoutMinutes, cfg.Headers),
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if len(via) >= 3 {
 				return fmt.Errorf("重定向次数过多")

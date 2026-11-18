@@ -75,7 +75,27 @@ func artexProfile(providerID, model string) (artexdb.LLMProfile, error) {
 			break
 		}
 	}
+	// The task engine already supports one dynamic, per-session header. Wire
+	// OpenCode's routing header into it so worker and operator turns keep a
+	// stable session identity instead of the provider-wide fallback value.
+	p.SessionHeaderKey = openCodeSessionHeaderKey(cfg.API, cfg.Headers)
 	return p, nil
+}
+
+func openCodeSessionHeaderKey(api string, headers []config.AIProviderHeader) string {
+	if config.IsOpenCodeAPI(api) || hasProviderHeader(headers, "x-opencode-session") {
+		return "x-opencode-session"
+	}
+	return ""
+}
+
+func hasProviderHeader(headers []config.AIProviderHeader, name string) bool {
+	for _, header := range headers {
+		if strings.EqualFold(strings.TrimSpace(header.Name), name) {
+			return true
+		}
+	}
+	return false
 }
 
 // artexFallbackProfile reuses the AI Workbench backup provider as the
