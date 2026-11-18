@@ -4373,6 +4373,7 @@ export const zh = {
         canvasTitle: "流程画布",
         canvasDesc: "从左到右依次执行，可在阶段卡片中连续添加多个节点",
         mobileCanvasDesc: "从上到下依次执行，可在阶段卡片中添加多个节点",
+        flowLegend: "连线表示数据流向：阶段内并行执行，进入下一阶段需等待上一阶段全部完成",
         newStage: "新阶段",
         addTask: "添加任务",
         deleteStage: "删除阶段",

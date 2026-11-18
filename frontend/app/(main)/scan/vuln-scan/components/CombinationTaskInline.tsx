@@ -1,5 +1,5 @@
 import { DEFAULT_TCP_HEURISTIC_CONFIG, normalizeTCPHeuristicConfig, validateTCPHeuristicConfig, type TCPHeuristicConfig } from "@/lib/tcp-heuristic"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import type { ChangeEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -42,6 +42,12 @@ import {
 } from "./CombinationTaskBuilder"
 import { builtInPortGroupOptions } from "../utils/portGroup"
 import { buildCombinationPresetCards } from "./combinationPresetUi"
+import {
+  buildCombinationFlowEdges,
+  buildCombinationFlowPaths,
+  type CombinationFlowPath,
+  type CombinationFlowPoint,
+} from "./combinationFlowEdges"
 import { isDesktopRuntime } from "@/lib/desktop"
 import { getSpaceEngineConfig, type SpaceEngineConfig } from "@/lib/config"
 import type { SYNCapabilityStatus, TCPDiscoveryMode } from "../types"
@@ -338,6 +344,9 @@ export function CombinationTaskInline({
   const [draggingNode, setDraggingNode] = useState<NodeRef | null>(null)
   const [dragOverStageId, setDragOverStageId] = useState<string | null>(null)
   const [dragOverNodeId, setDragOverNodeId] = useState<string | null>(null)
+  const flowCanvasRef = useRef<HTMLDivElement | null>(null)
+  const [flowPaths, setFlowPaths] = useState<CombinationFlowPath[]>([])
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null)
   const [savedTemplates, setSavedTemplates] = useState<SavedCombinationTemplate[]>([])
   const [loadingSavedTemplates, setLoadingSavedTemplates] = useState(false)
   const [selectedSavedTemplateId, setSelectedSavedTemplateId] = useState("")
@@ -355,6 +364,60 @@ export function CombinationTaskInline({
     () => stages.some((stage) => stage.nodes.some((node) => node.moduleId === "portscan")),
     [stages]
   )
+
+  // Data-flow links between module cards. The scheduler still runs whole
+  // stages; the links only make the work flow visible, so a stage stays the
+  // barrier between two columns.
+  const flowEdges = useMemo(() => buildCombinationFlowEdges(stages), [stages])
+
+  useLayoutEffect(() => {
+    const canvas = flowCanvasRef.current
+    if (!canvas) return
+    let frame = 0
+    const measure = () => {
+      frame = 0
+      const base = canvas.getBoundingClientRect()
+      const points: Record<string, CombinationFlowPoint> = {}
+      canvas.querySelectorAll<HTMLElement>("[data-flow-node]").forEach((element) => {
+        const id = element.dataset.flowNode
+        if (!id) return
+        const rect = element.getBoundingClientRect()
+        points[id] = {
+          left: rect.left - base.left,
+          right: rect.right - base.left,
+          cy: rect.top - base.top + rect.height / 2,
+        }
+      })
+      const next = buildCombinationFlowPaths(points, flowEdges)
+      setFlowPaths((previous) => {
+        if (previous.length !== next.length) return next
+        for (let index = 0; index < next.length; index += 1) {
+          if (previous[index].id !== next[index].id || previous[index].d !== next[index].d) return next
+        }
+        return previous
+      })
+    }
+    const schedule = () => {
+      if (frame) return
+      frame = window.requestAnimationFrame(measure)
+    }
+    // Measure synchronously so a stage edit repaints the links on the same
+    // frame; the observers below only handle later size changes.
+    measure()
+    const observer = new ResizeObserver(schedule)
+    observer.observe(canvas)
+    canvas.querySelectorAll<HTMLElement>("[data-flow-node]").forEach((element) => observer.observe(element))
+    window.addEventListener("resize", schedule)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener("resize", schedule)
+      if (frame) window.cancelAnimationFrame(frame)
+    }
+  }, [flowEdges, stages])
+
+  // Hovering a card previews its lineage; the drawer selection keeps the same
+  // highlight while the node configuration is open.
+  const focusedFlowNodeId = hoveredNodeId ?? selectedNode?.nodeId ?? null
 
   const loadSYNCapabilityStatus = useCallback(async () => {
     setLoadingSynCapability(true)
@@ -2008,11 +2071,37 @@ export function CombinationTaskInline({
               </CardHeader>
               <CardContent className="min-w-0 px-4 md:px-6">
                 <div className="w-full md:overflow-x-auto">
-                  <div className="flex w-full min-w-0 flex-col items-stretch gap-6 pb-4 md:min-h-[360px] md:min-w-full md:w-max md:flex-row md:items-start">
+                  <div
+                    ref={flowCanvasRef}
+                    className="relative flex w-full min-w-0 flex-col items-stretch gap-6 pb-4 md:min-h-[360px] md:min-w-full md:w-max md:flex-row md:items-start"
+                  >
+                    {flowPaths.length > 0 && (
+                      <svg aria-hidden="true" className="pointer-events-none absolute inset-0 hidden h-full w-full overflow-visible md:block">
+                        {flowPaths.map((path) => {
+                          const focused = focusedFlowNodeId === path.from || focusedFlowNodeId === path.to
+                          const dimmed = focusedFlowNodeId !== null && !focused
+                          return (
+                            <path
+                              key={path.id}
+                              d={path.d}
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth={focused ? 1.8 : 1.5}
+                              strokeLinecap="round"
+                              className={cn(
+                                "transition-opacity duration-150",
+                                focused ? "text-primary" : "text-muted-foreground",
+                                dimmed && "opacity-40"
+                              )}
+                            />
+                          )
+                        })}
+                      </svg>
+                    )}
                     {stages.map((stage, stageIndex) => (
                       <div key={stage.id} className="relative min-w-0 w-full md:w-[280px]">
                         {stageIndex < stages.length - 1 && (
-                          <div className="absolute bottom-[-24px] left-1/2 h-6 w-px bg-border md:bottom-auto md:left-auto md:right-[-18px] md:top-1/2 md:h-[2px] md:w-10" />
+                          <div className="absolute bottom-[-24px] left-1/2 h-6 w-px bg-border md:hidden" />
                         )}
                         <div className="rounded-2xl border bg-muted/10 p-3 space-y-3">
                           <div className="flex items-center gap-2">
@@ -2100,6 +2189,9 @@ export function CombinationTaskInline({
                                     role="button"
                                     tabIndex={0}
                                     draggable
+                                    data-flow-node={node.id}
+                                    onMouseEnter={() => setHoveredNodeId(node.id)}
+                                    onMouseLeave={() => setHoveredNodeId((current) => (current === node.id ? null : current))}
                                     onDragStart={(e) => {
                                       e.dataTransfer.effectAllowed = "move"
                                       setDraggingNode({ stageId: stage.id, nodeId: node.id })
@@ -2174,6 +2266,9 @@ export function CombinationTaskInline({
                       <Plus className="w-4 h-4 mr-1" /> {t.vulnScan.combination.inline.newStage}
                     </button>
                   </div>
+                  <p className="hidden pb-1 text-[11px] text-muted-foreground md:block">
+                    {t.vulnScan.combination.inline.flowLegend}
+                  </p>
                 </div>
               </CardContent>
             </Card>

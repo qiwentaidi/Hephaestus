@@ -4472,6 +4472,7 @@ export const en: Locale = {
         canvasDesc:
           "Execute from left to right. Add multiple nodes in each stage.",
         mobileCanvasDesc: "Execute from top to bottom. Add multiple nodes in each stage.",
+        flowLegend: "Links show the data flow. Nodes in a stage run in parallel; the next stage waits for all of them.",
         newStage: "New Stage",
         addTask: "Add Task",
         deleteStage: "Delete Stage",
