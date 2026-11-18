@@ -372,7 +372,7 @@ CMS建站:
       - (server="webfs" && header!="couchdb" && header!="drupal")
       - header="webfs"
   - id: fp_11ebdb0c94e0cde87e3dc6ad796711f6
-    name: Qingguo Software-CMS
+    name: 青果软件-CMS
     rule:
       - title="kingosoft" || body="setkingoencypt.jsp" || body="/jkingo.js" || (body="kingosoft" && body="青果")
   - id: fp_aed341e52ee9524ea531f48cbe61fbc6
@@ -1728,6 +1728,10 @@ CMS建站:
     name: Typemill-CMS
     rule:
       - body="typemill"
+  - id: fp_9a3ccbb3b41cd2b54bc282f6396e4381
+    name: Imperia-CMS
+    rule:
+      - body="imperia"
 IoT工控:
   - id: fp_0647d7be2a13eecb064f4fcd62c9cd64
     name: Tridium-NiagaraAX
@@ -5404,6 +5408,34 @@ WordPress:
     name: wp-plugin-truebooker-appointment-booking
     rule:
       - body="/wp-content/plugins/truebooker-appointment-booking/"
+  - id: fp_2d23d4ed38e0a37aec2f1becd913fd71
+    name: wp-plugin-simple-301-redirects
+    rule:
+      - body="/wp-content/plugins/simple-301-redirects/"
+  - id: fp_66d7b6abc724fe3f88d152d131babda2
+    name: wp-plugin-directorist
+    rule:
+      - body="/wp-content/plugins/directorist/"
+  - id: fp_4180a1675223fc5122ed98f1607f8d95
+    name: wp-plugin-ht-contactform
+    rule:
+      - body="/wp-content/plugins/ht-contactform/"
+  - id: fp_166b05cd13693d69e090386577919767
+    name: wp-plugin-wp-slimstat
+    rule:
+      - body="/wp-content/plugins/wp-slimstat"
+  - id: fp_0760257f9b22933221551251c94af609
+    name: wp-plugin-mage-eventpress
+    rule:
+      - body="/wp-content/plugins/mage-eventpress/"
+  - id: fp_6ad6dc9ff721a5d4f5f4c40a4ccc004a
+    name: wp-plugin-link-library
+    rule:
+      - body="/wp-content/plugins/link-library/"
+  - id: fp_8511e79771c8d7e57ed36bd0bdb3e6d9
+    name: wp-plugin-ultimate-addons-for-contact-form-7
+    rule:
+      - body="/wp-content/plugins/ultimate-addons-for-contact-form-7"
 中间件:
   - id: fp_de2b0ed3eae999079dc741ee3311222b
     name: debian
@@ -54312,3 +54344,43 @@ WordPress:
     name: OpenPanel
     rule:
       - title="Bull Dashboard"
+  - id: fp_d419fbb1d7fd6666a17be9e599d12a1c
+    name: Plex Media Server
+    rule:
+      - header="X-Plex-Protocol"
+  - id: fp_e1afa5c983062ee094a3cb7598143456
+    name: Collabora
+    rule:
+      - body="/apps/richdocumentscode/"
+  - id: fp_94c7d9727db0a06dc8191149c67a0698
+    name: openDCIM
+    rule:
+      - body="openDCIM"
+  - id: fp_ddb26e21f81268d67afe904af9c44901
+    name: Stock Management System
+    rule:
+      - title="Stock Management System"
+  - id: fp_5661394547ece73d0840ca4674b731a3
+    name: Postiz
+    rule:
+      - title="Postiz Register"
+  - id: fp_853d3af4fb7de72d6e01f6433ca133de
+    name: Kener
+    rule:
+      - title="Kener"
+  - id: fp_607f573f49cafd3ffd65f83715fc8a01
+    name: Dashdot
+    rule:
+      - body="dashdot"
+  - id: fp_e74072618ea019b428e72583ac0348d7
+    name: madong-admin-saas
+    rule:
+      - icon_hash="1349700189"
+  - id: fp_9675245b1a86e259a6f3963cd323df7b
+    name: ape-volo-admin
+    rule:
+      - body="ape-volo-admin" && body="中后台管理权限框架"
+  - id: fp_cf0a724e0db1f752132e681f10359571
+    name: Docker-Proxy hubcmdui
+    rule:
+      - body="hubcmdui"
