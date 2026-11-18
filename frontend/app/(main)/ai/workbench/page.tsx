@@ -3233,7 +3233,7 @@ function AIWorkbenchContent() {
         setMobileSearchOpen(false)
       }
     }
-    return <aside className={cn('flex h-full min-h-0 shrink-0 flex-col overflow-hidden border-r border-border/80 bg-muted/10', mobile ? 'w-full' : 'w-[310px]')}>
+    return <aside className={cn('flex h-full min-h-0 shrink-0 flex-col overflow-hidden bg-muted/10', mobile ? 'w-full border-r border-border/80' : 'w-[310px]')}>
       {mobile ? <SheetHeader className="flex h-12 shrink-0 flex-row items-center justify-between border-b border-border/80 px-4 py-0">
         <SheetTitle className="text-sm">{l.projectsAndSessions}</SheetTitle>
         <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-md" aria-label={l.hideSidebar} onClick={closeMobileSidebar}><X className="h-4 w-4" /></Button>
@@ -3313,13 +3313,24 @@ function AIWorkbenchContent() {
     }
   `}</style>
   <div className="flex h-full min-h-0 overflow-hidden bg-background text-foreground">
-    {!sidebarCollapsed ? <div className="hidden h-full lg:block">{projectSidebar(false)}</div> : null}
+    {/* The list stays mounted and clips itself while the wrapper animates its
+        width, so the panel wipes in and out instead of popping. The inner
+        aside keeps its 310px width to avoid re-wrapping text mid-transition. */}
+    <div
+      data-slot="ai-workbench-project-sidebar"
+      aria-hidden={sidebarCollapsed || undefined}
+      inert={sidebarCollapsed}
+      className={cn(
+        'hidden h-full shrink-0 overflow-hidden border-r transition-[width,border-color] duration-300 ease-in-out motion-reduce:transition-none lg:block',
+        sidebarCollapsed ? 'w-0 border-transparent' : 'w-[310px] border-border/80',
+      )}
+    >{projectSidebar(false)}</div>
     <main className="relative flex min-w-0 flex-1 flex-col">
       <div className="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-x-1 border-b border-border/70 px-2 md:h-11 md:min-h-0 md:flex-nowrap md:gap-2 md:px-4">
         <div className="flex shrink-0 items-center gap-1">
           <Button type="button" variant="ghost" size="icon" className="h-11 w-11 shrink-0 rounded-lg text-muted-foreground hover:text-foreground lg:hidden" aria-label={l.showSidebar} aria-expanded={mobileSidebarOpen} onClick={() => setMobileSidebarOpen(true)}><PanelLeftOpen className="h-4 w-4" /></Button>
           <Tooltip><TooltipTrigger asChild><Button type="button" variant="ghost" size="icon" className="hidden h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground lg:inline-flex" aria-label={sidebarCollapsed ? l.showSidebar : l.hideSidebar} aria-expanded={!sidebarCollapsed} onClick={() => { if (!sidebarCollapsed) setSearchOpen(false); setSidebarCollapsed((value) => !value) }}>{sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}</Button></TooltipTrigger><TooltipContent side="bottom">{sidebarCollapsed ? l.showList : l.hideList}</TooltipContent></Tooltip>
-          <Button type="button" variant="ghost" size="sm" className={cn('h-11 md:h-8 gap-1.5 rounded-lg text-muted-foreground hover:text-foreground', !sidebarCollapsed && 'lg:hidden')} onClick={() => newConversation()}><MessageSquarePlus className="h-4 w-4" />{l.newConversation}</Button>
+          <Button type="button" variant="ghost" size="sm" className={cn('h-11 md:h-8 gap-1.5 rounded-lg text-muted-foreground hover:text-foreground animate-in fade-in duration-200 motion-reduce:animate-none', !sidebarCollapsed && 'lg:hidden')} onClick={() => newConversation()}><MessageSquarePlus className="h-4 w-4" />{l.newConversation}</Button>
         </div>
         <div className="flex min-w-0 items-center gap-2">
           {sessionNodeName ? <span className="hidden md:inline max-w-24 truncate text-xs text-muted-foreground sm:max-w-48 xl:max-w-72" title={sessionNodeName}>{sessionNodeName}</span> : null}
