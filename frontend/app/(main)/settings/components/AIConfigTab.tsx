@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Bot,
-  BrainCircuit,
   CheckCircle2,
   Loader2,
   Plus,
@@ -32,6 +31,7 @@ import {
   testAIConfig,
   type AIConfig,
   type AIProviderConfig,
+  type AIProviderHeader,
   type AIProviderProtocol,
 } from '@/lib/api/ai-config'
 import { useI18n } from '@/lib/i18n'
@@ -50,6 +50,7 @@ const DEFAULT_PROVIDER: AIProviderConfig = {
   api: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
   key: '',
   model: 'qwen-plus',
+  headers: [],
   supportsTools: true,
   supportsStreaming: true,
 }
@@ -114,6 +115,7 @@ function normalizeConfig(config?: AIConfig | null): AIConfig {
             api: config?.api || DEFAULT_PROVIDER.api,
             key: config?.key || '',
             model: config?.model || DEFAULT_PROVIDER.model,
+            headers: config?.headers || [],
           },
         ]
 
@@ -134,6 +136,7 @@ function normalizeConfig(config?: AIConfig | null): AIConfig {
     model:
       provider.model ||
       (provider.protocol === 'anthropic' ? 'claude-3-5-sonnet-latest' : DEFAULT_PROVIDER.model),
+    headers: provider.headers || [],
   }))
 
   const defaultProviderId =
@@ -152,12 +155,14 @@ function normalizeConfig(config?: AIConfig | null): AIConfig {
       : ''
 
   return {
-    enabled: config?.enabled ?? false,
+    // Global AI is always on; providers keep their individual enable switches.
+    enabled: true,
     requestTimeoutMinutes: defaultProvider?.requestTimeoutMinutes ?? 30,
     protocol: defaultProvider?.protocol || 'openai-compatible',
     api: defaultProvider?.api || DEFAULT_PROVIDER.api,
     key: defaultProvider?.key || '',
     model: defaultProvider?.model || DEFAULT_PROVIDER.model,
+    headers: defaultProvider?.headers || [],
     defaultProviderId,
     providers: normalizedProviders,
     routing: {
@@ -183,6 +188,7 @@ function buildProviderFromPreset(index: number): AIProviderConfig {
     api: preset.api,
     key: '',
     model: preset.model,
+    headers: [],
     supportsTools: true,
     supportsStreaming: preset.protocol !== 'anthropic',
   }
@@ -201,6 +207,7 @@ function syncTopLevelConfig(config: AIConfig): AIConfig {
     api: provider.api,
     key: provider.key,
     model: provider.model,
+    headers: provider.headers || [],
   }
 }
 
@@ -219,6 +226,19 @@ function providerStatus(provider: AIProviderConfig) {
   return Boolean(provider.enabled && provider.api.trim() && provider.key.trim() && provider.model.trim())
 }
 
+function providerAPIHost(api: string): string {
+  try {
+    return new URL(api.trim()).hostname.toLowerCase()
+  } catch {
+    return ''
+  }
+}
+
+function isOpenCodeProvider(api: string) {
+  const host = providerAPIHost(api)
+  return host === 'opencode.ai' || host.endsWith('.opencode.ai')
+}
+
 export function AIConfigTab() {
   const { t } = useI18n()
   const [config, setConfig] = useState<AIConfig>(() => normalizeConfig())
@@ -230,6 +250,8 @@ export function AIConfigTab() {
   const selectedProvider = providers.find((provider) => provider.id === selectedProviderId) || providers[0]
   const rateUnit = selectedProvider ? requestRateUnit(selectedProvider) : 'second'
   const rateValue = (selectedProvider?.workbenchRequestsPerMinute || 0) / (rateUnit === 'second' ? 60 : 1)
+  const providerHeaders = selectedProvider?.headers || []
+  const selectedIsDefault = Boolean(selectedProvider && selectedProvider.id === config.defaultProviderId)
   const enabledProviders = providers.filter(providerStatus)
 
   useEffect(() => {
@@ -278,6 +300,27 @@ export function AIConfigTab() {
     })
   }
 
+  const addProviderHeader = () => {
+    if (!selectedProvider) return
+    updateSelectedProvider({ headers: [...(selectedProvider.headers || []), { name: '', value: '' }] })
+  }
+
+  const updateProviderHeader = (index: number, next: Partial<AIProviderHeader>) => {
+    if (!selectedProvider) return
+    updateSelectedProvider({
+      headers: (selectedProvider.headers || []).map((header, headerIndex) =>
+        headerIndex === index ? { ...header, ...next } : header,
+      ),
+    })
+  }
+
+  const removeProviderHeader = (index: number) => {
+    if (!selectedProvider) return
+    updateSelectedProvider({
+      headers: (selectedProvider.headers || []).filter((_, headerIndex) => headerIndex !== index),
+    })
+  }
+
   const addProvider = () => {
     setConfig((current) => {
       const nextProvider = buildProviderFromPreset(current.providers?.length || 0)
@@ -323,9 +366,40 @@ export function AIConfigTab() {
     }
   }
 
+  const prepareHeaders = (nextConfig: AIConfig): AIConfig => {
+    const providers = (nextConfig.providers || []).map((provider) => ({
+      ...provider,
+      headers: (provider.headers || [])
+        .map((header) => ({ name: header.name.trim(), value: header.value.trim() }))
+        .filter((header) => header.name || header.value),
+    }))
+    return syncTopLevelConfig({ ...nextConfig, providers })
+  }
+
+  const validateHeaders = (nextConfig: AIConfig) => {
+    for (const provider of nextConfig.providers || []) {
+      const seen = new Set<string>()
+      for (const header of provider.headers || []) {
+        if (!header.name) {
+          if (!header.value) continue
+          setSelectedProviderId(provider.id)
+          throw new Error(t.aiConfig.headersNameRequired)
+        }
+        const key = header.name.toLowerCase()
+        if (seen.has(key)) {
+          setSelectedProviderId(provider.id)
+          throw new Error(t.aiConfig.headersDuplicate.replace('{name}', header.name))
+        }
+        seen.add(key)
+      }
+    }
+  }
+
   const persistConfig = async (nextConfig: AIConfig) => {
-    validateTimeouts(nextConfig)
-    const normalized = withProviderNameFallbacks(nextConfig)
+    const prepared = prepareHeaders(nextConfig)
+    validateTimeouts(prepared)
+    validateHeaders(prepared)
+    const normalized = withProviderNameFallbacks(prepared)
     await saveAIConfig(normalized)
     setConfig(normalized)
     return normalized
@@ -339,12 +413,10 @@ export function AIConfigTab() {
     }
 
     const nextConfig = withProviderNameFallbacks(syncTopLevelConfig({ ...config, defaultProviderId: providerId }))
-    setConfig(nextConfig)
     setSelectedProviderId(providerId)
     setSaving(true)
     try {
-      validateTimeouts(nextConfig)
-      await saveAIConfig(nextConfig)
+      await persistConfig(nextConfig)
       toast.success(t.common.configSaved)
     } catch (error: any) {
       toast.error(`${t.common.saveFailed}: ${error.message || ''}`)
@@ -462,42 +534,15 @@ export function AIConfigTab() {
         </Button>
       </div>
 
-      <section className="grid gap-4 rounded-md border bg-card p-4 shadow-sm lg:grid-cols-[1fr_260px]">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
-            <BrainCircuit className="h-5 w-5" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-sm font-semibold">{t.aiConfig.globalTitle}</h3>
-              <Badge variant={config.enabled ? 'default' : 'outline'} className="h-5">
-                {config.enabled ? t.common.enabled : t.common.disabled}
-              </Badge>
-              <Badge variant="secondary" className="h-5">
-                {enabledProviders.length}/{providers.length} {t.aiConfig.available}
-              </Badge>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">{t.aiConfig.globalDescription}</p>
-          </div>
-        </div>
-        <div className="flex items-center justify-between gap-3 lg:justify-end">
-          <Label htmlFor="ai-global-enabled" className="text-xs text-muted-foreground">
-            {t.aiConfig.enableGlobal}
-          </Label>
-          <Switch
-            id="ai-global-enabled"
-            checked={config.enabled}
-            onCheckedChange={(enabled) => updateConfig({ enabled })}
-          />
-        </div>
-      </section>
-
       <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
         <section className="min-w-0 space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               <RadioTower className="h-4 w-4 text-primary/70" />
               <h3 className="text-sm font-semibold">{t.aiConfig.providers}</h3>
+              <Badge variant="secondary" className="h-5">
+                {enabledProviders.length}/{providers.length} {t.aiConfig.available}
+              </Badge>
             </div>
             <Button size="sm" variant="outline" className="h-8" onClick={addProvider}>
               <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -509,18 +554,23 @@ export function AIConfigTab() {
             {providers.map((provider, index) => {
               const active = provider.id === selectedProvider?.id
               const complete = providerStatus(provider)
+              const isDefault = provider.id === config.defaultProviderId
               const displayName = provider.name.trim() || `${t.aiConfig.unnamedProvider} ${index + 1}`
+              const starTitle = isDefault
+                ? t.aiConfig.currentDefault
+                : complete
+                  ? t.aiConfig.setAsDefault
+                  : t.aiConfig.fillProviderFirst
               return (
-                <button
-                  key={provider.id}
-                  type="button"
-                  className={cn(
-                    'w-full rounded-md border bg-card p-3 text-left shadow-sm transition hover:border-primary/30 hover:shadow-md',
-                    active && 'border-primary/60 ring-1 ring-primary/20',
-                  )}
-                  onClick={() => setSelectedProviderId(provider.id)}
-                >
-                  <div className="flex items-start justify-between gap-3">
+                <div key={provider.id} className="relative">
+                  <button
+                    type="button"
+                    className={cn(
+                      'w-full rounded-md border bg-card p-3 pr-10 text-left shadow-sm transition hover:border-primary/30 hover:shadow-md',
+                      active && 'border-primary/60 ring-1 ring-primary/20',
+                    )}
+                    onClick={() => setSelectedProviderId(provider.id)}
+                  >
                     <div className="flex min-w-0 items-start gap-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-muted/60 text-sm font-semibold text-primary">
                         {displayName.slice(0, 1).toUpperCase()}
@@ -528,7 +578,7 @@ export function AIConfigTab() {
                       <div className="min-w-0">
                         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                           <span className="truncate text-sm font-medium">{displayName}</span>
-                          {provider.id === config.defaultProviderId ? (
+                          {isDefault ? (
                             <Badge
                               variant="secondary"
                               className="h-5 gap-1 border-amber-200 bg-amber-50 px-1.5 text-[10px] text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
@@ -538,21 +588,44 @@ export function AIConfigTab() {
                             </Badge>
                           ) : null}
                         </div>
-                        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-                          {provider.protocol} · {provider.model || t.common.none}
+                        <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground">
+                          <span className="truncate">{provider.protocol} · {provider.model || t.common.none}</span>
+                          {complete ? (
+                            <CheckCircle2 className="h-3 w-3 shrink-0 text-green-500" aria-hidden="true" />
+                          ) : (
+                            <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/40" />
+                          )}
                         </p>
                       </div>
                     </div>
-                    {complete ? (
-                      <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-green-500" />
-                    ) : (
-                      <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-muted-foreground/40" />
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(
+                      'absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-md transition',
+                      isDefault
+                        ? 'text-amber-400'
+                        : complete
+                          ? 'text-muted-foreground/60 hover:bg-muted/60 hover:text-amber-400'
+                          : 'cursor-not-allowed text-muted-foreground/30',
                     )}
-                  </div>
-                </button>
+                    title={starTitle}
+                    aria-label={starTitle}
+                    disabled={!complete || isDefault}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      if (provider.id !== config.defaultProviderId) {
+                        void selectDefaultProvider(provider.id)
+                      }
+                    }}
+                  >
+                    <Star className={cn('h-4 w-4', isDefault && 'fill-amber-400 text-amber-500')} />
+                  </button>
+                </div>
               )
             })}
           </div>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">{t.aiConfig.defaultStarHint}</p>
         </section>
 
         <section className="min-w-0 space-y-4">
@@ -566,7 +639,45 @@ export function AIConfigTab() {
                     <p className="text-xs text-muted-foreground">{t.aiConfig.providerDetailDescription}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div
+                    className="flex items-center gap-1.5 rounded-md border border-border/70 px-2 py-1"
+                    title={t.aiConfig.enableProviderHint}
+                  >
+                    <Switch
+                      id="ai-provider-enabled"
+                      checked={selectedProvider.enabled}
+                      onCheckedChange={(enabled) => updateSelectedProvider({ enabled })}
+                      aria-label={t.aiConfig.enableProvider}
+                    />
+                    <Label htmlFor="ai-provider-enabled" className="text-xs">
+                      {t.aiConfig.enableProviderShort}
+                    </Label>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={selectedIsDefault ? 'secondary' : 'outline'}
+                    className={cn(
+                      'h-8',
+                      selectedIsDefault && 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+                    )}
+                    title={!providerStatus(selectedProvider) ? t.aiConfig.fillProviderFirst : undefined}
+                    onClick={() => {
+                      if (!selectedIsDefault) {
+                        void selectDefaultProvider(selectedProvider.id)
+                      }
+                    }}
+                    disabled={saving || !providerStatus(selectedProvider)}
+                  >
+                    <Star
+                      className={cn(
+                        'mr-1.5 h-3.5 w-3.5',
+                        selectedIsDefault && 'fill-amber-400 text-amber-500',
+                      )}
+                    />
+                    {selectedIsDefault ? t.aiConfig.currentDefault : t.aiConfig.setAsDefault}
+                  </Button>
                   <Button
                     type="button"
                     size="sm"
@@ -756,65 +867,104 @@ export function AIConfigTab() {
                   <p className="text-xs leading-relaxed text-muted-foreground">{t.aiConfig.tokenQuotaHelp}</p>
                 </div>
                 <details className="rounded-md border p-3 md:col-span-2">
-                  <summary className="cursor-pointer text-xs font-medium">{t.aiConfig.advancedSettings}</summary>
-                  <div className="mt-3 space-y-1.5">
-                    <Label htmlFor="ai-provider-request-timeout" className="text-xs">
-                      {t.aiConfig.requestTimeout}
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <div className="w-[140px]">
-                        <Input
-                          id="ai-provider-request-timeout"
-                          type="number"
-                          min={1}
-                          max={120}
-                          step={1}
-                          className="h-9"
-                          aria-describedby="ai-provider-request-timeout-help"
-                          aria-invalid={!Number.isInteger(selectedProvider.requestTimeoutMinutes) || (selectedProvider.requestTimeoutMinutes ?? 30) < 1 || (selectedProvider.requestTimeoutMinutes ?? 30) > 120}
-                          value={selectedProvider.requestTimeoutMinutes === 0 ? '' : selectedProvider.requestTimeoutMinutes ?? 30}
-                          onChange={(event) => updateSelectedProvider({ requestTimeoutMinutes: Number(event.target.value) })}
-                        />
+                  <summary className="flex cursor-pointer items-center gap-2 text-xs font-medium">
+                    <span>{t.aiConfig.advancedSettings}</span>
+                    {providerHeaders.length > 0 ? (
+                      <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-normal">
+                        {t.aiConfig.headersCount.replace('{count}', String(providerHeaders.length))}
+                      </Badge>
+                    ) : null}
+                  </summary>
+                  <div className="mt-3 space-y-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="ai-provider-request-timeout" className="text-xs">
+                        {t.aiConfig.requestTimeout}
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        <div className="w-[140px]">
+                          <Input
+                            id="ai-provider-request-timeout"
+                            type="number"
+                            min={1}
+                            max={120}
+                            step={1}
+                            className="h-9"
+                            aria-describedby="ai-provider-request-timeout-help"
+                            aria-invalid={!Number.isInteger(selectedProvider.requestTimeoutMinutes) || (selectedProvider.requestTimeoutMinutes ?? 30) < 1 || (selectedProvider.requestTimeoutMinutes ?? 30) > 120}
+                            value={selectedProvider.requestTimeoutMinutes === 0 ? '' : selectedProvider.requestTimeoutMinutes ?? 30}
+                            onChange={(event) => updateSelectedProvider({ requestTimeoutMinutes: Number(event.target.value) })}
+                          />
+                        </div>
+                        <span className="text-xs text-muted-foreground">{t.aiConfig.perMinute}</span>
                       </div>
-                      <span className="text-xs text-muted-foreground">{t.aiConfig.perMinute}</span>
+                      <p id="ai-provider-request-timeout-help" className="text-xs leading-relaxed text-muted-foreground">
+                        {t.aiConfig.requestTimeoutHelp}
+                      </p>
                     </div>
-                    <p id="ai-provider-request-timeout-help" className="text-xs leading-relaxed text-muted-foreground">
-                      {t.aiConfig.requestTimeoutHelp}
-                    </p>
+
+                    <div className="space-y-2 border-t pt-3">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <Label className="text-xs">{t.aiConfig.headersTitle}</Label>
+                          <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                            {t.aiConfig.headersHelp}
+                          </p>
+                        </div>
+                        <Button type="button" size="sm" variant="outline" className="h-8" onClick={addProviderHeader}>
+                          <Plus className="mr-1.5 h-3.5 w-3.5" />
+                          {t.aiConfig.addHeader}
+                        </Button>
+                      </div>
+
+                      {providerHeaders.length === 0 ? (
+                        <div className="rounded-md border border-dashed px-3 py-2 text-[11px] text-muted-foreground">
+                          {t.aiConfig.headersEmpty}
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {providerHeaders.map((header, index) => (
+                            <div key={index} className="flex items-start gap-2">
+                              <Input
+                                aria-label={t.aiConfig.headersName}
+                                className="h-9 min-w-0 flex-1 font-mono text-xs"
+                                placeholder={t.aiConfig.headersNamePlaceholder}
+                                value={header.name}
+                                onChange={(event) => updateProviderHeader(index, { name: event.target.value })}
+                              />
+                              <Input
+                                aria-label={t.aiConfig.headersValue}
+                                className="h-9 min-w-0 flex-1 font-mono text-xs"
+                                placeholder={t.aiConfig.headersValuePlaceholder}
+                                value={header.value}
+                                onChange={(event) => updateProviderHeader(index, { value: event.target.value })}
+                              />
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="h-9 w-9 shrink-0 text-muted-foreground"
+                                title={t.aiConfig.removeHeader}
+                                aria-label={t.aiConfig.removeHeader}
+                                onClick={() => removeProviderHeader(index)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {isOpenCodeProvider(selectedProvider.api) ? (
+                        <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700 dark:text-amber-300">
+                          <span aria-hidden="true" className="mt-0.5">◆</span>
+                          <span>{t.aiConfig.headersOpenCodeHint}</span>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 </details>
               </div>
 
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/20 px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <Switch
-                    id="ai-provider-enabled"
-                    checked={selectedProvider.enabled}
-                    onCheckedChange={(enabled) => updateSelectedProvider({ enabled })}
-                  />
-                  <Label htmlFor="ai-provider-enabled" className="text-xs">
-                    {t.aiConfig.enableProvider}
-                  </Label>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={selectedProvider.id === config.defaultProviderId ? 'secondary' : 'outline'}
-                  className="h-8"
-                  onClick={() => selectDefaultProvider(selectedProvider.id)}
-                  disabled={saving || !providerStatus(selectedProvider)}
-                >
-                  <Star
-                    className={cn(
-                      'mr-1.5 h-3.5 w-3.5',
-                      selectedProvider.id === config.defaultProviderId && 'fill-amber-400 text-amber-500',
-                    )}
-                  />
-                  {selectedProvider.id === config.defaultProviderId
-                    ? t.aiConfig.currentDefault
-                    : t.aiConfig.setAsDefault}
-                </Button>
-              </div>
             </div>
           ) : null}
 

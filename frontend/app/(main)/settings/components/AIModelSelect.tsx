@@ -34,7 +34,7 @@ export function AIModelSelect({ provider, onChange }: {
     const controller = new AbortController()
     const timer = setTimeout(async () => {
       try {
-        const models = await listAIModels({ api, key, protocol }, controller.signal)
+        const models = await listAIModels({ api, key, protocol, headers: provider.headers }, controller.signal)
         if (!controller.signal.aborted) setResult({ api, key, protocol, revision, models })
       } catch (error) {
         if (!controller.signal.aborted) {
@@ -46,7 +46,7 @@ export function AIModelSelect({ provider, onChange }: {
       clearTimeout(timer)
       controller.abort()
     }
-  }, [api, key, protocol, ready, revision])
+  }, [api, key, protocol, provider.headers, ready, revision])
 
   const errors: Record<string, string> = {
     invalid_config: t.aiConfig.modelsInvalidConfig,

@@ -7,6 +7,7 @@ export interface AIConfig {
   api: string
   key: string
   model: string
+  headers?: AIProviderHeader[]
   defaultProviderId?: string
   providers?: AIProviderConfig[]
   routing?: AIRoutingConfig
@@ -14,6 +15,12 @@ export interface AIConfig {
 }
 
 export type AIProviderProtocol = 'openai-compatible' | 'anthropic'
+
+/** A custom HTTP header attached to every model request for one provider. */
+export interface AIProviderHeader {
+  name: string
+  value: string
+}
 
 export interface AIProviderConfig {
   /** Complete model request timeout in minutes; missing/0 defaults to 30. */
@@ -32,6 +39,7 @@ export interface AIProviderConfig {
   api: string
   key: string
   model: string
+  headers?: AIProviderHeader[]
   supportsTools?: boolean
   supportsStreaming?: boolean
 }
@@ -51,7 +59,7 @@ export interface AIModelOption {
 }
 
 export async function listAIModels(
-  provider: Pick<AIProviderConfig, 'protocol' | 'api' | 'key'>,
+  provider: Pick<AIProviderConfig, 'protocol' | 'api' | 'key' | 'headers'>,
   signal?: AbortSignal,
 ): Promise<AIModelOption[]> {
   const response = await fetchWithAuth('/api/v1/config/ai/models', {
