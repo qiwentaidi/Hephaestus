@@ -2,20 +2,21 @@ import { fetchWithAuth } from '@/lib/api'
 import type { SpaceEngineConfig } from '@/lib/config'
 
 export const SPACE_ENGINES = [
-  { name: 'Chaos', requiresApi: true, recommended: true },
-  { name: 'FOFA', requiresApi: true, recommended: false },
-  { name: 'Hunter', requiresApi: true, recommended: false },
-  { name: 'Quake', requiresApi: true, recommended: false },
-  { name: 'Bevigil', requiresApi: true, recommended: false },
-  { name: 'ZoomEye', requiresApi: true, recommended: false },
-  { name: 'GitHub', requiresApi: true, recommended: false },
-  { name: 'Securitytrails', requiresApi: true, recommended: false },
-  { name: 'Digitorus', requiresApi: false, recommended: false },
-  { name: 'HackerTarget', requiresApi: false, recommended: false },
-  { name: 'THC', requiresApi: false, recommended: false },
-  { name: 'Anubis', requiresApi: false, recommended: false },
-  { name: 'crt.name', requiresApi: false, recommended: false },
-  { name: 'IP138', requiresApi: false, recommended: false },
+  { name: 'Chaos', requiresApi: true, recommended: true, related: false },
+  { name: 'FOFA', requiresApi: true, recommended: false, related: false },
+  { name: 'Hunter', requiresApi: true, recommended: false, related: false },
+  { name: 'Quake', requiresApi: true, recommended: false, related: false },
+  { name: 'Bevigil', requiresApi: true, recommended: false, related: false },
+  { name: 'ZoomEye', requiresApi: true, recommended: false, related: false },
+  { name: 'GitHub', requiresApi: true, recommended: false, related: false },
+  { name: 'Securitytrails', requiresApi: true, recommended: false, related: false },
+  { name: 'Digitorus', requiresApi: false, recommended: false, related: false },
+  { name: 'HackerTarget', requiresApi: false, recommended: false, related: false },
+  { name: 'THC', requiresApi: false, recommended: false, related: false },
+  { name: 'Anubis', requiresApi: false, recommended: false, related: false },
+  { name: 'crt.name', requiresApi: false, recommended: false, related: false },
+  { name: 'crt.sh', requiresApi: false, recommended: false, related: true },
+  { name: 'IP138', requiresApi: false, recommended: false, related: false },
 ] as const
 
 export const SPACE_ENGINE_NAMES = SPACE_ENGINES.map((engine) => engine.name)
@@ -101,7 +102,8 @@ export const isSubdomainEngineConfigured = (
     case 'HackerTarget':
     case 'THC':
     case 'Anubis':
-    case 'crt.name': return true
+    case 'crt.name':
+    case 'crt.sh': return true
     case 'IP138': return true
     default: return false
   }

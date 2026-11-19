@@ -209,6 +209,8 @@ func canonicalSubdomainAppendEngines(engines []string) []string {
 		"ip138":          "IP138",
 		"crt.name":       "crt.name",
 		"crtname":        "crt.name",
+		"crt.sh":         "crt.sh",
+		"crtsh":          "crt.sh",
 	}
 	seen := make(map[string]struct{}, len(engines))
 	result := make([]string, 0, len(engines))

@@ -12,6 +12,7 @@ import (
 	"hephaestus-backend/pkg/subdomain/bevigil"
 	"hephaestus-backend/pkg/subdomain/chaos"
 	"hephaestus-backend/pkg/subdomain/crtname"
+	"hephaestus-backend/pkg/subdomain/crtsh"
 	"hephaestus-backend/pkg/subdomain/digitorus"
 	// "hephaestus-backend/pkg/subdomain/ctradar" // 已下线，暂时注释
 	"hephaestus-backend/pkg/subdomain/fofa"
@@ -88,6 +89,7 @@ var (
 var hostnameLabelPattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`)
 
 var resolveDNSRecords = resolveDNSWithRetry
+var fetchCRTShNames = crtsh.FetchNames
 
 // NewSubdomainEngine 创建子域名扫描引擎
 // callback 用于接收扫描结果和进度更新，event 可以是: "subdomainLoading", "subdomainProgressID", "subdomainCounts", "subdomainComplete"
@@ -430,6 +432,10 @@ func (s *Subdomain) DetectAsset(ips, cnames []string) (assetType string, assetNa
 
 func (s *Subdomain) ApiPolymerization(ctrlCtx context.Context) {
 	totalDomains := len(s.options.Domains)
+	// crt.sh can return domains that share a certificate with the target but are
+	// not subdomains of it. They are collected per target and resolved once all
+	// targets have been processed.
+	relatedCandidates := make([]string, 0)
 	for idx, domain := range s.options.Domains {
 		// 发送域名开始处理事件
 		if s.callback != nil {
@@ -692,6 +698,41 @@ func (s *Subdomain) ApiPolymerization(ctrlCtx context.Context) {
 			}
 		}
 
+		// crt.sh (免费，无需API Key；较慢，可能返回同证书的关联域名)
+		if appendEngineEnabled(s.options.AppendEngines, "crt.sh", "crtsh", "CRTSh") {
+			if s.callback != nil {
+				s.callback("apiStart", map[string]interface{}{
+					"domain": domain,
+					"api":    "crt.sh",
+				})
+			}
+			names, err := fetchCRTShNames(ctrlCtx, domain, s.options.Proxy)
+			if err != nil {
+				logger.Warning("crt.sh 查询[%s]失败: %v", domain, err)
+			}
+			candidates := make([]string, 0, len(names))
+			for _, name := range names {
+				// 目标域及其子域走原有解析流程；其余同证书域名单独收集，
+				// 不经过 filterSubdomainCandidates 的后缀过滤。
+				if normalized, ok := normalizeSubdomainCandidate(domain, name); ok {
+					candidates = append(candidates, normalized)
+					continue
+				}
+				if host, ok := normalizeRelatedHost(name); ok {
+					relatedCandidates = append(relatedCandidates, host)
+				}
+			}
+			count := appendCandidates(candidates, "crt.sh")
+			apiResults["crt.sh"] = count
+			if s.callback != nil {
+				s.callback("apiComplete", map[string]interface{}{
+					"domain": domain,
+					"api":    "crt.sh",
+					"count":  count,
+				})
+			}
+		}
+
 		// Digitorus/certificatedetails (free, no API key required)
 		if appendEngineEnabled(s.options.AppendEngines, "Digitorus", "digitorus") {
 			if s.callback != nil {
@@ -888,6 +929,12 @@ func (s *Subdomain) ApiPolymerization(ctrlCtx context.Context) {
 		}
 
 		time.Sleep(time.Second)
+	}
+
+	// 关联域名不属于任何目标根域，统一作为独立根域落库，避免污染子域名统计。
+	if related := filterRelatedDomains(relatedCandidates, s.options.Domains); len(related) > 0 {
+		logger.Info("crt.sh 发现 %d 个证书关联域名", len(related))
+		s.RunnerRelated(ctrlCtx, related, "crt.sh")
 	}
 }
 

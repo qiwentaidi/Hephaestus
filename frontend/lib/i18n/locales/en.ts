@@ -4497,7 +4497,7 @@ export const en: Locale = {
         moduleConfigUnsupported:
           "Current module does not support configuration yet",
         subdomainEngineHint:
-          "Separate engines with commas. Digitorus, HackerTarget, THC, Anubis, IP138, and crt.name are always available; other engines use API keys from system settings.",
+          "Separate engines with commas. Digitorus, HackerTarget, THC, Anubis, IP138, crt.name, and crt.sh are always available; other engines use API keys from system settings. crt.sh may return related domains that share a certificate with the target and can be slow.",
         presets: {
           title: "Preset Workflows",
           desc: "Fill common scan chains in one click, then fine-tune node settings per target.",
@@ -5953,6 +5953,9 @@ export const en: Locale = {
       selectAll: "Select All",
       partiallySelected: "Partially selected",
       free: "Free",
+      related: "Related",
+      relatedHint:
+        "This engine may return related domains that share a certificate with the target (not necessarily target subdomains); crt.sh can be slow",
       engineRequired: "Select at least one search engine",
       apiNotConfigured:
         "{engine} API is not configured. Go to Settings to configure it",

@@ -141,6 +141,16 @@ export function SubdomainConfigPanel({
                     <span className="min-w-0 truncate" title={engineName}>{engineName}</span>
                     {engine.recommended && <Badge variant="default" className="h-4 shrink-0 px-1 py-0 text-xs">{t.common.recommended}</Badge>}
                     {!engine.requiresApi && <Badge variant="secondary" className="h-4 shrink-0 px-1 py-0 text-xs">{t.subdomain.configSheet.free}</Badge>}
+                    {engine.related && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="h-4 shrink-0 px-1 py-0 text-xs">{t.subdomain.configSheet.related}</Badge>
+                          </TooltipTrigger>
+                          <TooltipContent><p>{t.subdomain.configSheet.relatedHint}</p></TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
                   </Label>
                   {checked && engine.requiresApi && !hasConfig && (
                     <TooltipProvider>

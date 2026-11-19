@@ -4397,7 +4397,7 @@ export const zh = {
         sheetDesc: "针对单个模块配置并发、策略与高级选项",
         emptyNodeSelection: "请选择画布中的节点以编辑参数",
         moduleConfigUnsupported: "当前模块暂不支持配置",
-        subdomainEngineHint: "多个引擎用英文逗号分隔；Digitorus、HackerTarget、THC、Anubis、IP138、crt.name 始终可用，其他引擎使用系统设置中的 API。",
+        subdomainEngineHint: "多个引擎用英文逗号分隔；Digitorus、HackerTarget、THC、Anubis、IP138、crt.name、crt.sh 始终可用，其他引擎使用系统设置中的 API；crt.sh 可能返回同证书的关联域名且访问较慢。",
         presets: {
           title: "预设流程",
           desc: "一键填充常用扫描链路，再按目标微调各节点参数。",
@@ -5817,6 +5817,8 @@ export const zh = {
       selectAll: "全选",
       partiallySelected: "部分选中",
       free: "免费",
+      related: "关联",
+      relatedHint: "该引擎会返回与目标共用证书的关联域名（不一定是目标的子域名）；crt.sh 访问可能较慢",
       engineRequired: "请至少选择一个搜索引擎",
       apiNotConfigured: "{engine} API 未配置，请前往设置页面配置",
       apiConfigured: "{engine} API 已配置",
