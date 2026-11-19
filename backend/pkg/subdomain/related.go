@@ -15,9 +15,9 @@ const maxRelatedDomains = 300
 
 // RunnerRelated resolves certificate-related domains and emits them through the
 // same subdomain result callback. Unlike RunnerWithSources, it does not filter
-// candidates by the target root domain: each related domain is stored as its
-// own root (Domain == Subdomain), which lets the existing scan result table
-// hold it without a dedicated schema.
+// candidates by the target root domain. Each related host is stored under its
+// closest related domain: the related domain itself becomes the root, and its
+// SAN subdomains are stored as its subdomains.
 func (s *Subdomain) RunnerRelated(ctrlCtx context.Context, domains []string, source string) {
 	if len(domains) == 0 || s.callback == nil {
 		return
@@ -27,6 +27,7 @@ func (s *Subdomain) RunnerRelated(ctrlCtx context.Context, domains []string, sou
 	if len(dnsServers) == 0 {
 		dnsServers = DefaultDnsServers
 	}
+	roots := relatedRoots(domains)
 	thread := s.options.Thread
 	if thread <= 0 {
 		thread = 50
@@ -50,7 +51,7 @@ func (s *Subdomain) RunnerRelated(ctrlCtx context.Context, domains []string, sou
 		}
 		assetType, assetName := s.DetectAsset(ips, cnames)
 		s.callback("subdomainLoading", SubdomainResult{
-			Domain:          host,
+			Domain:          roots[host],
 			Subdomain:       host,
 			IPs:             ips,
 			AssetType:       assetType,
@@ -79,10 +80,37 @@ func (s *Subdomain) RunnerRelated(ctrlCtx context.Context, domains []string, sou
 	wg.Wait()
 }
 
+// relatedRoots maps each related host to the closest related domain that covers
+// it. A host with no related parent (for example m.testexample.com when only
+// m.testexample.com is present) is its own root.
+func relatedRoots(domains []string) map[string]string {
+	set := make(map[string]struct{}, len(domains))
+	for _, domain := range domains {
+		set[domain] = struct{}{}
+	}
+	roots := make(map[string]string, len(domains))
+	for _, domain := range domains {
+		root := domain
+		suffix := domain
+		for {
+			index := strings.IndexByte(suffix, '.')
+			if index < 0 {
+				break
+			}
+			suffix = suffix[index+1:]
+			if _, exists := set[suffix]; exists {
+				root = suffix
+				break
+			}
+		}
+		roots[domain] = root
+	}
+	return roots
+}
+
 // filterRelatedDomains keeps valid domains that are not covered by any scan
-// target, removes duplicates, drops names that are subdomains of another
-// related domain, and caps the result to keep shared CDN certificates from
-// flooding the result table.
+// target, removes duplicates, and caps the result to keep shared CDN
+// certificates from flooding the result table.
 func filterRelatedDomains(candidates []string, targets []string) []string {
 	targetRoots := make(map[string]struct{}, len(targets))
 	for _, target := range targets {
@@ -115,31 +143,10 @@ func filterRelatedDomains(candidates []string, targets []string) []string {
 		hosts = append(hosts, host)
 	}
 	sort.Strings(hosts)
-
-	result := make([]string, 0, len(hosts))
-	for _, host := range hosts {
-		covered := false
-		suffix := host
-		for {
-			index := strings.IndexByte(suffix, '.')
-			if index < 0 {
-				break
-			}
-			suffix = suffix[index+1:]
-			if _, exists := uniq[suffix]; exists {
-				covered = true
-				break
-			}
-		}
-		if covered {
-			continue
-		}
-		result = append(result, host)
-		if len(result) >= maxRelatedDomains {
-			break
-		}
+	if len(hosts) > maxRelatedDomains {
+		hosts = hosts[:maxRelatedDomains]
 	}
-	return result
+	return hosts
 }
 
 func normalizeRelatedHost(host string) (string, bool) {

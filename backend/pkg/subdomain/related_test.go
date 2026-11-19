@@ -22,7 +22,7 @@ func TestFilterRelatedDomains(t *testing.T) {
 		"",
 	}, []string{"a.com"})
 
-	want := []string{"ab1.com", "ab2.com"}
+	want := []string{"ab1.com", "ab2.com", "www.ab1.com"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("filterRelatedDomains = %v, want %v", got, want)
 	}
@@ -39,10 +39,23 @@ func TestFilterRelatedDomainsCapsResults(t *testing.T) {
 	}
 }
 
-func TestRunnerRelatedStoresEachHostAsItsOwnRoot(t *testing.T) {
+func TestRelatedRootsUseClosestRelatedDomain(t *testing.T) {
+	got := relatedRoots([]string{"example.org", "www.example.org", "a.www.example.org", "example.net"})
+	want := map[string]string{
+		"example.org":       "example.org",
+		"www.example.org":   "example.org",
+		"a.www.example.org": "www.example.org",
+		"example.net":       "example.net",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("relatedRoots = %v, want %v", got, want)
+	}
+}
+
+func TestRunnerRelatedGroupsHostsUnderRelatedRoots(t *testing.T) {
 	original := resolveDNSRecords
 	t.Cleanup(func() { resolveDNSRecords = original })
-	resolveDNSRecords = func(host string, _ []string, _ int) ([]string, []string, error) {
+	resolveDNSRecords = func(string, []string, int) ([]string, []string, error) {
 		return []string{"203.0.113.9"}, nil, nil
 	}
 
@@ -61,28 +74,36 @@ func TestRunnerRelatedStoresEachHostAsItsOwnRoot(t *testing.T) {
 		mu.Unlock()
 	})
 
-	engine.RunnerRelated(context.Background(), []string{"ab1.com", "ab2.com"}, "crt.sh")
+	engine.RunnerRelated(context.Background(), []string{"ab1.com", "www.ab1.com", "ab2.com"}, "crt.sh")
 
 	mu.Lock()
 	defer mu.Unlock()
-	if len(results) != 2 {
-		t.Fatalf("expected 2 results, got %d", len(results))
+	if len(results) != 3 {
+		t.Fatalf("expected 3 results, got %d", len(results))
 	}
-	seen := make(map[string]bool, len(results))
+	bySubdomain := make(map[string]SubdomainResult, len(results))
 	for _, result := range results {
-		if result.Domain != result.Subdomain {
-			t.Fatalf("expected domain == subdomain, got %q / %q", result.Domain, result.Subdomain)
-		}
 		if result.Source != "crt.sh" {
 			t.Fatalf("expected crt.sh source, got %q", result.Source)
 		}
 		if len(result.IPs) != 1 || result.IPs[0] != "203.0.113.9" {
 			t.Fatalf("unexpected ips: %v", result.IPs)
 		}
-		seen[result.Domain] = true
+		bySubdomain[result.Subdomain] = result
 	}
-	if !seen["ab1.com"] || !seen["ab2.com"] {
-		t.Fatalf("expected ab1.com and ab2.com, got %v", seen)
+	expected := map[string]string{
+		"ab1.com":     "ab1.com",
+		"www.ab1.com": "ab1.com",
+		"ab2.com":     "ab2.com",
+	}
+	for subdomain, root := range expected {
+		result, ok := bySubdomain[subdomain]
+		if !ok {
+			t.Fatalf("missing result for %s: %v", subdomain, bySubdomain)
+		}
+		if result.Domain != root {
+			t.Fatalf("expected %s root %q, got %q", subdomain, root, result.Domain)
+		}
 	}
 }
 
@@ -133,6 +154,7 @@ func TestApiPolymerizationSplitsCRTShRelatedDomains(t *testing.T) {
 		"example.com|example.com",
 		"example.com|www.example.com",
 		"ab1.com|ab1.com",
+		"ab1.com|www.ab1.com",
 		"ab2.com|ab2.com",
 	} {
 		if !keys[key] {
@@ -141,8 +163,5 @@ func TestApiPolymerizationSplitsCRTShRelatedDomains(t *testing.T) {
 	}
 	if keys["example.com|ab1.com"] {
 		t.Fatalf("related domain was stored under the target root: %v", keys)
-	}
-	if keys["ab1.com|www.ab1.com"] {
-		t.Fatalf("subdomain of a related domain should be dropped: %v", keys)
 	}
 }
