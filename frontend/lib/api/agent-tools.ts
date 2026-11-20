@@ -8,7 +8,10 @@ export interface AgentTool {
   title: string
   description: string
   source: AgentToolSource
+  /** Globally enabled (AI capability switch, or MCP server + tool switches). */
   enabled: boolean
+  /** Available in this runtime (background tasks / interactive shell features). */
+  available: boolean
   serverId?: string
   serverName?: string
 }

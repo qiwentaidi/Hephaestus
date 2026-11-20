@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
-import { ListChecks, Loader2, Search } from 'lucide-react'
+import { Copy, ListChecks, Loader2, Search } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -25,11 +25,18 @@ import {
   type AgentToolSource,
   type AgentToolVisibilityConfig,
 } from '@/lib/api/agent-tools'
+import { copyToClipboard } from '@/lib/clipboard'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
 const ROLE_ORDER: AgentToolRole[] = ['planner', 'worker', 'controller', 'pentest']
 const SOURCES: AgentToolSource[] = ['platform', 'system', 'mcp']
+
+// A binding only means something when the tool is enabled globally and exists
+// in this runtime; both failures are rendered as a disabled row.
+function usable(tool: AgentTool) {
+  return tool.enabled && tool.available !== false
+}
 
 export default function AgentToolVisibilitySheet({
   open,
@@ -99,6 +106,7 @@ export default function AgentToolVisibilitySheet({
   }, [filtered, copy.toolSourceMCP])
 
   const toggle = (tool: AgentTool) => {
+    if (!usable(tool)) return
     setDisabled((current) => {
       const next = new Set(current[role] ?? [])
       if (next.has(tool.name)) next.delete(tool.name)
@@ -111,7 +119,7 @@ export default function AgentToolVisibilitySheet({
     setDisabled((current) => {
       const next = new Set(current[role] ?? [])
       for (const tool of items) {
-        if (!tool.enabled) continue
+        if (!usable(tool)) continue
         if (on) next.delete(tool.name)
         else next.add(tool.name)
       }
@@ -120,10 +128,15 @@ export default function AgentToolVisibilitySheet({
   }
 
   const setAll = (on: boolean) => {
-    setDisabled((current) => ({
-      ...current,
-      [role]: on ? [] : tools.map((tool) => tool.name),
-    }))
+    setDisabled((current) => {
+      const next = new Set(current[role] ?? [])
+      for (const tool of tools) {
+        if (!usable(tool)) continue
+        if (on) next.delete(tool.name)
+        else next.add(tool.name)
+      }
+      return { ...current, [role]: [...next] }
+    })
   }
 
   const save = async () => {
@@ -146,19 +159,20 @@ export default function AgentToolVisibilitySheet({
 
   const renderTool = (tool: AgentTool) => {
     const checked = !disabledSet.has(tool.name)
+    const canUse = usable(tool)
     return (
       <label
         key={tool.name}
         className={cn(
           'flex cursor-pointer items-start gap-2 rounded-md border border-border/60 px-2.5 py-2',
-          !tool.enabled && 'cursor-not-allowed opacity-55',
-          checked && tool.enabled && 'border-primary/35 bg-primary/5',
+          !canUse && 'cursor-not-allowed opacity-55',
+          checked && canUse && 'border-primary/35 bg-primary/5',
         )}
       >
         <Checkbox
           className="mt-0.5"
           checked={checked}
-          disabled={!tool.enabled}
+          disabled={!canUse}
           onCheckedChange={() => toggle(tool)}
         />
         <span className="min-w-0 flex-1">
@@ -166,8 +180,29 @@ export default function AgentToolVisibilitySheet({
             <span className="truncate text-xs font-medium">{tool.title || tool.name}</span>
             <Badge variant="outline" className="h-4 rounded px-1 text-[9px] font-normal">{sourceLabel(tool.source)}</Badge>
             {!tool.enabled ? <Badge variant="outline" className="h-4 rounded border-amber-500/40 px-1 text-[9px] font-normal text-amber-700 dark:text-amber-300">{copy.toolDisabledGlobally}</Badge> : null}
+            {tool.enabled && tool.available === false ? <Badge variant="outline" className="h-4 rounded border-amber-500/40 px-1 text-[9px] font-normal text-amber-700 dark:text-amber-300">{copy.toolUnavailable}</Badge> : null}
           </span>
-          <span className="mt-0.5 block truncate font-mono text-[10px] text-muted-foreground">{tool.name}</span>
+          <span className="mt-0.5 flex items-center gap-1">
+            <span className="min-w-0 flex-1 truncate font-mono text-[10px] text-muted-foreground">{tool.name}</span>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-5 w-5 shrink-0 text-muted-foreground"
+              aria-label={copy.toolCopyName}
+              title={copy.toolCopyName}
+              onClick={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                void copyToClipboard(tool.name).then((ok) => {
+                  if (ok) toast.success(copy.copied)
+                  else toast.error(copy.copyFailed)
+                })
+              }}
+            >
+              <Copy className="h-3 w-3" aria-hidden="true" />
+            </Button>
+          </span>
           {tool.description ? <span className="mt-1 block line-clamp-2 text-[11px] leading-4 text-muted-foreground">{tool.description}</span> : null}
         </span>
       </label>
@@ -188,7 +223,7 @@ export default function AgentToolVisibilitySheet({
         <div className="flex flex-wrap items-center gap-1.5 border-b border-border/70 px-5 py-3">
           {ROLE_ORDER.map((item) => {
             const hidden = new Set(disabled[item] ?? [])
-            const available = tools.filter((tool) => tool.enabled && !hidden.has(tool.name)).length
+            const available = tools.filter((tool) => usable(tool) && !hidden.has(tool.name)).length
             return (
               <Button
                 key={item}
@@ -205,7 +240,9 @@ export default function AgentToolVisibilitySheet({
               </Button>
             )
           })}
-          <span className="ml-auto text-[11px] text-muted-foreground">{copy.toolHiddenCount.replace('{n}', String(disabledSet.size))}</span>
+          <span className="ml-auto text-[11px] text-muted-foreground">
+            {copy.toolHiddenCount.replace('{n}', String(tools.filter((tool) => usable(tool) && disabledSet.has(tool.name)).length))}
+          </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 px-5 py-3">
@@ -248,7 +285,7 @@ export default function AgentToolVisibilitySheet({
                   </div>
                   {group.source === 'mcp' ? <div className="space-y-3">
                     {mcpServerGroups.map(([serverName, serverTools]) => {
-                      const selectable = serverTools.filter((tool) => tool.enabled)
+                      const selectable = serverTools.filter(usable)
                       const enabledCount = selectable.filter((tool) => !disabledSet.has(tool.name)).length
                       const allOn = selectable.length > 0 && enabledCount === selectable.length
                       const state: boolean | 'indeterminate' = allOn ? true : enabledCount > 0 ? 'indeterminate' : false
