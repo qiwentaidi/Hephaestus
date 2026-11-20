@@ -276,7 +276,7 @@ export function LauncherWindowTitlebar() {
 			)}
 			style={{
 				["--wails-draggable" as string]: "drag",
-				["-webkit-app-region" as string]: "drag",
+				["WebkitAppRegion" as string]: "drag",
 			}}
 			onDoubleClick={handleTitlebarDoubleClick}
 			onMouseDown={handleTitlebarMouseDown}
@@ -295,7 +295,7 @@ export function LauncherWindowTitlebar() {
 				data-no-titlebar-drag="true"
 				style={{
 					["--wails-draggable" as string]: "no-drag",
-					["-webkit-app-region" as string]: "no-drag",
+					["WebkitAppRegion" as string]: "no-drag",
 				}}
 			>
 				<Button
@@ -317,7 +317,7 @@ export function LauncherWindowTitlebar() {
 					data-no-titlebar-drag="true"
 					style={{
 						["--wails-draggable" as string]: "no-drag",
-						["-webkit-app-region" as string]: "no-drag",
+						["WebkitAppRegion" as string]: "no-drag",
 					}}
 				>
 					<Button
@@ -373,7 +373,7 @@ export function LauncherWindowTitlebar() {
 					data-no-titlebar-drag="true"
 					style={{
 						["--wails-draggable" as string]: "no-drag",
-						["-webkit-app-region" as string]: "no-drag",
+						["WebkitAppRegion" as string]: "no-drag",
 					}}
 				>
 					<DialogHeader>

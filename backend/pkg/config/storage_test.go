@@ -209,6 +209,27 @@ func TestResolveAgentIdentityKeepsExplicitValues(t *testing.T) {
 	}
 }
 
+func TestNormalizeAIConfigPreservesEmptyNewProviderFields(t *testing.T) {
+	cfg := NormalizeAIConfig(AIConfig{
+		Providers: []AIProviderConfig{{
+			ID:       "new-provider",
+			Protocol: AIProtocolOpenAICompatible,
+			Enabled:  false,
+		}},
+	})
+
+	if len(cfg.Providers) != 1 {
+		t.Fatalf("providers = %d, want 1", len(cfg.Providers))
+	}
+	provider := cfg.Providers[0]
+	if provider.API != "" || provider.Model != "" {
+		t.Fatalf("empty provider fields must not be prefilled, got api=%q model=%q", provider.API, provider.Model)
+	}
+	if provider.Name == "" {
+		t.Fatalf("provider name fallback should still be applied")
+	}
+}
+
 func TestNormalizeAIConfigMigratesLegacySingleProvider(t *testing.T) {
 	cfg := NormalizeAIConfig(AIConfig{
 		Enabled: true,

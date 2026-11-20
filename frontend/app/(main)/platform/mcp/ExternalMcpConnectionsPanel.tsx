@@ -2,6 +2,16 @@
 
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { FormItem } from '@/components/ui/form'
@@ -124,6 +134,7 @@ export default function ExternalMcpConnectionsPanel({ callCounts, externalCallCo
   const [formServerId, setFormServerId] = useState<string | null>(null)
   const [form, setForm] = useState<ServerForm>(emptyForm)
   const [formError, setFormError] = useState('')
+  const [pendingDelete, setPendingDelete] = useState<MCPServer | null>(null)
 
   const refresh = useCallback(async () => {
     try {
@@ -280,14 +291,16 @@ export default function ExternalMcpConnectionsPanel({ callCounts, externalCallCo
     }
   }
 
-  const remove = async (server: MCPServer) => {
-    if (!window.confirm(c.confirmDelete)) return
+  const confirmRemove = async () => {
+    const server = pendingDelete
+    if (!server || busy !== null) return
     setBusy(server.id)
     try {
       await readPayload(await fetchWithAuth(`/api/v1/mcp/external-servers/${encodeURIComponent(server.id)}`, { method: 'DELETE' }))
       setServers(items => items.filter(item => item.id !== server.id))
       toast.success(c.deleted)
       onRefreshCounts()
+      setPendingDelete(null)
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : c.error)
     } finally {
@@ -386,7 +399,7 @@ export default function ExternalMcpConnectionsPanel({ callCounts, externalCallCo
                 <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
                   <Button size="sm" variant="outline" disabled={busyThis} onClick={() => void discover(server)}><RefreshCw className={`mr-2 h-3.5 w-3.5 ${busyThis ? 'animate-spin' : ''}`} />{c.discover}</Button>
                   <Button size="sm" variant="outline" disabled={busyThis} onClick={() => beginEdit(server)}>{c.edit}</Button>
-                  <Button size="sm" variant="outline" disabled={busyThis} onClick={() => void remove(server)}><Trash2 className="mr-2 h-3.5 w-3.5" />{c.remove}</Button>
+                  <Button size="sm" variant="outline" disabled={busyThis} onClick={() => setPendingDelete(server)}><Trash2 className="mr-2 h-3.5 w-3.5" />{c.remove}</Button>
                 </div>
               </article>
             )
@@ -465,6 +478,35 @@ export default function ExternalMcpConnectionsPanel({ callCounts, externalCallCo
           </form>
         </SheetContent>
       </Sheet>
+
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={open => {
+          if (!open && busy === null) setPendingDelete(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{c.confirmDeleteTitle}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete ? `${c.confirmDelete} (${pendingDelete.name})` : c.confirmDelete}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy !== null}>{c.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={busy !== null}
+              onClick={event => {
+                event.preventDefault()
+                void confirmRemove()
+              }}
+            >
+              {c.remove}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

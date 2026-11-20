@@ -21,6 +21,7 @@ import (
 	"time"
 
 	appcore "hephaestus-backend/internal/app"
+	"hephaestus-backend/mcp"
 	"hephaestus-backend/middleware"
 	"hephaestus-backend/pkg/config"
 	"hephaestus-backend/pkg/database"
@@ -55,6 +56,8 @@ type DesktopService struct {
 	app                      *application.App
 	bootstrapMu              sync.Mutex
 	bootstrapNonces          map[string]time.Time
+	screenshotMu             sync.Mutex
+	screenshotPending        map[string]chan desktopScreenshotOutcome
 }
 
 var desktopStorageMu sync.Mutex
@@ -625,6 +628,10 @@ func (d *DesktopService) openLauncherWindow() error {
 func (d *DesktopService) ServiceStartup(ctx context.Context, _ application.ServiceOptions) error {
 	config.SetRuntimeMode(config.RuntimeModeDesktop)
 
+	// Expose the live desktop window to MCP clients. Server-only deployments
+	// never register a provider, so the tool is not advertised there.
+	mcp.RegisterDesktopScreenshotProvider(d)
+
 	if err := d.coreApp.Bootstrap(); err != nil {
 		return err
 	}
@@ -700,6 +707,9 @@ func (d *DesktopService) registerDesktopRoutes(router *gin.Engine) {
 	api := router.Group("/api/v1/desktop")
 	api.Use(d.requireDesktopAPIToken())
 	{
+		api.POST("/screenshot/capture", d.handleDesktopScreenshotCapture)
+		api.POST("/screenshot/complete", d.handleDesktopScreenshotComplete)
+
 		api.GET("/auth/session", func(c *gin.Context) {
 			token, err := readDesktopAuthToken()
 			if err != nil {

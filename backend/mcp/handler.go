@@ -105,16 +105,20 @@ type mcpToolDefinition struct {
 	Handler mcpToolHandler
 }
 
-type mcpToolTextContent struct {
-	Type string `json:"type"`
-	Text string `json:"text"`
+// mcpToolContent models one MCP content block. Text blocks use Text; image
+// blocks use Data (base64) plus MimeType, as defined by the MCP specification.
+type mcpToolContent struct {
+	Type     string `json:"type"`
+	Text     string `json:"text,omitempty"`
+	Data     string `json:"data,omitempty"`
+	MimeType string `json:"mimeType,omitempty"`
 }
 
 type mcpToolCallResult struct {
-	Content           []mcpToolTextContent `json:"content"`
-	StructuredContent interface{}          `json:"structuredContent,omitempty"`
-	IsError           bool                 `json:"isError,omitempty"`
-	Blocked           bool                 `json:"blocked,omitempty"`
+	Content           []mcpToolContent `json:"content"`
+	StructuredContent interface{}      `json:"structuredContent,omitempty"`
+	IsError           bool             `json:"isError,omitempty"`
+	Blocked           bool             `json:"blocked,omitempty"`
 }
 
 type mcpSessionState struct {
@@ -305,7 +309,7 @@ func handleMCPToolCall(c *gin.Context, req *mcpJSONRPCRequest, profile mcpServer
 	if err != nil {
 		markMCPAuditFailure(c, 0, err.Error())
 		writeMCPResult(c, req.ID, mcpToolCallResult{
-			Content: []mcpToolTextContent{{
+			Content: []mcpToolContent{{
 				Type: "text",
 				Text: err.Error(),
 			}},
@@ -326,7 +330,7 @@ func callMCPTool(c *gin.Context, name string, rawArgs json.RawMessage, profile m
 			if match := toolguard.CheckToolCall(name, rawArgs); match != nil {
 				message := toolguard.FormatBlockedMessage(match)
 				return mcpToolCallResult{
-					Content: []mcpToolTextContent{{Type: "text", Text: message}},
+					Content: []mcpToolContent{{Type: "text", Text: message}},
 					StructuredContent: gin.H{
 						"blocked": true,
 						"match":   match,
@@ -683,7 +687,7 @@ func decodeMCPToolArgs(raw json.RawMessage, dest interface{}) error {
 
 func newMCPToolResult(payload interface{}) mcpToolCallResult {
 	return mcpToolCallResult{
-		Content: []mcpToolTextContent{{
+		Content: []mcpToolContent{{
 			Type: "text",
 			Text: marshalMCPText(payload),
 		}},

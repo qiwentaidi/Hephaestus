@@ -43,6 +43,11 @@ func mcpToolDefinitionsForProfile(profile mcpServerProfile) []mcpToolDefinition 
 		if profile.Key == mcpSpaceEngineProfile.Key && definition.Tool.ModuleKey != "space_engine" {
 			continue
 		}
+		// The screenshot tool needs the live Wails webview; do not advertise it
+		// on server-only deployments where the desktop host is absent.
+		if definition.Tool.Name == desktopScreenshotToolName && !hasDesktopScreenshotProvider() {
+			continue
+		}
 		filtered = append(filtered, definition)
 	}
 	return filtered
@@ -65,6 +70,9 @@ func loadMCPToolDefinitions() ([]mcpToolDefinition, error) {
 	}
 
 	handlers := map[string]mcpToolHandler{
+		"desktop_screenshot": func(c *gin.Context, _ json.RawMessage) (mcpToolCallResult, error) {
+			return mcpCallDesktopScreenshot(c.Request.Context())
+		},
 		"space_engine_search": func(c *gin.Context, rawArgs json.RawMessage) (mcpToolCallResult, error) {
 			var args mcpSpaceSearchArgs
 			if err := decodeMCPToolArgs(rawArgs, &args); err != nil {

@@ -1434,23 +1434,9 @@ func normalizeAIProvider(provider AIProviderConfig, index int) AIProviderConfig 
 	}
 	provider.Protocol = normalizeAIProtocol(provider.Protocol)
 	provider.API = strings.TrimSpace(provider.API)
-	if provider.API == "" {
-		if provider.Protocol == AIProtocolAnthropic {
-			provider.API = defaultAnthropicAPIAddr
-		} else {
-			provider.API = defaultAIAPIAddr
-		}
-	}
 	provider.Key = strings.TrimSpace(provider.Key)
 	provider.Model = strings.TrimSpace(provider.Model)
 	provider.Headers = NormalizeAIProviderHeaders(provider.Headers)
-	if provider.Model == "" {
-		if provider.Protocol == AIProtocolAnthropic {
-			provider.Model = "claude-3-5-sonnet-latest"
-		} else {
-			provider.Model = defaultAIModel
-		}
-	}
 	if provider.Protocol == AIProtocolAnthropic {
 		provider.SupportsTools = true
 		provider.SupportsStreaming = false

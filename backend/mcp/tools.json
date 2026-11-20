@@ -1169,5 +1169,22 @@
       },
       "required": ["token", "dictionary"]
     }
+  },
+  {
+    "name": "desktop_screenshot",
+    "moduleKey": "desktop",
+    "moduleName": "Desktop Client",
+    "moduleNameI18n": { "en": "Desktop Client", "zh": "桌面客户端" },
+    "title": "Capture Desktop Client Window",
+    "titleI18n": { "en": "Capture Desktop Client Window", "zh": "截取桌面客户端窗口" },
+    "version": "1.0.0",
+    "description": "Capture the current Hephaestus desktop client main window as a PNG image so the agent can see what the operator sees. Only available while the desktop app is running. The image reflects the live window and may contain sensitive data.",
+    "descriptionI18n": {
+      "en": "Capture the current Hephaestus desktop client main window as a PNG image so the agent can see what the operator sees. Only available while the desktop app is running. The image reflects the live window and may contain sensitive data.",
+      "zh": "截取 Hephaestus 桌面客户端当前主窗口并返回 PNG 图像，让 AI 看到操作者当前界面。仅在桌面客户端运行时可用；截图反映实时窗口内容，可能包含敏感信息。"
+    },
+    "permission": "read",
+    "annotations": { "readOnlyHint": true, "destructiveHint": false, "idempotentHint": false, "openWorldHint": false },
+    "inputSchema": { "type": "object", "properties": {} }
   }
 ]

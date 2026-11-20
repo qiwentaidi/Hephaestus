@@ -99,6 +99,7 @@ import {
 import { subscribeContentTabsEnabled, subscribeSidebarVariant, type SidebarVariant } from "@/lib/appearance";
 import { emptySidebarPinsSnapshot, parseSidebarPins, readSidebarPinsSnapshot, subscribeSidebarPins, toggleSidebarPin } from "@/lib/sidebar-pins";
 import { getLayoutRoutePath, mergeLayoutTab, type LayoutTab } from "@/lib/layout-tabs";
+import { confirmNavigation } from "@/lib/navigation-guard";
 import { ProductRatingDialog } from "./ProductRatingDialog";
 
 type NavChild = { title: string; href: string; icon?: typeof LayoutDashboard };
@@ -200,8 +201,8 @@ const getNavItems = (t: ReturnType<typeof useI18n>["t"], desktopMode: boolean): 
 		children: [
 			...(!desktopMode ? [
 				{ title: t.vulnScan.agents.tab, href: "/agents", icon: Server },
-				{ title: t.sidebar.settings, href: "/settings", icon: Settings },
 			] : []),
+			{ title: t.sidebar.settings, href: "/settings", icon: Settings },
 			{ title: t.sidebar.mcp, href: "/platform/mcp", icon: ServerCog },
 			{ title: t.sidebar.logs, href: "/backend-logs", icon: ScrollText },
 		],
@@ -592,14 +593,35 @@ export default function MainLayout({
 		setExpandedItem((prev) => prev === title ? null : title);
 	};
 
-	const allowLayoutNavigation = () => window.dispatchEvent(new Event("hephaestus:before-layout-navigation", { cancelable: true }));
+	const allowLayoutNavigation = async () => {
+		if (!(await confirmNavigation())) return false;
+		return window.dispatchEvent(new Event("hephaestus:before-layout-navigation", { cancelable: true }));
+	};
 
 	const navigateTo = (href: string, title?: string) => {
-		if (href !== currentRoute && !allowLayoutNavigation()) return;
-		setMobileNavigationOpen(false);
-		upsertLayoutTab(href, title);
-		router.push(href);
+		void (async () => {
+			if (href !== currentRoute && !(await allowLayoutNavigation())) return;
+			setMobileNavigationOpen(false);
+			upsertLayoutTab(href, title);
+			router.push(href);
+		})();
 	};
+
+	const navigateToRef = useRef(navigateTo);
+	useEffect(() => {
+		navigateToRef.current = navigateTo;
+	});
+
+	useEffect(() => {
+		const handleNavigate = (event: Event) => {
+			const href = (event as CustomEvent<{ href?: string }>).detail?.href;
+			if (typeof href === "string" && href.startsWith("/")) {
+				navigateToRef.current(href);
+			}
+		};
+		window.addEventListener("hephaestus:navigate", handleNavigate);
+		return () => window.removeEventListener("hephaestus:navigate", handleNavigate);
+	}, []);
 
 	const renderNavChildren = (children: NavChild[], pinnable = false) => children.map((child) => {
 		const pinned = pinnedRoutes.includes(child.href);
@@ -661,13 +683,15 @@ export default function MainLayout({
 		: item.href === activeHref;
 
 	const handleCloseLayoutTab = (href: string) => {
-		if (href === currentRoute && !allowLayoutNavigation()) return;
-		const nextTabs = layoutTabs.filter((tab) => tab.href !== href);
-		setLayoutTabs(nextTabs);
-		if (currentRoute === href) {
-			const fallbackTab = nextTabs[nextTabs.length - 1];
-			router.push(fallbackTab?.href || "/dashboard");
-		}
+		void (async () => {
+			if (href === currentRoute && !(await allowLayoutNavigation())) return;
+			const nextTabs = layoutTabs.filter((tab) => tab.href !== href);
+			setLayoutTabs(nextTabs);
+			if (currentRoute === href) {
+				const fallbackTab = nextTabs[nextTabs.length - 1];
+				router.push(fallbackTab?.href || "/dashboard");
+			}
+		})();
 	};
 
 	const handleCloseOtherLayoutTabs = (href: string) => {
@@ -677,20 +701,24 @@ export default function MainLayout({
 	};
 
 	const handleCloseRightLayoutTabs = (href: string) => {
-		const targetIndex = layoutTabs.findIndex((tab) => tab.href === href);
-		if (targetIndex < 0) return;
-		const nextTabs = layoutTabs.slice(0, targetIndex + 1);
-		if (!nextTabs.some((tab) => tab.href === currentRoute) && !allowLayoutNavigation()) return;
-		setLayoutTabs(nextTabs);
-		if (!nextTabs.some((tab) => tab.href === currentRoute)) {
-			router.push(nextTabs[nextTabs.length - 1]?.href || "/dashboard");
-		}
+		void (async () => {
+			const targetIndex = layoutTabs.findIndex((tab) => tab.href === href);
+			if (targetIndex < 0) return;
+			const nextTabs = layoutTabs.slice(0, targetIndex + 1);
+			if (!nextTabs.some((tab) => tab.href === currentRoute) && !(await allowLayoutNavigation())) return;
+			setLayoutTabs(nextTabs);
+			if (!nextTabs.some((tab) => tab.href === currentRoute)) {
+				router.push(nextTabs[nextTabs.length - 1]?.href || "/dashboard");
+			}
+		})();
 	};
 
 	const handleCloseAllLayoutTabs = () => {
-		if (!allowLayoutNavigation()) return;
-		setLayoutTabs([]);
-		router.push("/dashboard");
+		void (async () => {
+			if (!(await allowLayoutNavigation())) return;
+			setLayoutTabs([]);
+			router.push("/dashboard");
+		})();
 	};
 
 	// 检查更新
@@ -892,11 +920,13 @@ export default function MainLayout({
 	};
 
 	const performLogout = () => {
-		if (!allowLayoutNavigation()) return;
-		clearToken();
+		void (async () => {
+			if (!(await allowLayoutNavigation())) return;
+			clearToken();
 
-		setLogoutConfirmOpen(false);
-		router.push("/");
+			setLogoutConfirmOpen(false);
+			router.push("/");
+		})();
 	};
 
 	const handleLogout = () => {

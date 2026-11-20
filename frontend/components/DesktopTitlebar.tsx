@@ -4,6 +4,7 @@ import { MouseEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Copy, Minus, PanelTop, PanelTopClose, Rocket, Settings, Square, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { DesktopResizeHandles, type DesktopResizeEdge } from "@/components/DesktopResizeHandles";
+import { DesktopScreenshotButton } from "@/components/DesktopScreenshotButton";
 import { Button } from "@/components/ui/button";
 import { getApiBaseURL, getDesktopApiHeaders, hasDesktopApiToken } from "@/lib/env";
 import {
@@ -169,8 +170,8 @@ export function DesktopTitlebar() {
 		void requestDesktopWindow(`/api/v1/desktop/window/start-resize?edge=${edge}`).catch(() => undefined);
 	};
 
-	const handleOpenSettings = async () => {
-		await requestDesktopWindow("/api/v1/desktop/settings/open");
+	const handleOpenSettings = () => {
+		window.dispatchEvent(new CustomEvent("hephaestus:navigate", { detail: { href: "/settings" } }));
 	};
 
 	const handleOpenLauncher = async () => {
@@ -220,7 +221,7 @@ export function DesktopTitlebar() {
 			className={`flex h-9 select-none items-center border-b border-border/70 bg-card/96 backdrop-blur-xl ${isMac ? "pl-[76px] pr-2.5" : "pl-2.5 pr-0"}`}
 			style={{
 				["--wails-draggable" as string]: "drag",
-				["-webkit-app-region" as string]: "drag",
+				["WebkitAppRegion" as string]: "drag",
 			}}
 			onDoubleClick={handleTitlebarDoubleClick}
 			onMouseDown={handleTitlebarMouseDown}
@@ -237,7 +238,7 @@ export function DesktopTitlebar() {
 					data-no-titlebar-drag="true"
 					style={{
 						["--wails-draggable" as string]: "no-drag",
-						["-webkit-app-region" as string]: "no-drag",
+						["WebkitAppRegion" as string]: "no-drag",
 					}}
 				>
 					<Tooltip>
@@ -276,7 +277,7 @@ export function DesktopTitlebar() {
 					className="flex h-full flex-1"
 					style={{
 						["--wails-draggable" as string]: "drag",
-						["-webkit-app-region" as string]: "drag",
+						["WebkitAppRegion" as string]: "drag",
 					}}
 				/>
 				<div
@@ -284,7 +285,7 @@ export function DesktopTitlebar() {
 					data-no-titlebar-drag="true"
 					style={{
 						["--wails-draggable" as string]: "no-drag",
-						["-webkit-app-region" as string]: "no-drag",
+						["WebkitAppRegion" as string]: "no-drag",
 					}}
 				>
 					{shouldShowAppActions && (
@@ -347,6 +348,8 @@ export function DesktopTitlebar() {
 							<TooltipContent>{t.desktopTitlebar.toggleContentTabs}</TooltipContent>
 						</Tooltip>
 					)}
+
+					<DesktopScreenshotButton visible={shouldShowAppActions} />
 
 					{!isMac && (
 						<>

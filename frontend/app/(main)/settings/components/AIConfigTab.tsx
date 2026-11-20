@@ -5,7 +5,9 @@ import {
   Bot,
   CheckCircle2,
   Loader2,
+  MoreVertical,
   Plus,
+  Power,
   RadioTower,
   Save,
   Settings2,
@@ -14,6 +16,13 @@ import {
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PasswordInput } from '@/components/ui/password-input'
@@ -55,46 +64,7 @@ const DEFAULT_PROVIDER: AIProviderConfig = {
   supportsStreaming: true,
 }
 
-const PROVIDER_PRESETS: Array<{
-  label: string
-  protocol: AIProviderProtocol
-  api: string
-  model: string
-}> = [
-  {
-    label: 'OpenAI Compatible',
-    protocol: 'openai-compatible',
-    api: 'https://api.openai.com/v1',
-    model: 'gpt-4o-mini',
-  },
-  {
-    label: 'DashScope Compatible',
-    protocol: 'openai-compatible',
-    api: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-    model: 'qwen-plus',
-  },
-  {
-    label: 'DeepSeek Compatible',
-    protocol: 'openai-compatible',
-    api: 'https://api.deepseek.com/v1',
-    model: 'deepseek-chat',
-  },
-  {
-    label: 'Claude (Anthropic)',
-    protocol: 'anthropic',
-    api: 'https://api.anthropic.com/v1',
-    model: 'claude-3-5-sonnet-latest',
-  },
-]
-
 const ROUTE_DEFAULT_VALUE = '__default__'
-const ROUTE_KEYS = ['workbench', 'jsscan', 'repeaterPolish', 'subdomainAssist'] as const
-type AIRouteKey = (typeof ROUTE_KEYS)[number]
-
-function effectiveWorkbenchProviderId(config: AIConfig) {
-  return config.routing?.workbench || config.defaultProviderId || ''
-}
-
 function requestRateUnit(provider: AIProviderConfig): 'second' | 'minute' {
   const rpm = provider.workbenchRequestsPerMinute || 0
   if (provider.workbenchRequestRateUnit === 'minute') return 'minute'
@@ -119,25 +89,25 @@ function normalizeConfig(config?: AIConfig | null): AIConfig {
           },
         ]
 
-  const normalizedProviders = providers.map((provider, index) => ({
-    ...DEFAULT_PROVIDER,
-    ...provider,
-    requestTimeoutMinutes: provider.requestTimeoutMinutes ?? 30,
-    workbenchRequestsPerMinute: Math.max(0, provider.workbenchRequestsPerMinute || 0),
-    workbenchRequestRateUnit: requestRateUnit(provider),
-    id: provider.id || `provider-${index + 1}`,
-    name: provider.name ?? `AI Provider ${index + 1}`,
-    protocol: provider.protocol || 'openai-compatible',
-    api:
-      provider.api ||
-      (provider.protocol === 'anthropic'
-        ? 'https://api.anthropic.com/v1'
-        : DEFAULT_PROVIDER.api),
-    model:
-      provider.model ||
-      (provider.protocol === 'anthropic' ? 'claude-3-5-sonnet-latest' : DEFAULT_PROVIDER.model),
-    headers: provider.headers || [],
-  }))
+  const usedProviderIDs = new Set<string>()
+  const normalizedProviders = providers.map((provider, index) => {
+    const providerID =
+      provider.id && !usedProviderIDs.has(provider.id) ? provider.id : uniqueProviderID(usedProviderIDs)
+    usedProviderIDs.add(providerID)
+    return {
+      ...DEFAULT_PROVIDER,
+      ...provider,
+      requestTimeoutMinutes: provider.requestTimeoutMinutes ?? 30,
+      workbenchRequestsPerMinute: Math.max(0, provider.workbenchRequestsPerMinute || 0),
+      workbenchRequestRateUnit: requestRateUnit(provider),
+      id: providerID,
+      name: provider.name ?? `AI Provider ${index + 1}`,
+      protocol: provider.protocol || 'openai-compatible',
+      api: provider.api ?? '',
+      model: provider.model ?? '',
+      headers: provider.headers || [],
+    }
+  })
 
   const defaultProviderId =
     config?.defaultProviderId && normalizedProviders.some((provider) => provider.id === config.defaultProviderId)
@@ -146,7 +116,7 @@ function normalizeConfig(config?: AIConfig | null): AIConfig {
 
   const defaultProvider = normalizedProviders.find((provider) => provider.id === defaultProviderId) || normalizedProviders[0]
   const rawRouting = config?.routing || {}
-  const workbenchProviderId = rawRouting.workbench || defaultProviderId || ''
+  const workbenchProviderId = defaultProviderId || ''
   const workbenchFallback =
     rawRouting.workbenchFallback &&
     rawRouting.workbenchFallback !== workbenchProviderId &&
@@ -166,7 +136,6 @@ function normalizeConfig(config?: AIConfig | null): AIConfig {
     defaultProviderId,
     providers: normalizedProviders,
     routing: {
-      ...rawRouting,
       workbenchFallback,
       workbenchFallbackEnabled: Boolean(rawRouting.workbenchFallbackEnabled),
     },
@@ -174,23 +143,39 @@ function normalizeConfig(config?: AIConfig | null): AIConfig {
   }
 }
 
-function buildProviderFromPreset(index: number): AIProviderConfig {
-  const preset = PROVIDER_PRESETS[index % PROVIDER_PRESETS.length]
-  const suffix = Date.now().toString(36)
+let providerIDSequence = 0
+
+function createProviderID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `provider-${crypto.randomUUID()}`
+  }
+  providerIDSequence += 1
+  return `provider-${Date.now().toString(36)}-${providerIDSequence}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+function uniqueProviderID(used: Set<string>): string {
+  let id = createProviderID()
+  while (used.has(id)) {
+    id = createProviderID()
+  }
+  return id
+}
+
+function createEmptyProvider(used: Set<string>): AIProviderConfig {
   return {
     requestTimeoutMinutes: 30,
     workbenchRequestsPerMinute: 0,
     workbenchRequestRateUnit: 'second',
-    id: `provider-${suffix}`,
-    name: preset.label,
-    protocol: preset.protocol,
-    enabled: true,
-    api: preset.api,
+    id: uniqueProviderID(used),
+    name: '',
+    protocol: 'openai-compatible',
+    enabled: false,
+    api: '',
     key: '',
-    model: preset.model,
+    model: '',
     headers: [],
     supportsTools: true,
-    supportsStreaming: preset.protocol !== 'anthropic',
+    supportsStreaming: true,
   }
 }
 
@@ -245,6 +230,8 @@ export function AIConfigTab() {
   const [selectedProviderId, setSelectedProviderId] = useState(DEFAULT_PROVIDER.id)
   const [saving, setSaving] = useState(false)
   const [testingProviderId, setTestingProviderId] = useState<string | null>(null)
+  const [draggedProviderId, setDraggedProviderId] = useState<string | null>(null)
+  const [dragOverProviderId, setDragOverProviderId] = useState<string | null>(null)
 
   const providers = useMemo(() => config.providers || [], [config.providers])
   const selectedProvider = providers.find((provider) => provider.id === selectedProviderId) || providers[0]
@@ -276,16 +263,6 @@ export function AIConfigTab() {
     }
   }, [t.aiConfig.loadFailed])
 
-  const providerOptions = useMemo(
-    () =>
-      providers.map((provider, index) => ({
-        value: provider.id,
-        label: provider.name.trim() || `${t.aiConfig.unnamedProvider} ${index + 1}`,
-        disabled: !providerStatus(provider),
-      })),
-    [providers, t.aiConfig.unnamedProvider],
-  )
-
   const updateConfig = (next: Partial<AIConfig>) => {
     setConfig((current) => syncTopLevelConfig({ ...current, ...next }))
   }
@@ -297,6 +274,42 @@ export function AIConfigTab() {
         provider.id === selectedProvider.id ? { ...provider, ...next } : provider,
       )
       return syncTopLevelConfig({ ...current, providers: updatedProviders })
+    })
+  }
+
+  const updateProvider = (providerId: string, next: Partial<AIProviderConfig>) => {
+    setConfig((current) =>
+      syncTopLevelConfig({
+        ...current,
+        providers: (current.providers || []).map((provider) =>
+          provider.id === providerId ? { ...provider, ...next } : provider,
+        ),
+      }),
+    )
+  }
+
+  const reorderProviders = (fromId: string, toId: string) => {
+    if (!fromId || !toId || fromId === toId) return
+    setConfig((current) => {
+      const items = [...(current.providers || [])]
+      const fromIndex = items.findIndex((provider) => provider.id === fromId)
+      const toIndex = items.findIndex((provider) => provider.id === toId)
+      if (fromIndex < 0 || toIndex < 0) return current
+      const [moved] = items.splice(fromIndex, 1)
+      items.splice(toIndex, 0, moved)
+      return syncTopLevelConfig({ ...current, providers: items })
+    })
+  }
+
+  const moveProvider = (providerId: string, offset: number) => {
+    setConfig((current) => {
+      const items = [...(current.providers || [])]
+      const index = items.findIndex((provider) => provider.id === providerId)
+      const target = index + offset
+      if (index < 0 || target < 0 || target >= items.length) return current
+      const [moved] = items.splice(index, 1)
+      items.splice(target, 0, moved)
+      return syncTopLevelConfig({ ...current, providers: items })
     })
   }
 
@@ -323,37 +336,41 @@ export function AIConfigTab() {
 
   const addProvider = () => {
     setConfig((current) => {
-      const nextProvider = buildProviderFromPreset(current.providers?.length || 0)
+      const existingProviders = current.providers || []
+      const nextProvider = createEmptyProvider(new Set(existingProviders.map((provider) => provider.id)))
       const next = syncTopLevelConfig({
         ...current,
-        providers: [...(current.providers || []), nextProvider],
-        defaultProviderId: current.defaultProviderId || nextProvider.id,
+        providers: [...existingProviders, nextProvider],
+        defaultProviderId: current.defaultProviderId || existingProviders[0]?.id || nextProvider.id,
       })
       setSelectedProviderId(nextProvider.id)
       return next
     })
   }
 
-  const removeSelectedProvider = () => {
-    if (!selectedProvider || providers.length <= 1) return
+  const removeProvider = (providerId: string) => {
+    if (providers.length <= 1) return
+    const provider = providers.find((item) => item.id === providerId)
+    if (!provider) return
 
     setConfig((current) => {
-      const remaining = (current.providers || []).filter((provider) => provider.id !== selectedProvider.id)
+      const remaining = (current.providers || []).filter((item) => item.id !== providerId)
       const defaultProviderId =
-        current.defaultProviderId === selectedProvider.id ? remaining[0]?.id : current.defaultProviderId
+        current.defaultProviderId === providerId ? remaining[0]?.id : current.defaultProviderId
       const routing = { ...current.routing }
-      for (const key of ROUTE_KEYS) {
-        if (routing[key] === selectedProvider.id) {
-          routing[key] = ''
-        }
-      }
-      if (routing.workbenchFallback === selectedProvider.id) {
+      if (routing.workbenchFallback === providerId) {
         routing.workbenchFallback = ''
         routing.workbenchFallbackEnabled = false
       }
-      setSelectedProviderId(defaultProviderId || remaining[0]?.id || DEFAULT_PROVIDER.id)
+      if (selectedProviderId === providerId) {
+        setSelectedProviderId(defaultProviderId || remaining[0]?.id || DEFAULT_PROVIDER.id)
+      }
       return syncTopLevelConfig({ ...current, providers: remaining, defaultProviderId, routing })
     })
+  }
+
+  const removeSelectedProvider = () => {
+    if (selectedProvider) removeProvider(selectedProvider.id)
   }
 
   const validateTimeouts = (nextConfig: AIConfig) => {
@@ -463,53 +480,7 @@ export function AIConfigTab() {
     }
   }
 
-  const updateWorkbenchRoute = (value: string) => {
-    const providerId = value === ROUTE_DEFAULT_VALUE ? '' : value
-    const nextWorkbenchProviderId = providerId || config.defaultProviderId || ''
-    const nextRouting = {
-      ...config.routing,
-      workbench: providerId,
-    }
-    if (nextRouting.workbenchFallback === nextWorkbenchProviderId) {
-      nextRouting.workbenchFallback = ''
-      nextRouting.workbenchFallbackEnabled = false
-    }
-    updateConfig({ routing: nextRouting })
-  }
-
-  const routeSelect = (key: AIRouteKey, label: string, description: string) => (
-    <div className="grid gap-1.5">
-      <Label className="text-xs">{label}</Label>
-      <Select
-        value={config.routing?.[key] || ROUTE_DEFAULT_VALUE}
-        onValueChange={(value) =>
-          key === 'workbench'
-            ? updateWorkbenchRoute(value)
-            : updateConfig({
-                routing: {
-                  ...config.routing,
-                  [key]: value === ROUTE_DEFAULT_VALUE ? '' : value,
-                },
-              })
-        }
-      >
-        <SelectTrigger className="h-9">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ROUTE_DEFAULT_VALUE}>{t.aiConfig.useDefaultProvider}</SelectItem>
-          {providerOptions.map((option) => (
-            <SelectItem key={option.value} value={option.value} disabled={option.disabled}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <p className="text-[11px] text-muted-foreground">{description}</p>
-    </div>
-  )
-
-  const workbenchProviderId = effectiveWorkbenchProviderId(config)
+  const workbenchProviderId = config.defaultProviderId || ''
   const fallbackProviderOptions = providers.map((provider, index) => ({
     value: provider.id,
     label: provider.name.trim() || `${t.aiConfig.unnamedProvider} ${index + 1}`,
@@ -562,12 +533,51 @@ export function AIConfigTab() {
                   ? t.aiConfig.setAsDefault
                   : t.aiConfig.fillProviderFirst
               return (
-                <div key={provider.id} className="relative">
+                <div
+                  key={provider.id}
+                  className={cn('relative', draggedProviderId === provider.id && 'opacity-50')}
+                  onDragOver={(event) => {
+                    if (!draggedProviderId || draggedProviderId === provider.id) return
+                    event.preventDefault()
+                    event.dataTransfer.dropEffect = 'move'
+                    setDragOverProviderId(provider.id)
+                  }}
+                  onDragLeave={(event) => {
+                    const related = event.relatedTarget as Node | null
+                    if (!related || !event.currentTarget.contains(related)) {
+                      setDragOverProviderId((current) => (current === provider.id ? null : current))
+                    }
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault()
+                    const fromId = draggedProviderId || event.dataTransfer.getData('text/plain')
+                    reorderProviders(fromId, provider.id)
+                    setDraggedProviderId(null)
+                    setDragOverProviderId(null)
+                  }}
+                >
                   <button
                     type="button"
+                    draggable
+                    onDragStart={(event) => {
+                      setDraggedProviderId(provider.id)
+                      setDragOverProviderId(null)
+                      event.dataTransfer.effectAllowed = 'move'
+                      event.dataTransfer.setData('text/plain', provider.id)
+                    }}
+                    onDragEnd={() => {
+                      setDraggedProviderId(null)
+                      setDragOverProviderId(null)
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return
+                      event.preventDefault()
+                      moveProvider(provider.id, event.key === 'ArrowUp' ? -1 : 1)
+                    }}
                     className={cn(
-                      'w-full rounded-md border bg-card p-3 pr-10 text-left shadow-sm transition hover:border-primary/30 hover:shadow-md',
+                      'min-h-[68px] w-full rounded-md border bg-card p-3 pr-10 text-left shadow-sm transition hover:border-primary/30 hover:shadow-md',
                       active && 'border-primary/60 ring-1 ring-primary/20',
+                      dragOverProviderId === provider.id && 'border-primary/60 ring-2 ring-primary/20',
                     )}
                     onClick={() => setSelectedProviderId(provider.id)}
                   >
@@ -589,7 +599,7 @@ export function AIConfigTab() {
                           ) : null}
                         </div>
                         <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground">
-                          <span className="truncate">{provider.protocol} · {provider.model || t.common.none}</span>
+                          <span className="truncate">{provider.model || t.common.none}</span>
                           {complete ? (
                             <CheckCircle2 className="h-3 w-3 shrink-0 text-green-500" aria-hidden="true" />
                           ) : (
@@ -621,25 +631,55 @@ export function AIConfigTab() {
                   >
                     <Star className={cn('h-4 w-4', isDefault && 'fill-amber-400 text-amber-500')} />
                   </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label={t.aiConfig.providerActions}
+                        title={t.aiConfig.providerActions}
+                        className="absolute right-2 top-9 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/60 transition hover:bg-muted/60 hover:text-foreground"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem
+                        onSelect={() => updateProvider(provider.id, { enabled: !provider.enabled })}
+                      >
+                        <Power className="h-4 w-4" />
+                        {provider.enabled ? t.aiConfig.disableProvider : t.aiConfig.enableProviderShort}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => void testProvider(provider)}>
+                        <RadioTower className="h-4 w-4" />
+                        {t.aiConfig.testProvider}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        variant="destructive"
+                        disabled={providers.length <= 1}
+                        onSelect={() => removeProvider(provider.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        {t.aiConfig.deleteProvider}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               )
             })}
           </div>
-          <p className="text-[11px] leading-relaxed text-muted-foreground">{t.aiConfig.defaultStarHint}</p>
         </section>
 
         <section className="min-w-0 space-y-4">
           {selectedProvider ? (
             <div className="rounded-md border bg-card p-4 shadow-sm">
-              <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-3 sm:flex-nowrap">
                 <div className="flex min-w-0 items-center gap-2">
-                  <Bot className="h-4 w-4 text-primary/70" />
-                  <div>
-                    <h3 className="text-sm font-semibold">{t.aiConfig.providerDetail}</h3>
-                    <p className="text-xs text-muted-foreground">{t.aiConfig.providerDetailDescription}</p>
-                  </div>
+                  <Bot className="h-4 w-4 shrink-0 text-primary/70" />
+                  <h3 className="truncate text-sm font-semibold">{t.aiConfig.providerDetail}</h3>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-2">
                   <div
                     className="flex items-center gap-1.5 rounded-md border border-border/70 px-2 py-1"
                     title={t.aiConfig.enableProviderHint}
@@ -969,90 +1009,59 @@ export function AIConfigTab() {
           ) : null}
 
           <div className="rounded-md border bg-card p-4 shadow-sm">
-            <div className="mb-4 flex items-center gap-2 border-b pb-3">
-              <Settings2 className="h-4 w-4 text-primary/70" />
-              <div>
-                <h3 className="text-sm font-semibold">{t.aiConfig.routingTitle}</h3>
-                <p className="text-xs text-muted-foreground">{t.aiConfig.routingDescription}</p>
+            <div className="mb-4 flex items-center justify-between gap-3 border-b pb-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <Settings2 className="h-4 w-4 shrink-0 text-primary/70" />
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold">{t.aiConfig.failoverTitle}</h3>
+                  <p className="text-xs text-muted-foreground">{t.aiConfig.failoverDescription}</p>
+                </div>
               </div>
+              <Switch
+                id="ai-workbench-fallback-enabled"
+                aria-label={t.aiConfig.workbenchFallbackEnabled}
+                checked={fallbackEnabled}
+                onCheckedChange={(enabled) =>
+                  updateConfig({
+                    routing: {
+                      ...config.routing,
+                      workbenchFallbackEnabled: enabled,
+                    },
+                  })
+                }
+              />
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="grid gap-1.5">
-                <Label className="text-xs">{t.aiConfig.defaultProvider}</Label>
-                <Select value={config.defaultProviderId} onValueChange={selectDefaultProvider}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {providerOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value} disabled={option.disabled}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-[11px] text-muted-foreground">{t.aiConfig.defaultProviderHint}</p>
-              </div>
-              {routeSelect('workbench', t.aiConfig.routeWorkbench, t.aiConfig.routeWorkbenchHint)}
-              <div className="grid gap-3 border-t pt-4 md:col-span-2">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <Label htmlFor="ai-workbench-fallback-enabled" className="text-xs">
-                      {t.aiConfig.workbenchFallbackEnabled}
-                    </Label>
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      {t.aiConfig.workbenchFallbackEnabledHint}
-                    </p>
-                  </div>
-                  <Switch
-                    id="ai-workbench-fallback-enabled"
-                    checked={fallbackEnabled}
-                    onCheckedChange={(enabled) =>
-                      updateConfig({
-                        routing: {
-                          ...config.routing,
-                          workbenchFallbackEnabled: enabled,
-                        },
-                      })
-                    }
-                  />
-                </div>
-                <div className="grid gap-1.5">
-                  <Label className="text-xs">{t.aiConfig.workbenchFallbackProvider}</Label>
-                  <Select
-                    value={fallbackProviderId}
-                    disabled={!fallbackEnabled}
-                    onValueChange={(value) =>
-                      updateConfig({
-                        routing: {
-                          ...config.routing,
-                          workbenchFallback: value === ROUTE_DEFAULT_VALUE ? '' : value,
-                        },
-                      })
-                    }
-                  >
-                    <SelectTrigger className="h-9">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ROUTE_DEFAULT_VALUE}>
-                        {t.aiConfig.selectWorkbenchFallbackProvider}
-                      </SelectItem>
-                      {fallbackProviderOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value} disabled={option.disabled}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[11px] text-muted-foreground">
-                    {t.aiConfig.workbenchFallbackProviderHint}
-                  </p>
-                </div>
-              </div>
-              {routeSelect('jsscan', t.aiConfig.routeJSScan, t.aiConfig.routeJSScanHint)}
-              {routeSelect('repeaterPolish', t.aiConfig.routeRepeater, t.aiConfig.routeRepeaterHint)}
-              {routeSelect('subdomainAssist', t.aiConfig.routeSubdomain, t.aiConfig.routeSubdomainHint)}
+            <div className="grid gap-1.5">
+              <Label className="text-xs">{t.aiConfig.workbenchFallbackProvider}</Label>
+              <Select
+                value={fallbackProviderId}
+                disabled={!fallbackEnabled}
+                onValueChange={(value) =>
+                  updateConfig({
+                    routing: {
+                      ...config.routing,
+                      workbenchFallback: value === ROUTE_DEFAULT_VALUE ? '' : value,
+                    },
+                  })
+                }
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ROUTE_DEFAULT_VALUE}>
+                    {t.aiConfig.selectWorkbenchFallbackProvider}
+                  </SelectItem>
+                  {fallbackProviderOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value} disabled={option.disabled}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground">
+                {t.aiConfig.workbenchFallbackProviderHint}
+              </p>
             </div>
           </div>
         </section>

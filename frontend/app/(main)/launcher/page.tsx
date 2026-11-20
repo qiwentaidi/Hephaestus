@@ -27,6 +27,16 @@ import {
 	ContextMenuSubTrigger,
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,6 +62,10 @@ import {
 type LauncherItemForm = LauncherItem & {
 	groupName: string;
 };
+
+type PendingLauncherDelete =
+	| { kind: "group"; groupName: string }
+	| { kind: "item"; groupName: string; item: LauncherItem };
 
 type LauncherIconDescriptor = {
 	src: string;
@@ -114,6 +128,7 @@ export default function LauncherPage() {
 	const [editingRef, setEditingRef] = useState<{ groupName: string; itemPath: string; itemName: string } | null>(null);
 	const [itemForm, setItemForm] = useState<LauncherItemForm>(emptyItemForm);
 	const [groupName, setGroupName] = useState("");
+	const [pendingDelete, setPendingDelete] = useState<PendingLauncherDelete | null>(null);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -197,7 +212,6 @@ export default function LauncherPage() {
 	};
 
 	const deleteGroup = async (groupName: string) => {
-		if (!window.confirm(formatLauncherText(i18n.confirm.deleteGroup, { name: groupName }))) return;
 		try {
 			await persistGroups(groups.filter((group) => group.name !== groupName));
 			toast.success(i18n.messages.groupDeleted);
@@ -277,7 +291,6 @@ export default function LauncherPage() {
 	};
 
 	const deleteItem = async (groupName: string, item: LauncherItem) => {
-		if (!window.confirm(formatLauncherText(i18n.confirm.deleteItem, { name: item.name }))) return;
 		try {
 			const nextGroups = groups.map((group) => {
 				if (group.name !== groupName) {
@@ -293,6 +306,17 @@ export default function LauncherPage() {
 		} catch (error: any) {
 			toast.error(error?.message || i18n.messages.deleteItemFailed);
 		}
+	};
+
+	const confirmPendingDelete = async () => {
+		const pending = pendingDelete;
+		setPendingDelete(null);
+		if (!pending) return;
+		if (pending.kind === "group") {
+			await deleteGroup(pending.groupName);
+			return;
+		}
+		await deleteItem(pending.groupName, pending.item);
 	};
 
 	const moveItem = async (fromGroupName: string, toGroupName: string, item: LauncherItem) => {
@@ -355,7 +379,7 @@ export default function LauncherPage() {
 				<Edit className="h-4 w-4" />
 				{t.common.edit}
 			</ContextMenuItem>
-			<ContextMenuItem className="gap-3" variant="destructive" onClick={() => void deleteItem(group.name, item)}>
+			<ContextMenuItem className="gap-3" variant="destructive" onClick={() => setPendingDelete({ kind: "item", groupName: group.name, item })}>
 				<Delete className="h-4 w-4" />
 				{t.common.delete}
 			</ContextMenuItem>
@@ -399,7 +423,7 @@ export default function LauncherPage() {
 										<Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-foreground" onClick={() => openAddItemDialog(group.name)}>
 											<Plus className="h-4 w-4" />
 										</Button>
-										<Button variant="ghost" size="icon" onClick={() => void deleteGroup(group.name)}>
+										<Button variant="ghost" size="icon" onClick={() => setPendingDelete({ kind: "group", groupName: group.name })}>
 											<Trash2 className="h-4 w-4" />
 										</Button>
 									</div>
@@ -457,7 +481,7 @@ export default function LauncherPage() {
 								{i18n.actions.addGroup}
 							</ContextMenuItem>
 							<ContextMenuSeparator />
-							<ContextMenuItem variant="destructive" onClick={() => void deleteGroup(group.name)}>
+							<ContextMenuItem variant="destructive" onClick={() => setPendingDelete({ kind: "group", groupName: group.name })}>
 								<Trash2 className="h-4 w-4" />
 								{t.common.delete}
 							</ContextMenuItem>
@@ -632,6 +656,36 @@ export default function LauncherPage() {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			<AlertDialog open={pendingDelete !== null} onOpenChange={(open) => { if (!open) setPendingDelete(null); }}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							{pendingDelete?.kind === "item" ? i18n.confirm.deleteItemTitle : i18n.confirm.deleteGroupTitle}
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							{pendingDelete
+								? formatLauncherText(
+									pendingDelete.kind === "item" ? i18n.confirm.deleteItem : i18n.confirm.deleteGroup,
+									{ name: pendingDelete.kind === "item" ? pendingDelete.item.name : pendingDelete.groupName },
+								)
+								: ""}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
+						<AlertDialogAction
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							onClick={(event) => {
+								event.preventDefault();
+								void confirmPendingDelete();
+							}}
+						>
+							{t.common.delete}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

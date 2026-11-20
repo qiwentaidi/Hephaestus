@@ -55,6 +55,7 @@ import AgentToolVisibilitySheet from './components/AgentToolVisibilitySheet'
 import { diffPromptLines, measurePrompt, MAX_AGENT_PROMPT_BYTES } from '@/lib/agent-prompt'
 import { listAgentPrompts, saveAgentPrompt, type AgentPrompt, type AgentPromptRole } from '@/lib/api/agent-prompts'
 import { copyToClipboard } from '@/lib/clipboard'
+import { registerNavigationGuard } from '@/lib/navigation-guard'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
@@ -110,6 +111,9 @@ export default function AgentManagementPage() {
   const [compare, setCompare] = useState(false)
   const [wrap, setWrap] = useState(true)
   const [resetOpen, setResetOpen] = useState(false)
+  const [reloadOpen, setReloadOpen] = useState(false)
+  const [leaveOpen, setLeaveOpen] = useState(false)
+  const leaveResolverRef = useRef<((value: boolean) => void) | null>(null)
   const [modKey, setModKey] = useState('⌘')
   const [toolsOpen, setToolsOpen] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
@@ -184,10 +188,19 @@ export default function AgentManagementPage() {
   }
 
   const reload = useCallback(() => {
-    if (dirty && !window.confirm(copy.reloadConfirm)) return
+    if (dirty) {
+      setReloadOpen(true)
+      return
+    }
     setLoading(true)
     void load()
-  }, [dirty, copy.reloadConfirm, load])
+  }, [dirty, load])
+
+  const confirmReload = useCallback(() => {
+    setReloadOpen(false)
+    setLoading(true)
+    void load()
+  }, [load])
 
   const save = useCallback(async (reset = false) => {
     if (!item || saving) return
@@ -224,16 +237,33 @@ export default function AgentManagementPage() {
       event.preventDefault()
       event.returnValue = ''
     }
-    const beforeNavigate = (event: Event) => {
-      if (saving || !window.confirm(copy.leaveConfirm)) event.preventDefault()
-    }
     window.addEventListener('beforeunload', beforeUnload)
-    window.addEventListener('hephaestus:before-layout-navigation', beforeNavigate)
-    return () => {
-      window.removeEventListener('beforeunload', beforeUnload)
-      window.removeEventListener('hephaestus:before-layout-navigation', beforeNavigate)
-    }
-  }, [dirty, saving, copy.leaveConfirm])
+    return () => window.removeEventListener('beforeunload', beforeUnload)
+  }, [dirty])
+
+  useEffect(() => {
+    if (!dirty) return
+    return registerNavigationGuard(async () => {
+      if (saving) return false
+      if (leaveResolverRef.current) return false
+      return await new Promise<boolean>((resolve) => {
+        leaveResolverRef.current = resolve
+        setLeaveOpen(true)
+      })
+    })
+  }, [dirty, saving])
+
+  useEffect(() => () => {
+    leaveResolverRef.current?.(false)
+    leaveResolverRef.current = null
+  }, [])
+
+  const resolveLeave = useCallback((value: boolean) => {
+    setLeaveOpen(false)
+    const resolve = leaveResolverRef.current
+    leaveResolverRef.current = null
+    resolve?.(value)
+  }, [])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -756,6 +786,54 @@ export default function AgentManagementPage() {
             <AlertDialogCancel disabled={saving}>{copy.cancel}</AlertDialogCancel>
             <AlertDialogAction disabled={saving} onClick={(event) => { event.preventDefault(); void save(true) }}>
               {saving ? copy.saving : copy.confirmReset}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={reloadOpen} onOpenChange={setReloadOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{copy.reload}</AlertDialogTitle>
+            <AlertDialogDescription>{copy.reloadConfirm}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{copy.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault()
+                confirmReload()
+              }}
+            >
+              {copy.reload}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={leaveOpen} onOpenChange={(open) => { if (!open) resolveLeave(false) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{copy.unsaved}</AlertDialogTitle>
+            <AlertDialogDescription>{copy.leaveConfirm}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={(event) => {
+                event.preventDefault()
+                resolveLeave(false)
+              }}
+            >
+              {copy.cancel}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(event) => {
+                event.preventDefault()
+                resolveLeave(true)
+              }}
+            >
+              {copy.leaveAction}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

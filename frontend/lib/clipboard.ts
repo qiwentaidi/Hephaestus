@@ -175,3 +175,38 @@ function copyWithExecCommand(text: string): boolean {
 export function isClipboardApiSupported(): boolean {
   return canClipboardApi()
 }
+
+/**
+ * 是否支持把图片写入剪贴板（现代 Clipboard API + ClipboardItem）。
+ */
+export function isImageClipboardSupported(): boolean {
+  if (!hasDom()) return false
+  if (typeof window.isSecureContext === 'boolean' && !window.isSecureContext) return false
+  if (typeof navigator === 'undefined' || !navigator.clipboard) return false
+  if (typeof navigator.clipboard.write !== 'function') return false
+  return typeof ClipboardItem !== 'undefined'
+}
+
+/**
+ * 把 PNG data URL 写入图片剪贴板。
+ * 不支持时返回 false，由调用方决定是否改为保存文件。
+ */
+export async function copyImageToClipboard(dataUrl: string): Promise<boolean> {
+  if (!dataUrl) return false
+  if (!isImageClipboardSupported()) {
+    warn('image_clipboard_unavailable')
+    return false
+  }
+  try {
+    const blob = await (await fetch(dataUrl)).blob()
+    if (!blob.type.startsWith('image/')) {
+      warn('image_clipboard_not_image', { type: blob.type })
+      return false
+    }
+    await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })])
+    return true
+  } catch (err: any) {
+    warn('image_clipboard_failed', { message: err?.message, name: err?.name })
+    return false
+  }
+}

@@ -159,6 +159,13 @@ body {
   background: color-mix(in srgb, var(--primary) 8%, var(--card));
 }
 
+/* Hide transient overlays while a native window snapshot is taken. */
+html.hephaestus-screenshot-capture [data-rht-toaster],
+html.hephaestus-screenshot-capture [data-sonner-toaster],
+html.hephaestus-screenshot-capture [data-radix-popper-content-wrapper] {
+  visibility: hidden !important;
+}
+
 @custom-variant dark (&:where(.dark, .dark *, .shadcn-dark, .shadcn-dark *, .flame, .flame *, .graphite, .graphite *));
 
 .app-brand-mark-image {
