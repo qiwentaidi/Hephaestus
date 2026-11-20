@@ -872,8 +872,8 @@ github.com/prometheus/procfs v0.6.0/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1
 github.com/prometheus/procfs v0.7.3/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1xBZuNvfVA=
 github.com/prometheus/procfs v0.8.0/go.mod h1:z7EfXMXOkbkqb9IINtpCn86r/to3BnA0uaxHdg830/4=
 github.com/prometheus/procfs v0.9.0/go.mod h1:+pB4zwohETzFnmlpe6yd2lSc+0/46IYZRB/chUwxUZY=
-github.com/qiwentaidi/Norma v0.0.0-20261018113434-4f5684e56760 h1:mkBp3jVhS8zfM8LmpehBS76WXLzz6v0CIn0ujAkATMY=
-github.com/qiwentaidi/Norma v0.0.0-20261018113434-4f5684e56760/go.mod h1:BudWrf7iHl96FgHqFr/HwN3mKYmGjJDt+xL2ZHXfFZw=
+github.com/qiwentaidi/Norma v0.5.1 h1:c+nE5gtW0DfQLwV75axFsGAJFda6/b0ITgeWMP9ZQ40=
+github.com/qiwentaidi/Norma v0.5.1/go.mod h1:BudWrf7iHl96FgHqFr/HwN3mKYmGjJDt+xL2ZHXfFZw=
 github.com/qiwentaidi/clients v0.0.7 h1:mYawy0QGEikPxyzGiEqCfOkYRlV7Wu1oBn2M+NvxpXw=
 github.com/qiwentaidi/clients v0.0.7/go.mod h1:SW/Qn8/jtuMvifNju8BhRSCHkzqsYmrDNrf2f0VoaXA=
 github.com/qiwentaidi/fingers v0.3.0 h1:6JwzPSZtBpVy54zZVkJ2uy8jJ8/th6xIzxnjMgs03ZU=

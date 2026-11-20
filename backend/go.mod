@@ -423,4 +423,4 @@ replace github.com/projectdiscovery/nuclei/v3 v3.8.0 => ./lib/nuclei
 
 replace github.com/projectdiscovery/gozero => github.com/qiwentaidi/gozero v0.0.1-hephaestus
 
-replace github.com/Autumn-27/norma => github.com/qiwentaidi/Norma v0.0.0-20261018113434-4f5684e56760
+replace github.com/Autumn-27/norma => github.com/qiwentaidi/Norma v0.5.1

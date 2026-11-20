@@ -75,6 +75,7 @@ export function TaskCreateDialog({ projects, source, planSource, onClose, onCrea
   // 智能编排 Worker 并发默认 4（上限 8）；仅影响新建编排任务，既有任务的
   // workers 存在 hephaestus_task_options 里，不会被这个默认值改动。
   const [planWorkers, setPlanWorkers] = useState(String(planSource?.run.maxWorkers ?? 4))
+  const [allowWebSearch, setAllowWebSearch] = useState(false)
   const [planModels, setPlanModels] = useState<AIWorkbenchModelOption[]>([])
   const [planModel, setPlanModel] = useState(sourcePlanModel)
   const [planWorkerModel, setPlanWorkerModel] = useState(sourceWorkerModel)
@@ -187,6 +188,7 @@ export function TaskCreateDialog({ projects, source, planSource, onClose, onCrea
           maxWorkers: n,
           // Worker total is unlimited; only the Planner's finish_plan ends the run.
           maxTotalWorkers: 0,
+          allowWebSearch,
         })
         onPlanCreated?.(detail)
       } catch (e) { setError(e instanceof Error ? e.message : p.createValidation) }
@@ -271,7 +273,11 @@ export function TaskCreateDialog({ projects, source, planSource, onClose, onCrea
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2"><Label htmlFor={`${id}-plan-model`}>{separatePlanModels ? p.plannerModel : p.model}</Label><Select value={effectivePlanModel} onValueChange={setPlanModel} disabled={busy || loadingPlanModels || !planModels.length}><SelectTrigger id={`${id}-plan-model`} className="w-full"><SelectValue placeholder={p.model} /></SelectTrigger><SelectContent>{effectivePlanModel && !planModelAvailable && <SelectItem value={effectivePlanModel} disabled>{effectivePlanModel.split('::')[1]} · {p.unavailableModel}</SelectItem>}{planModels.map(option => <SelectItem key={`${option.providerId}::${option.model}`} value={`${option.providerId}::${option.model}`}>{option.providerName} · {option.model}</SelectItem>)}</SelectContent></Select></div>
           {separatePlanModels && <div className="space-y-2"><Label htmlFor={`${id}-worker-model`}>{p.workerModel}</Label><Select value={effectiveWorkerModel} onValueChange={setPlanWorkerModel} disabled={busy || loadingPlanModels || !planModels.length}><SelectTrigger id={`${id}-worker-model`} className="w-full"><SelectValue placeholder={p.workerModel} /></SelectTrigger><SelectContent>{effectiveWorkerModel && !workerModelAvailable && <SelectItem value={effectiveWorkerModel} disabled>{effectiveWorkerModel.split('::')[1]} · {p.unavailableModel}</SelectItem>}{planModels.map(option => <SelectItem key={`${option.providerId}::${option.model}`} value={`${option.providerId}::${option.model}`}>{option.providerName} · {option.model}</SelectItem>)}</SelectContent></Select></div>}
-          <div className="space-y-2"><Label htmlFor={`${id}-plan-workers`}>{p.maxWorkers}</Label><NumberInput id={`${id}-plan-workers`} min={1} max={8} step={1} value={planWorkers} onChange={e => setPlanWorkers(e.target.value)} disabled={busy} /><p className="text-xs text-muted-foreground">{p.maxWorkersHint}</p></div>
+          <div className="space-y-2"><Label htmlFor={`${id}-plan-workers`}>{p.maxWorkers}</Label><NumberInput id={`${id}-plan-workers`} min={1} max={8} step={1} value={planWorkers} onChange={e => setPlanWorkers(e.target.value)} disabled={busy} /></div>
+        </div>
+        <div className="space-y-2 rounded-md border p-3">
+          <div className="flex items-center gap-2"><Checkbox id={`${id}-allow-web-search`} checked={allowWebSearch} onCheckedChange={value => setAllowWebSearch(value === true)} disabled={busy} /><Label htmlFor={`${id}-allow-web-search`}>{p.allowWebSearch}</Label></div>
+          <p className="text-xs leading-5 text-muted-foreground">{p.allowWebSearchHint}</p>
         </div>
         {!loadingPlanModels && planModels.length > 0 && (!planModelAvailable || !workerModelAvailable) ? <Alert><AlertDescription>{p.modelUnavailable}</AlertDescription></Alert> : null}
         {!loadingPlanModels && !planModels.length ? <Alert variant="destructive"><AlertDescription>{p.noModels}</AlertDescription></Alert> : null}

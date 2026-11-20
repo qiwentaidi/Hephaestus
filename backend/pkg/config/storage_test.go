@@ -348,6 +348,63 @@ func TestNormalizeAIConfigKeepsValidWorkbenchFallbackOnly(t *testing.T) {
 	}
 }
 
+func TestNormalizeAIConfigKeepsWorkbenchFallbackChainInOrder(t *testing.T) {
+	providers := []AIProviderConfig{
+		{ID: "primary", Protocol: AIProtocolOpenAICompatible, Enabled: true, API: "https://primary.example.com/v1", Key: "sk-primary", Model: "primary-model"},
+		{ID: "backup", Protocol: AIProtocolOpenAICompatible, Enabled: true, API: "https://backup.example.com/v1", Key: "sk-backup", Model: "backup-model"},
+		{ID: "backup2", Protocol: AIProtocolOpenAICompatible, Enabled: true, API: "https://backup2.example.com/v1", Key: "sk-backup2", Model: "backup2-model"},
+	}
+	cfg := NormalizeAIConfig(AIConfig{
+		Enabled:           true,
+		DefaultProviderID: "primary",
+		Providers:         providers,
+		Routing: AIRoutingConfig{
+			WorkbenchFallbackEnabled: true,
+			WorkbenchFallbacks:       []string{"backup2", "primary", "backup2", " backup ", "missing"},
+		},
+	})
+	want := []string{"backup2", "backup"}
+	if len(cfg.Routing.WorkbenchFallbacks) != len(want) {
+		t.Fatalf("fallback chain = %#v, want %#v", cfg.Routing.WorkbenchFallbacks, want)
+	}
+	for i := range want {
+		if cfg.Routing.WorkbenchFallbacks[i] != want[i] {
+			t.Fatalf("fallback chain = %#v, want %#v", cfg.Routing.WorkbenchFallbacks, want)
+		}
+	}
+	if cfg.Routing.WorkbenchFallback != "backup2" {
+		t.Fatalf("legacy fallback field = %q, want first chain entry", cfg.Routing.WorkbenchFallback)
+	}
+
+	// The legacy single value keeps migrating to the front of the chain.
+	legacy := NormalizeAIConfig(AIConfig{
+		Enabled:           true,
+		DefaultProviderID: "primary",
+		Providers:         providers,
+		Routing: AIRoutingConfig{
+			WorkbenchFallbackEnabled: true,
+			WorkbenchFallback:        "backup",
+		},
+	})
+	if len(legacy.Routing.WorkbenchFallbacks) != 1 || legacy.Routing.WorkbenchFallbacks[0] != "backup" {
+		t.Fatalf("legacy fallback did not migrate: %#v", legacy.Routing)
+	}
+
+	// An all-invalid chain disables failover instead of leaving a stale switch on.
+	empty := NormalizeAIConfig(AIConfig{
+		Enabled:           true,
+		DefaultProviderID: "primary",
+		Providers:         providers,
+		Routing: AIRoutingConfig{
+			WorkbenchFallbackEnabled: true,
+			WorkbenchFallbacks:       []string{"primary", "missing"},
+		},
+	})
+	if empty.Routing.WorkbenchFallbackEnabled || len(empty.Routing.WorkbenchFallbacks) != 0 {
+		t.Fatalf("invalid chain should disable failover: %#v", empty.Routing)
+	}
+}
+
 func TestWriteConfigFileAddsImmutableAgentIDComment(t *testing.T) {
 	resetConfigGlobalsForTest()
 	SetRuntimeMode(RuntimeModeAgent)

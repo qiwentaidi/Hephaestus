@@ -24,6 +24,10 @@ type createPlanRunRequest struct {
 	WorkerModel       string   `json:"workerModel"`
 	MaxWorkers        int      `json:"maxWorkers"`
 	MaxTotalWorkers   int      `json:"maxTotalWorkers"`
+	// AllowWebSearch is the per-task opt-in for the agent web_search tool.
+	// Off by default: search queries carry target information to a third-party
+	// search backend, which can be a data-egress compliance issue.
+	AllowWebSearch bool `json:"allowWebSearch"`
 }
 
 func CreateAIPlanRunHandler(c *gin.Context) { createARTEXPlan(c) }

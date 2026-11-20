@@ -281,10 +281,15 @@ type AIProviderConfig struct {
 type AIRoutingConfig struct {
 	Workbench                string `yaml:"workbench,omitempty" json:"workbench,omitempty"`
 	WorkbenchFallbackEnabled bool   `yaml:"workbenchFallbackEnabled,omitempty" json:"workbenchFallbackEnabled,omitempty"`
-	WorkbenchFallback        string `yaml:"workbenchFallback,omitempty" json:"workbenchFallback,omitempty"`
-	JSScan                   string `yaml:"jsscan,omitempty" json:"jsscan,omitempty"`
-	RepeaterPolish           string `yaml:"repeaterPolish,omitempty" json:"repeaterPolish,omitempty"`
-	SubdomainAssist          string `yaml:"subdomainAssist,omitempty" json:"subdomainAssist,omitempty"`
+	// WorkbenchFallback is the legacy single backup channel. It stays in sync
+	// with WorkbenchFallbacks[0] so older payloads and clients keep working.
+	WorkbenchFallback string `yaml:"workbenchFallback,omitempty" json:"workbenchFallback,omitempty"`
+	// WorkbenchFallbacks is the ordered backup chain: the primary model fails
+	// over to the first entry, then the next, and so on.
+	WorkbenchFallbacks []string `yaml:"workbenchFallbacks,omitempty" json:"workbenchFallbacks,omitempty"`
+	JSScan             string   `yaml:"jsscan,omitempty" json:"jsscan,omitempty"`
+	RepeaterPolish     string   `yaml:"repeaterPolish,omitempty" json:"repeaterPolish,omitempty"`
+	SubdomainAssist    string   `yaml:"subdomainAssist,omitempty" json:"subdomainAssist,omitempty"`
 }
 
 // DingTalkConfig 钉钉 Webhook 配置
@@ -1328,10 +1333,26 @@ func NormalizeAIConfig(aiConfig AIConfig) AIConfig {
 	aiConfig.Routing.SubdomainAssist = strings.TrimSpace(aiConfig.Routing.SubdomainAssist)
 	aiConfig.Routing.WorkbenchFallback = strings.TrimSpace(aiConfig.Routing.WorkbenchFallback)
 	workbenchProviderID := firstNonEmpty(aiConfig.Routing.Workbench, aiConfig.DefaultProviderID)
-	if aiConfig.Routing.WorkbenchFallback == "" ||
-		aiConfig.Routing.WorkbenchFallback == workbenchProviderID ||
-		!seen[aiConfig.Routing.WorkbenchFallback] {
-		aiConfig.Routing.WorkbenchFallback = ""
+	// Legacy single selection migrates into the ordered chain.
+	fallbackIDs := aiConfig.Routing.WorkbenchFallbacks
+	if len(fallbackIDs) == 0 && aiConfig.Routing.WorkbenchFallback != "" {
+		fallbackIDs = []string{aiConfig.Routing.WorkbenchFallback}
+	}
+	validFallbacks := make([]string, 0, len(fallbackIDs))
+	seenFallback := make(map[string]bool, len(fallbackIDs))
+	for _, candidate := range fallbackIDs {
+		id := strings.TrimSpace(candidate)
+		if id == "" || id == workbenchProviderID || !seen[id] || seenFallback[id] {
+			continue
+		}
+		seenFallback[id] = true
+		validFallbacks = append(validFallbacks, id)
+	}
+	aiConfig.Routing.WorkbenchFallbacks = validFallbacks
+	aiConfig.Routing.WorkbenchFallback = ""
+	if len(validFallbacks) > 0 {
+		aiConfig.Routing.WorkbenchFallback = validFallbacks[0]
+	} else {
 		aiConfig.Routing.WorkbenchFallbackEnabled = false
 	}
 

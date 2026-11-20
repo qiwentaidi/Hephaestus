@@ -98,25 +98,45 @@ func hasProviderHeader(headers []config.AIProviderHeader, name string) bool {
 	return false
 }
 
-// artexFallbackProfile reuses the AI Workbench backup provider as the
-// orchestration task-wide backup. It is opt-in through the same setting, and a
-// broken backup configuration must not block creating the primary task.
-func artexFallbackProfile() (artexdb.LLMProfile, bool, error) {
+// artexFallbackProfiles reuses the AI Workbench backup channels as the
+// orchestration task-wide backup chain, in the configured order. It is opt-in
+// through the same setting, and a broken entry must not block creating the
+// primary task: unusable channels are skipped.
+func artexFallbackProfiles() ([]artexdb.LLMProfile, bool, error) {
 	cfg, err := config.GetAIConfig()
 	if err != nil {
-		return artexdb.LLMProfile{}, false, err
+		return nil, false, err
 	}
 	cfg = config.NormalizeAIConfig(cfg)
-	providerID := strings.TrimSpace(cfg.Routing.WorkbenchFallback)
-	if !cfg.Routing.WorkbenchFallbackEnabled || providerID == "" {
-		return artexdb.LLMProfile{}, false, nil
+	if !cfg.Routing.WorkbenchFallbackEnabled {
+		return nil, false, nil
 	}
-	profile, err := artexProfile(providerID, "")
-	if err != nil {
-		return artexdb.LLMProfile{}, false, err
+	providerIDs := cfg.Routing.WorkbenchFallbacks
+	if len(providerIDs) == 0 {
+		if legacy := strings.TrimSpace(cfg.Routing.WorkbenchFallback); legacy != "" {
+			providerIDs = []string{legacy}
+		}
 	}
-	profile.Name += " fallback"
-	return profile, true, nil
+	if len(providerIDs) == 0 {
+		return nil, false, nil
+	}
+	profiles := make([]artexdb.LLMProfile, 0, len(providerIDs))
+	for _, providerID := range providerIDs {
+		providerID = strings.TrimSpace(providerID)
+		if providerID == "" {
+			continue
+		}
+		profile, err := artexProfile(providerID, "")
+		if err != nil {
+			continue
+		}
+		profile.Name += " fallback"
+		profiles = append(profiles, profile)
+	}
+	if len(profiles) == 0 {
+		return nil, false, nil
+	}
+	return profiles, true, nil
 }
 
 func createARTEXPlan(c *gin.Context) {
@@ -179,13 +199,13 @@ func createARTEXPlan(c *gin.Context) {
 		workers = defaultOrchestrationWorkers
 	}
 	workers = min(workers, 8)
-	var fallbackProfile *artexdb.LLMProfile
-	if fallback, ok, fallbackErr := artexFallbackProfile(); fallbackErr != nil {
+	var fallbackProfiles []artexdb.LLMProfile
+	if fallbacks, ok, fallbackErr := artexFallbackProfiles(); fallbackErr != nil {
 		log.Printf("[orchestration] 备用模型配置不可用，本次任务不启用主备切换: %v", fallbackErr)
 	} else if ok {
-		fallbackProfile = &fallback
+		fallbackProfiles = fallbacks
 	}
-	t, err := rt.Engine.PrepareHostTask(taskengine.HostTaskOptions{Name: project.Name, Description: "目标资产：" + strings.Join(targets, "\n") + "\n授权范围：" + strings.Join(scope, "\n"), Goal: objective, Planner: planner, Worker: worker, Fallback: fallbackProfile, Workers: workers})
+	t, err := rt.Engine.PrepareHostTask(taskengine.HostTaskOptions{Name: project.Name, Description: "目标资产：" + strings.Join(targets, "\n") + "\n授权范围：" + strings.Join(scope, "\n"), Goal: objective, Planner: planner, Worker: worker, Fallbacks: fallbackProfiles, AllowWebSearch: req.AllowWebSearch, Workers: workers})
 	if err != nil {
 		nativeError(c, 500, err)
 		return
@@ -535,8 +555,15 @@ func syncARTEXRun(ctx context.Context, store *pentest.SQLStore, rt *taskengine.R
 		}
 	}
 	status := nativeRunState(dto.Status)
+	// A switch that ended in a successful run is not an error. Only keep the
+	// reason while the run is paused/running, so a completed task does not show a
+	// stale "primary failed" banner.
+	failoverReason := dto.LLMFailoverReason
+	if status == "completed" || status == "cancelled" {
+		failoverReason = ""
+	}
 	if status != run.Status || ((status == "paused" || status == "pausing") && run.CompletedAt != nil) {
-		if err = store.SyncARTEXRunStatus(ctx, run.ID, status, run.Summary, dto.LLMFailoverReason); err != nil {
+		if err = store.SyncARTEXRunStatus(ctx, run.ID, status, run.Summary, failoverReason); err != nil {
 			return err
 		}
 	}
