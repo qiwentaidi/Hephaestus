@@ -320,7 +320,7 @@ Each platform needs its native toolchain: Xcode Command Line Tools on macOS, Web
 Development mode:
 
 ```bash
-go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha.78
+go install github.com/wailsapp/wails/v3/cmd/wails3@v3.1.0
 cd backend/cmd/desktop
 wails3 task dev
 ```

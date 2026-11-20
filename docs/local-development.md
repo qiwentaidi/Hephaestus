@@ -64,7 +64,7 @@ npm run dev
 桌面客户端基于 Wails 3，默认使用 SQLite，本地后端端口为 `38456`。各平台还需准备原生工具链和 WebView 运行环境，例如 macOS 的 Xcode 命令行工具、Windows 的 WebView2、Linux 的 GTK 和 WebKit 开发库。
 
 ```bash
-go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha.78
+go install github.com/wailsapp/wails/v3/cmd/wails3@v3.1.0
 cd backend/cmd/desktop
 wails3 task dev
 ```

@@ -27,7 +27,7 @@ concurrency:
 env:
   GO_VERSION: '1.26.3'
   NODE_VERSION: '22'
-  WAILS_VERSION: 'v3.0.0-alpha.78'
+  WAILS_VERSION: 'v3.1.0'
   APPLE_NOTARY_KEYCHAIN_PROFILE: 'hephaestus-notary'
   # 宿主机不要清空 Docker 层缓存。
   DOCKER_BUILD_CACHE_PRUNE: '0'
