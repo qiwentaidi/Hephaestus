@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Info, Loader2, Save, Search } from 'lucide-react'
+import { Info, Loader2, Search } from 'lucide-react'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -81,25 +81,37 @@ export function AIWebSearchCard() {
     setSettings((current) => ({ ...current, ...next }))
   }
 
-  const save = async () => {
+  // 开关、来源、代理与 Key 都直接落盘，不再提供单独的保存按钮。
+  const persistSettings = async (next: AIWebSearchSettings) => {
+    // Brave/Tavily 必须先有 Key，否则后端会直接拒绝；先留在本地状态，等 Key 填好再落盘。
+    const missingKey =
+      (next.backend === 'brave-free' && !next.braveKeySet && !braveKey.trim()) ||
+      (next.backend === 'tavily' && !next.tavilyKeySet && !tavilyKey.trim())
+    if (missingKey) return
+
     setSaving(true)
     try {
-      const next = await saveAIWebSearchSettings({
-        enabled: settings.enabled,
-        backend: settings.backend,
-        proxy: settings.proxy,
+      const saved = await saveAIWebSearchSettings({
+        enabled: next.enabled,
+        backend: next.backend,
+        proxy: next.proxy,
         braveApiKey: braveKey.trim() || undefined,
         tavilyApiKey: tavilyKey.trim() || undefined,
       })
-      setSettings(next)
+      setSettings(saved)
       setBraveKey('')
       setTavilyKey('')
-      toast.success(t.aiConfig.webSearchSaved)
     } catch (error) {
       toast.error(`${t.aiConfig.webSearchSaveFailed}: ${errorMessage(error)}`)
     } finally {
       setSaving(false)
     }
+  }
+
+  const updateAndSave = (next: Partial<AIWebSearchSettings>) => {
+    const merged = { ...settings, ...next }
+    setSettings(merged)
+    void persistSettings(merged)
   }
 
   const test = async () => {
@@ -130,7 +142,7 @@ export function AIWebSearchCard() {
           aria-label={t.aiConfig.webSearchTitle}
           checked={settings.enabled}
           disabled={loading || saving}
-          onCheckedChange={(enabled) => update({ enabled })}
+          onCheckedChange={(enabled) => updateAndSave({ enabled })}
         />
       </div>
 
@@ -147,7 +159,7 @@ export function AIWebSearchCard() {
           <Select
             value={settings.backend}
             disabled={loading || saving}
-            onValueChange={(value: AIWebSearchBackend) => update({ backend: value })}
+            onValueChange={(value: AIWebSearchBackend) => updateAndSave({ backend: value })}
           >
             <SelectTrigger className="h-9">
               <SelectValue />
@@ -174,6 +186,7 @@ export function AIWebSearchCard() {
               disabled={loading || saving}
               placeholder={settings.braveKeySet ? t.aiConfig.webSearchKeyConfigured : t.aiConfig.webSearchKeyRequired}
               onChange={(event) => setBraveKey(event.target.value)}
+              onBlur={() => void persistSettings(settings)}
             />
           </div>
         ) : null}
@@ -190,6 +203,7 @@ export function AIWebSearchCard() {
               disabled={loading || saving}
               placeholder={settings.tavilyKeySet ? t.aiConfig.webSearchKeyConfigured : t.aiConfig.webSearchKeyRequired}
               onChange={(event) => setTavilyKey(event.target.value)}
+              onBlur={() => void persistSettings(settings)}
             />
           </div>
         ) : null}
@@ -205,6 +219,7 @@ export function AIWebSearchCard() {
             disabled={loading || saving}
             placeholder={t.aiConfig.webSearchProxyPlaceholder}
             onChange={(event) => update({ proxy: event.target.value })}
+            onBlur={() => void persistSettings(settings)}
           />
           <p className="text-[11px] leading-relaxed text-muted-foreground">{t.aiConfig.webSearchProxyHint}</p>
         </div>
@@ -213,14 +228,14 @@ export function AIWebSearchCard() {
           {settings.enabled ? t.aiConfig.webSearchTotalEnabled : t.aiConfig.webSearchTotalDisabled}
         </p>
 
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          {t.aiConfig.webSearchAutoSaveHint}
+        </p>
+
         <div className="flex flex-wrap justify-end gap-2">
           <Button type="button" size="sm" variant="outline" className="h-8" onClick={() => void test()} disabled={loading || saving || testing}>
             {testing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
             {testing ? t.aiConfig.webSearchTesting : t.aiConfig.webSearchTest}
-          </Button>
-          <Button type="button" size="sm" className="h-8" onClick={() => void save()} disabled={loading || saving}>
-            {saving ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-            {saving ? t.aiConfig.webSearchSaving : t.aiConfig.webSearchSave}
           </Button>
         </div>
       </div>

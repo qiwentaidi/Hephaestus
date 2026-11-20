@@ -4,11 +4,10 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   Bot,
   CheckCircle2,
-  ChevronDown,
-  ChevronRight,
   Info,
   Loader2,
   MoreVertical,
+  Pencil,
   Plus,
   Power,
   RadioTower,
@@ -16,6 +15,7 @@ import {
   Settings2,
   Star,
   Trash2,
+  X,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -38,6 +38,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { MultiSelectFilter } from '@/components/ui/multi-select-filter'
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet'
 import {
   getAIConfig,
   saveAIConfig,
@@ -69,7 +71,6 @@ const DEFAULT_PROVIDER: AIProviderConfig = {
   supportsStreaming: true,
 }
 
-const ROUTE_DEFAULT_VALUE = '__default__'
 function requestRateUnit(provider: AIProviderConfig): 'second' | 'minute' {
   const rpm = provider.workbenchRequestsPerMinute || 0
   if (provider.workbenchRequestRateUnit === 'minute') return 'minute'
@@ -121,13 +122,21 @@ function normalizeConfig(config?: AIConfig | null): AIConfig {
 
   const defaultProvider = normalizedProviders.find((provider) => provider.id === defaultProviderId) || normalizedProviders[0]
   const rawRouting = config?.routing || {}
-  const workbenchProviderId = defaultProviderId || ''
-  const workbenchFallback =
-    rawRouting.workbenchFallback &&
-    rawRouting.workbenchFallback !== workbenchProviderId &&
-    normalizedProviders.some((provider) => provider.id === rawRouting.workbenchFallback)
-      ? rawRouting.workbenchFallback
-      : ''
+  const workbenchProviderId = rawRouting.workbench || defaultProviderId || ''
+  const configuredFallbacks =
+    Array.isArray(rawRouting.workbenchFallbacks) && rawRouting.workbenchFallbacks.length > 0
+      ? rawRouting.workbenchFallbacks
+      : rawRouting.workbenchFallback
+        ? [rawRouting.workbenchFallback]
+        : []
+  const workbenchFallbacks: string[] = []
+  for (const candidate of configuredFallbacks) {
+    const id = typeof candidate === 'string' ? candidate.trim() : ''
+    if (!id || id === workbenchProviderId || workbenchFallbacks.includes(id)) continue
+    if (!normalizedProviders.some((provider) => provider.id === id)) continue
+    workbenchFallbacks.push(id)
+  }
+  const workbenchFallback = workbenchFallbacks[0] || ''
 
   return {
     // Global AI is always on; providers keep their individual enable switches.
@@ -142,6 +151,7 @@ function normalizeConfig(config?: AIConfig | null): AIConfig {
     providers: normalizedProviders,
     routing: {
       workbenchFallback,
+      workbenchFallbacks,
       workbenchFallbackEnabled: Boolean(rawRouting.workbenchFallbackEnabled),
     },
     workbenchRemoteDispatch: config?.workbenchRemoteDispatch ?? false,
@@ -233,11 +243,11 @@ export function AIConfigTab() {
   const { t } = useI18n()
   const [config, setConfig] = useState<AIConfig>(() => normalizeConfig())
   const [selectedProviderId, setSelectedProviderId] = useState(DEFAULT_PROVIDER.id)
+  const [detailOpen, setDetailOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [testingProviderId, setTestingProviderId] = useState<string | null>(null)
   const [draggedProviderId, setDraggedProviderId] = useState<string | null>(null)
   const [dragOverProviderId, setDragOverProviderId] = useState<string | null>(null)
-  const [advancedOpen, setAdvancedOpen] = useState(false)
 
   const providers = useMemo(() => config.providers || [], [config.providers])
   const selectedProvider = providers.find((provider) => provider.id === selectedProviderId) || providers[0]
@@ -269,10 +279,6 @@ export function AIConfigTab() {
     }
   }, [t.aiConfig.loadFailed])
 
-  const updateConfig = (next: Partial<AIConfig>) => {
-    setConfig((current) => syncTopLevelConfig({ ...current, ...next }))
-  }
-
   const updateSelectedProvider = (next: Partial<AIProviderConfig>) => {
     if (!selectedProvider) return
     setConfig((current) => {
@@ -296,27 +302,23 @@ export function AIConfigTab() {
 
   const reorderProviders = (fromId: string, toId: string) => {
     if (!fromId || !toId || fromId === toId) return
-    setConfig((current) => {
-      const items = [...(current.providers || [])]
-      const fromIndex = items.findIndex((provider) => provider.id === fromId)
-      const toIndex = items.findIndex((provider) => provider.id === toId)
-      if (fromIndex < 0 || toIndex < 0) return current
-      const [moved] = items.splice(fromIndex, 1)
-      items.splice(toIndex, 0, moved)
-      return syncTopLevelConfig({ ...current, providers: items })
-    })
+    const items = [...(config.providers || [])]
+    const fromIndex = items.findIndex((provider) => provider.id === fromId)
+    const toIndex = items.findIndex((provider) => provider.id === toId)
+    if (fromIndex < 0 || toIndex < 0) return
+    const [moved] = items.splice(fromIndex, 1)
+    items.splice(toIndex, 0, moved)
+    autoSaveConfig(syncTopLevelConfig({ ...config, providers: items }))
   }
 
   const moveProvider = (providerId: string, offset: number) => {
-    setConfig((current) => {
-      const items = [...(current.providers || [])]
-      const index = items.findIndex((provider) => provider.id === providerId)
-      const target = index + offset
-      if (index < 0 || target < 0 || target >= items.length) return current
-      const [moved] = items.splice(index, 1)
-      items.splice(target, 0, moved)
-      return syncTopLevelConfig({ ...current, providers: items })
-    })
+    const items = [...(config.providers || [])]
+    const index = items.findIndex((provider) => provider.id === providerId)
+    const target = index + offset
+    if (index < 0 || target < 0 || target >= items.length) return
+    const [moved] = items.splice(index, 1)
+    items.splice(target, 0, moved)
+    autoSaveConfig(syncTopLevelConfig({ ...config, providers: items }))
   }
 
   const addProviderHeader = () => {
@@ -341,17 +343,16 @@ export function AIConfigTab() {
   }
 
   const addProvider = () => {
-    setConfig((current) => {
-      const existingProviders = current.providers || []
-      const nextProvider = createEmptyProvider(new Set(existingProviders.map((provider) => provider.id)))
-      const next = syncTopLevelConfig({
-        ...current,
-        providers: [...existingProviders, nextProvider],
-        defaultProviderId: current.defaultProviderId || existingProviders[0]?.id || nextProvider.id,
-      })
-      setSelectedProviderId(nextProvider.id)
-      return next
+    const existingProviders = config.providers || []
+    const nextProvider = createEmptyProvider(new Set(existingProviders.map((provider) => provider.id)))
+    const next = syncTopLevelConfig({
+      ...config,
+      providers: [...existingProviders, nextProvider],
+      defaultProviderId: config.defaultProviderId || existingProviders[0]?.id || nextProvider.id,
     })
+    setSelectedProviderId(nextProvider.id)
+    setDetailOpen(true)
+    autoSaveConfig(next)
   }
 
   const removeProvider = (providerId: string) => {
@@ -359,20 +360,20 @@ export function AIConfigTab() {
     const provider = providers.find((item) => item.id === providerId)
     if (!provider) return
 
-    setConfig((current) => {
-      const remaining = (current.providers || []).filter((item) => item.id !== providerId)
-      const defaultProviderId =
-        current.defaultProviderId === providerId ? remaining[0]?.id : current.defaultProviderId
-      const routing = { ...current.routing }
-      if (routing.workbenchFallback === providerId) {
-        routing.workbenchFallback = ''
-        routing.workbenchFallbackEnabled = false
-      }
-      if (selectedProviderId === providerId) {
-        setSelectedProviderId(defaultProviderId || remaining[0]?.id || DEFAULT_PROVIDER.id)
-      }
-      return syncTopLevelConfig({ ...current, providers: remaining, defaultProviderId, routing })
-    })
+    const remaining = (config.providers || []).filter((item) => item.id !== providerId)
+    const defaultProviderId =
+      config.defaultProviderId === providerId ? remaining[0]?.id : config.defaultProviderId
+    const routing = { ...config.routing }
+    const remainingFallbacks = (routing.workbenchFallbacks || []).filter((id) => id !== providerId)
+    routing.workbenchFallbacks = remainingFallbacks
+    routing.workbenchFallback = remainingFallbacks[0] || ''
+    if (remainingFallbacks.length === 0) {
+      routing.workbenchFallbackEnabled = false
+    }
+    if (selectedProviderId === providerId) {
+      setSelectedProviderId(defaultProviderId || remaining[0]?.id || DEFAULT_PROVIDER.id)
+    }
+    autoSaveConfig(syncTopLevelConfig({ ...config, providers: remaining, defaultProviderId, routing }))
   }
 
   const removeSelectedProvider = () => {
@@ -460,6 +461,21 @@ export function AIConfigTab() {
     }
   }
 
+  // 渠道列表与主备路由没有单独的保存按钮：改动后直接落盘。
+  const autoSaveConfig = (next: AIConfig) => {
+    setConfig(next)
+    setSaving(true)
+    void (async () => {
+      try {
+        await persistConfig(next)
+      } catch (error: any) {
+        toast.error(`${t.common.saveFailed}: ${error.message || ''}`)
+      } finally {
+        setSaving(false)
+      }
+    })()
+  }
+
   const testProvider = async (provider: AIProviderConfig) => {
     if (!providerStatus(provider)) {
       toast.error(t.aiConfig.fillProviderFirst)
@@ -486,31 +502,23 @@ export function AIConfigTab() {
     }
   }
 
-  const workbenchProviderId = config.defaultProviderId || ''
-  const fallbackProviderOptions = providers.map((provider, index) => ({
-    value: provider.id,
-    label: provider.name.trim() || `${t.aiConfig.unnamedProvider} ${index + 1}`,
-    disabled:
-      provider.id === workbenchProviderId ||
-      !providerStatus(provider) ||
-      provider.protocol !== 'openai-compatible',
-  }))
   const fallbackEnabled = Boolean(config.routing?.workbenchFallbackEnabled)
-  const fallbackProviderId = config.routing?.workbenchFallback || ROUTE_DEFAULT_VALUE
+  const fallbackProviderIds = config.routing?.workbenchFallbacks || []
+  const fallbackPrimaryId = config.routing?.workbench || config.defaultProviderId || ''
+  const fallbackOptions = providers
+    .filter(
+      (provider) =>
+        provider.id !== fallbackPrimaryId &&
+        providerStatus(provider) &&
+        provider.protocol === 'openai-compatible',
+    )
+    .map((provider, index) => ({
+      value: provider.id,
+      label: provider.name.trim() || `${t.aiConfig.unnamedProvider} ${index + 1}`,
+    }))
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="flex flex-col items-start justify-between gap-3 border-b py-3 sm:flex-row sm:items-center">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">{t.aiConfig.title}</h2>
-          <p className="text-xs text-muted-foreground">{t.aiConfig.description}</p>
-        </div>
-        <Button onClick={saveConfig} size="sm" className="h-8 shadow-sm" disabled={saving}>
-          {saving ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-          {t.common.saveConfig}
-        </Button>
-      </div>
-
       <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
         <section className="min-w-0 space-y-3">
           <div className="flex items-center justify-between gap-3">
@@ -585,7 +593,10 @@ export function AIConfigTab() {
                       active && 'border-primary/60 ring-1 ring-primary/20',
                       dragOverProviderId === provider.id && 'border-primary/60 ring-2 ring-primary/20',
                     )}
-                    onClick={() => setSelectedProviderId(provider.id)}
+                    onClick={() => {
+                      setSelectedProviderId(provider.id)
+                      setDetailOpen(true)
+                    }}
                   >
                     <div className="flex min-w-0 items-start gap-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-muted/60 text-sm font-semibold text-primary">
@@ -615,41 +626,40 @@ export function AIConfigTab() {
                       </div>
                     </div>
                   </button>
-                  <button
-                    type="button"
-                    className={cn(
-                      'absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-md transition',
-                      isDefault
-                        ? 'text-amber-400'
-                        : complete
-                          ? 'text-muted-foreground/60 hover:bg-muted/60 hover:text-amber-400'
-                          : 'cursor-not-allowed text-muted-foreground/30',
-                    )}
-                    title={starTitle}
-                    aria-label={starTitle}
-                    disabled={!complete || isDefault}
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      if (provider.id !== config.defaultProviderId) {
-                        void selectDefaultProvider(provider.id)
-                      }
-                    }}
-                  >
-                    <Star className={cn('h-4 w-4', isDefault && 'fill-amber-400 text-amber-500')} />
-                  </button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
                         type="button"
                         aria-label={t.aiConfig.providerActions}
                         title={t.aiConfig.providerActions}
-                        className="absolute right-2 top-9 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/60 transition hover:bg-muted/60 hover:text-foreground"
+                        className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/60 transition hover:bg-muted/60 hover:text-foreground"
                         onClick={(event) => event.stopPropagation()}
                       >
                         <MoreVertical className="h-4 w-4" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem
+                        onSelect={() => {
+                          setSelectedProviderId(provider.id)
+                          setDetailOpen(true)
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                        {t.common.edit}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onSelect={() => {
+                          if (!complete || isDefault) return
+                          void selectDefaultProvider(provider.id)
+                        }}
+                        disabled={!complete || isDefault}
+                      >
+                        <Star className={cn('h-4 w-4', isDefault && 'fill-amber-400 text-amber-500')} />
+                        {starTitle}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onSelect={() => updateProvider(provider.id, { enabled: !provider.enabled })}
                       >
@@ -678,14 +688,86 @@ export function AIConfigTab() {
         </section>
 
         <section className="min-w-0 space-y-4">
+          <AIWebSearchCard />
+
+          <div className="rounded-md border bg-card p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between gap-3 border-b pb-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <Settings2 className="h-4 w-4 shrink-0 text-primary/70" />
+                <h3 className="truncate text-sm font-semibold">{t.aiConfig.failoverTitle}</h3>
+              </div>
+              <Switch
+                id="ai-workbench-fallback-enabled"
+                aria-label={t.aiConfig.workbenchFallbackEnabled}
+                checked={fallbackEnabled}
+                onCheckedChange={(enabled) =>
+                  autoSaveConfig(
+                    syncTopLevelConfig({
+                      ...config,
+                      routing: {
+                        ...config.routing,
+                        workbenchFallbackEnabled: enabled,
+                      },
+                    }),
+                  )
+                }
+              />
+            </div>
+            <Alert className="mb-4 border-border/70 bg-muted/30 py-2.5">
+              <Info className="h-4 w-4 text-primary/70" />
+              <AlertDescription className="text-xs leading-relaxed">
+                <p>{t.aiConfig.failoverDescription}</p>
+                <p>{t.aiConfig.workbenchFallbackProviderHint}</p>
+              </AlertDescription>
+            </Alert>
+            <div className="grid gap-1.5">
+              <Label className="text-xs">{t.aiConfig.workbenchFallbackProvider}</Label>
+              <MultiSelectFilter
+                className="w-full"
+                options={fallbackOptions}
+                values={fallbackProviderIds}
+                allLabel={t.aiConfig.workbenchFallbackClear}
+                placeholderLabel={t.aiConfig.selectWorkbenchFallbackProvider}
+                countLabel={t.common.selectedCount}
+                removeLabel={t.common.remove}
+                clearLabel={t.common.clear}
+                ariaLabel={t.aiConfig.workbenchFallbackProvider}
+                disabled={!fallbackEnabled}
+                contentClassName="w-72"
+                onChange={(next) => {
+                  const ids = next.filter((id) => fallbackOptions.some((option) => option.value === id))
+                  autoSaveConfig(
+                    syncTopLevelConfig({
+                      ...config,
+                      routing: {
+                        ...config.routing,
+                        workbenchFallbacks: ids,
+                        workbenchFallback: ids[0] || '',
+                      },
+                    }),
+                  )
+                }}
+              />
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
+        <SheetContent side="right" showCloseButton={false} className="flex w-full flex-col gap-0 p-0 sm:max-w-xl">
           {selectedProvider ? (
-            <div className="rounded-md border bg-card p-4 shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-3 sm:flex-nowrap">
-                <div className="flex min-w-0 items-center gap-2">
-                  <Bot className="h-4 w-4 shrink-0 text-primary/70" />
-                  <h3 className="truncate text-sm font-semibold">{t.aiConfig.providerDetail}</h3>
+            <>
+              <div className="flex items-center justify-between gap-3 border-b px-5 py-3.5">
+                <div className="min-w-0">
+                  <SheetTitle className="flex items-center gap-2 text-sm font-semibold">
+                    <Bot className="h-4 w-4 shrink-0 text-primary/70" />
+                    {t.aiConfig.providerDetail}
+                  </SheetTitle>
+                  <SheetDescription className="mt-0.5 truncate text-xs text-muted-foreground">
+                    {selectedProvider.name.trim() || t.aiConfig.unnamedProvider}
+                  </SheetDescription>
                 </div>
-                <div className="flex flex-wrap items-center justify-end gap-2">
+                <div className="flex shrink-0 items-center gap-1">
                   <div
                     className="flex items-center justify-center"
                     title={t.aiConfig.enableProvider}
@@ -742,339 +824,306 @@ export function AIConfigTab() {
                     size="icon"
                     variant="ghost"
                     className="h-8 w-8"
-                    onClick={removeSelectedProvider}
+                    onClick={() => {
+                      removeSelectedProvider()
+                      setDetailOpen(false)
+                    }}
                     disabled={providers.length <= 1}
                     title={t.aiConfig.deleteProvider}
                     aria-label={t.aiConfig.deleteProvider}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
+                  <div className="mx-1 h-5 w-px shrink-0 bg-border" aria-hidden="true" />
+                  <SheetClose asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-muted-foreground"
+                      aria-label={t.common.close}
+                      title={t.common.close}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </SheetClose>
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="ai-provider-name" className="text-xs">
-                    {t.aiConfig.providerName}
-                  </Label>
-                  <Input
-                    id="ai-provider-name"
-                    className="h-9"
-                    value={selectedProvider.name}
-                    onChange={(event) => updateSelectedProvider({ name: event.target.value })}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">{t.aiConfig.protocol}</Label>
-                  <Select
-                    value={selectedProvider.protocol}
-                    onValueChange={(protocol) => {
-                      updateSelectedProvider({
-                        protocol: protocol as AIProviderProtocol,
-                        supportsStreaming: protocol !== 'anthropic',
-                      })
-                    }}
-                  >
-                    <SelectTrigger className="h-9">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="openai-compatible">{t.aiConfig.openAICompatible}</SelectItem>
-                      <SelectItem value="anthropic">{t.aiConfig.anthropic}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5 md:col-span-2">
-                  <Label htmlFor="ai-provider-api" className="text-xs">
-                    {t.apiKeys.baseUrl}
-                  </Label>
-                  <Input
-                    id="ai-provider-api"
-                    className="h-9 font-mono text-xs"
-                    value={selectedProvider.api}
-                    onChange={(event) => updateSelectedProvider({ api: event.target.value })}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="ai-provider-key" className="text-xs">
-                    {t.apiKeys.apiKey}
-                  </Label>
-                  <PasswordInput
-                    id="ai-provider-key"
-                    className="h-9"
-                    value={selectedProvider.key}
-                    onChange={(event) => updateSelectedProvider({ key: event.target.value })}
-                  />
-                </div>
-                <AIModelSelect
-                  key={selectedProvider.id}
-                  provider={selectedProvider}
-                  onChange={(model) => updateSelectedProvider({ model })}
-                />
-                <details
-                  className="rounded-md border p-3 md:col-span-2"
-                  onToggle={(event) => setAdvancedOpen(event.currentTarget.open)}
-                >
-                  <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-medium [&::-webkit-details-marker]:hidden">
-                    {advancedOpen ? (
-                      <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-                    ) : (
-                      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-                    )}
-                    <span>{t.aiConfig.advancedSettings}</span>
-                    {providerHeaders.length > 0 ? (
-                      <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-normal">
-                        {t.aiConfig.headersCount.replace('{count}', String(providerHeaders.length))}
-                      </Badge>
-                    ) : null}
-                  </summary>
-                  <div className="mt-3 space-y-4">
+              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+                <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label htmlFor="ai-provider-request-rate" className="text-xs">
-                      {t.aiConfig.requestRate}
+                    <Label htmlFor="ai-provider-name" className="text-xs">
+                      {t.aiConfig.providerName}
                     </Label>
-                    <div className="flex items-center gap-2">
-                      <div className="min-w-0 flex-1 sm:w-[180px] sm:flex-none">
-                        <Input
-                          id="ai-provider-request-rate"
-                          type="number"
-                          min={0}
-                          step={1}
-                          className="h-9"
-                          aria-describedby="ai-provider-request-rate-help"
-                          value={rateValue}
-                          onChange={(event) => {
-                            const count = Math.max(0, Math.trunc(Number(event.target.value)))
-                            if (Number.isSafeInteger(count * 60)) {
-                              updateSelectedProvider({
-                                workbenchRequestsPerMinute: count * (rateUnit === 'second' ? 60 : 1),
-                                workbenchRequestRateUnit: rateUnit,
-                              })
-                            }
-                          }}
-                        />
-                      </div>
-                      <span className="shrink-0 text-sm text-muted-foreground">{t.aiConfig.requestsPer}</span>
-                      <Select
-                        value={rateUnit}
-                        onValueChange={(unit: 'second' | 'minute') => updateSelectedProvider({
-                          workbenchRequestRateUnit: unit,
-                          workbenchRequestsPerMinute: rateValue * (unit === 'second' ? 60 : 1),
-                        })}
-                      >
-                        <SelectTrigger id="ai-provider-request-rate-unit" className="h-9 w-[100px] shrink-0" aria-label={t.aiConfig.requestRateUnit}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="second">{t.aiConfig.perSecond}</SelectItem>
-                          <SelectItem value="minute">{t.aiConfig.perMinute}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <p id="ai-provider-request-rate-help" className="text-xs leading-relaxed text-muted-foreground">
-                      {t.aiConfig.requestRateHelp}
-                    </p>
+                    <Input
+                      id="ai-provider-name"
+                      className="h-9"
+                      value={selectedProvider.name}
+                      onChange={(event) => updateSelectedProvider({ name: event.target.value })}
+                    />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">{t.aiConfig.tokenQuota}</Label>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="ai-provider-max-total-tokens" className="text-xs text-muted-foreground">
-                          {t.aiConfig.maxTotalTokens}
-                        </Label>
-                        <Input
-                          id="ai-provider-max-total-tokens"
-                          type="number"
-                          min={0}
-                          step={1000}
-                          className="h-9"
-                          placeholder="120000"
-                          value={selectedProvider.maxTotalTokens || ''}
-                          onChange={(event) => {
-                            const raw = event.target.value.trim()
-                            const parsed = raw === '' ? 0 : Math.max(0, Math.trunc(Number(raw)))
-                            if (raw === '' || Number.isSafeInteger(parsed)) {
-                              updateSelectedProvider({ maxTotalTokens: parsed })
-                            }
-                          }}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="ai-provider-max-output-tokens" className="text-xs text-muted-foreground">
-                          {t.aiConfig.maxOutputTokens}
-                        </Label>
-                        <Input
-                          id="ai-provider-max-output-tokens"
-                          type="number"
-                          min={0}
-                          step={1024}
-                          className="h-9"
-                          placeholder="16384"
-                          value={selectedProvider.maxOutputTokens || ''}
-                          onChange={(event) => {
-                            const raw = event.target.value.trim()
-                            const parsed = raw === '' ? 0 : Math.max(0, Math.trunc(Number(raw)))
-                            if (raw === '' || Number.isSafeInteger(parsed)) {
-                              updateSelectedProvider({ maxOutputTokens: parsed })
-                            }
-                          }}
-                        />
-                      </div>
-                    </div>
+                    <Label className="text-xs">{t.aiConfig.protocol}</Label>
+                    <Select
+                      value={selectedProvider.protocol}
+                      onValueChange={(protocol) => {
+                        updateSelectedProvider({
+                          protocol: protocol as AIProviderProtocol,
+                          supportsStreaming: protocol !== 'anthropic',
+                        })
+                      }}
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="openai-compatible">{t.aiConfig.openAICompatible}</SelectItem>
+                        <SelectItem value="anthropic">{t.aiConfig.anthropic}</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="ai-provider-request-timeout" className="text-xs">
-                        {t.aiConfig.requestTimeout}
-                      </Label>
-                      <div className="flex items-center gap-2">
-                        <div className="w-[140px]">
-                          <Input
-                            id="ai-provider-request-timeout"
-                            type="number"
-                            min={1}
-                            max={120}
-                            step={1}
-                            className="h-9"
-                            aria-describedby="ai-provider-request-timeout-help"
-                            aria-invalid={!Number.isInteger(selectedProvider.requestTimeoutMinutes) || (selectedProvider.requestTimeoutMinutes ?? 30) < 1 || (selectedProvider.requestTimeoutMinutes ?? 30) > 120}
-                            value={selectedProvider.requestTimeoutMinutes === 0 ? '' : selectedProvider.requestTimeoutMinutes ?? 30}
-                            onChange={(event) => updateSelectedProvider({ requestTimeoutMinutes: Number(event.target.value) })}
-                          />
-                        </div>
-                        <span className="text-xs text-muted-foreground">{t.aiConfig.perMinute}</span>
-                      </div>
-                      <p id="ai-provider-request-timeout-help" className="text-xs leading-relaxed text-muted-foreground">
-                        {t.aiConfig.requestTimeoutHelp}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2 border-t pt-3">
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div>
-                          <Label className="text-xs">{t.aiConfig.headersTitle}</Label>
-                          <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-                            {t.aiConfig.headersHelp}
-                          </p>
-                        </div>
-                        <Button type="button" size="sm" variant="outline" className="h-8" onClick={addProviderHeader}>
-                          <Plus className="mr-1.5 h-3.5 w-3.5" />
-                          {t.aiConfig.addHeader}
-                        </Button>
-                      </div>
-
-                      {providerHeaders.length === 0 ? (
-                        <div className="rounded-md border border-dashed px-3 py-2 text-[11px] text-muted-foreground">
-                          {t.aiConfig.headersEmpty}
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {providerHeaders.map((header, index) => (
-                            <div key={index} className="flex items-start gap-2">
-                              <Input
-                                aria-label={t.aiConfig.headersName}
-                                className="h-9 min-w-0 flex-1 font-mono text-xs"
-                                placeholder={t.aiConfig.headersNamePlaceholder}
-                                value={header.name}
-                                onChange={(event) => updateProviderHeader(index, { name: event.target.value })}
-                              />
-                              <Input
-                                aria-label={t.aiConfig.headersValue}
-                                className="h-9 min-w-0 flex-1 font-mono text-xs"
-                                placeholder={t.aiConfig.headersValuePlaceholder}
-                                value={header.value}
-                                onChange={(event) => updateProviderHeader(index, { value: event.target.value })}
-                              />
-                              <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                className="h-9 w-9 shrink-0 text-muted-foreground"
-                                title={t.aiConfig.removeHeader}
-                                aria-label={t.aiConfig.removeHeader}
-                                onClick={() => removeProviderHeader(index)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {isOpenCodeProvider(selectedProvider.api) ? (
-                        <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700 dark:text-amber-300">
-                          <span aria-hidden="true" className="mt-0.5">◆</span>
-                          <span>{t.aiConfig.headersOpenCodeHint}</span>
-                        </div>
+                  <div className="space-y-1.5 md:col-span-2">
+                    <Label htmlFor="ai-provider-api" className="text-xs">
+                      {t.apiKeys.baseUrl}
+                    </Label>
+                    <Input
+                      id="ai-provider-api"
+                      className="h-9 font-mono text-xs"
+                      value={selectedProvider.api}
+                      onChange={(event) => updateSelectedProvider({ api: event.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ai-provider-key" className="text-xs">
+                      {t.apiKeys.apiKey}
+                    </Label>
+                    <PasswordInput
+                      id="ai-provider-key"
+                      className="h-9"
+                      value={selectedProvider.key}
+                      onChange={(event) => updateSelectedProvider({ key: event.target.value })}
+                    />
+                  </div>
+                  <AIModelSelect
+                    key={selectedProvider.id}
+                    provider={selectedProvider}
+                    onChange={(model) => updateSelectedProvider({ model })}
+                  />
+                  <div className="space-y-4 border-t pt-4 md:col-span-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-medium">{t.aiConfig.advancedSettings}</span>
+                      {providerHeaders.length > 0 ? (
+                        <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-normal">
+                          {t.aiConfig.headersCount.replace('{count}', String(providerHeaders.length))}
+                        </Badge>
                       ) : null}
                     </div>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div>
+                            <Label className="text-xs">{t.aiConfig.headersTitle}</Label>
+                            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                              {t.aiConfig.headersHelp}
+                            </p>
+                          </div>
+                          <Button type="button" size="sm" variant="outline" className="h-8" onClick={addProviderHeader}>
+                            <Plus className="mr-1.5 h-3.5 w-3.5" />
+                            {t.aiConfig.addHeader}
+                          </Button>
+                        </div>
+
+                        {providerHeaders.length === 0 ? (
+                          <div className="rounded-md border border-dashed px-3 py-2 text-[11px] text-muted-foreground">
+                            {t.aiConfig.headersEmpty}
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {providerHeaders.map((header, index) => (
+                              <div key={index} className="flex items-start gap-2">
+                                <Input
+                                  aria-label={t.aiConfig.headersName}
+                                  className="h-9 min-w-0 flex-1 font-mono text-xs"
+                                  placeholder={t.aiConfig.headersNamePlaceholder}
+                                  value={header.name}
+                                  onChange={(event) => updateProviderHeader(index, { name: event.target.value })}
+                                />
+                                <Input
+                                  aria-label={t.aiConfig.headersValue}
+                                  className="h-9 min-w-0 flex-1 font-mono text-xs"
+                                  placeholder={t.aiConfig.headersValuePlaceholder}
+                                  value={header.value}
+                                  onChange={(event) => updateProviderHeader(index, { value: event.target.value })}
+                                />
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-9 w-9 shrink-0 text-muted-foreground"
+                                  title={t.aiConfig.removeHeader}
+                                  aria-label={t.aiConfig.removeHeader}
+                                  onClick={() => removeProviderHeader(index)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {isOpenCodeProvider(selectedProvider.api) ? (
+                          <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700 dark:text-amber-300">
+                            <span aria-hidden="true" className="mt-0.5">◆</span>
+                            <span>{t.aiConfig.headersOpenCodeHint}</span>
+                          </div>
+                        ) : null}
+                      </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="ai-provider-request-rate" className="text-xs">
+                        {t.aiConfig.requestRate}
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        <div className="min-w-0 flex-1 sm:w-[180px] sm:flex-none">
+                          <Input
+                            id="ai-provider-request-rate"
+                            type="number"
+                            min={0}
+                            step={1}
+                            className="h-9"
+                            aria-describedby="ai-provider-request-rate-help"
+                            value={rateValue}
+                            onChange={(event) => {
+                              const count = Math.max(0, Math.trunc(Number(event.target.value)))
+                              if (Number.isSafeInteger(count * 60)) {
+                                updateSelectedProvider({
+                                  workbenchRequestsPerMinute: count * (rateUnit === 'second' ? 60 : 1),
+                                  workbenchRequestRateUnit: rateUnit,
+                                })
+                              }
+                            }}
+                          />
+                        </div>
+                        <span className="shrink-0 text-sm text-muted-foreground">{t.aiConfig.requestsPer}</span>
+                        <Select
+                          value={rateUnit}
+                          onValueChange={(unit: 'second' | 'minute') => updateSelectedProvider({
+                            workbenchRequestRateUnit: unit,
+                            workbenchRequestsPerMinute: rateValue * (unit === 'second' ? 60 : 1),
+                          })}
+                        >
+                          <SelectTrigger id="ai-provider-request-rate-unit" className="h-9 w-[100px] shrink-0" aria-label={t.aiConfig.requestRateUnit}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="second">{t.aiConfig.perSecond}</SelectItem>
+                            <SelectItem value="minute">{t.aiConfig.perMinute}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <p id="ai-provider-request-rate-help" className="text-xs leading-relaxed text-muted-foreground">
+                        {t.aiConfig.requestRateHelp}
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">{t.aiConfig.tokenQuota}</Label>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="ai-provider-max-total-tokens" className="text-xs text-muted-foreground">
+                            {t.aiConfig.maxTotalTokens}
+                          </Label>
+                          <Input
+                            id="ai-provider-max-total-tokens"
+                            type="number"
+                            min={0}
+                            step={1000}
+                            className="h-9"
+                            placeholder="120000"
+                            value={selectedProvider.maxTotalTokens || ''}
+                            onChange={(event) => {
+                              const raw = event.target.value.trim()
+                              const parsed = raw === '' ? 0 : Math.max(0, Math.trunc(Number(raw)))
+                              if (raw === '' || Number.isSafeInteger(parsed)) {
+                                updateSelectedProvider({ maxTotalTokens: parsed })
+                              }
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="ai-provider-max-output-tokens" className="text-xs text-muted-foreground">
+                            {t.aiConfig.maxOutputTokens}
+                          </Label>
+                          <Input
+                            id="ai-provider-max-output-tokens"
+                            type="number"
+                            min={0}
+                            step={1024}
+                            className="h-9"
+                            placeholder="16384"
+                            value={selectedProvider.maxOutputTokens || ''}
+                            onChange={(event) => {
+                              const raw = event.target.value.trim()
+                              const parsed = raw === '' ? 0 : Math.max(0, Math.trunc(Number(raw)))
+                              if (raw === '' || Number.isSafeInteger(parsed)) {
+                                updateSelectedProvider({ maxOutputTokens: parsed })
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="ai-provider-request-timeout" className="text-xs">
+                          {t.aiConfig.requestTimeout}
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <div className="w-[140px]">
+                            <Input
+                              id="ai-provider-request-timeout"
+                              type="number"
+                              min={1}
+                              max={120}
+                              step={1}
+                              className="h-9"
+                              aria-describedby="ai-provider-request-timeout-help"
+                              aria-invalid={!Number.isInteger(selectedProvider.requestTimeoutMinutes) || (selectedProvider.requestTimeoutMinutes ?? 30) < 1 || (selectedProvider.requestTimeoutMinutes ?? 30) > 120}
+                              value={selectedProvider.requestTimeoutMinutes === 0 ? '' : selectedProvider.requestTimeoutMinutes ?? 30}
+                              onChange={(event) => updateSelectedProvider({ requestTimeoutMinutes: Number(event.target.value) })}
+                            />
+                          </div>
+                          <span className="text-xs text-muted-foreground">{t.aiConfig.perMinute}</span>
+                        </div>
+                        <p id="ai-provider-request-timeout-help" className="text-xs leading-relaxed text-muted-foreground">
+                          {t.aiConfig.requestTimeoutHelp}
+                        </p>
+                      </div>
+
+
+                    
+                  
+                    </div>
                   </div>
-                </details>
+
+                </div>
               </div>
 
-            </div>
+              <div className="flex flex-wrap justify-end gap-2 border-t px-5 py-4">
+                <Button variant="outline" onClick={() => setDetailOpen(false)}>
+                  {t.common.close}
+                </Button>
+                <Button onClick={saveConfig} disabled={saving}>
+                  {saving ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Save className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  {t.common.saveConfig}
+                </Button>
+              </div>
+            </>
           ) : null}
-
-          <AIWebSearchCard />
-
-          <div className="rounded-md border bg-card p-4 shadow-sm">
-            <div className="mb-3 flex items-center justify-between gap-3 border-b pb-3">
-              <div className="flex min-w-0 items-center gap-2">
-                <Settings2 className="h-4 w-4 shrink-0 text-primary/70" />
-                <h3 className="truncate text-sm font-semibold">{t.aiConfig.failoverTitle}</h3>
-              </div>
-              <Switch
-                id="ai-workbench-fallback-enabled"
-                aria-label={t.aiConfig.workbenchFallbackEnabled}
-                checked={fallbackEnabled}
-                onCheckedChange={(enabled) =>
-                  updateConfig({
-                    routing: {
-                      ...config.routing,
-                      workbenchFallbackEnabled: enabled,
-                    },
-                  })
-                }
-              />
-            </div>
-            <Alert className="mb-4 border-border/70 bg-muted/30 py-2.5">
-              <Info className="h-4 w-4 text-primary/70" />
-              <AlertDescription className="text-xs leading-relaxed">
-                <p>{t.aiConfig.failoverDescription}</p>
-                <p>{t.aiConfig.workbenchFallbackProviderHint}</p>
-              </AlertDescription>
-            </Alert>
-            <div className="grid gap-1.5">
-              <Label className="text-xs">{t.aiConfig.workbenchFallbackProvider}</Label>
-              <Select
-                value={fallbackProviderId}
-                disabled={!fallbackEnabled}
-                onValueChange={(value) =>
-                  updateConfig({
-                    routing: {
-                      ...config.routing,
-                      workbenchFallback: value === ROUTE_DEFAULT_VALUE ? '' : value,
-                    },
-                  })
-                }
-              >
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ROUTE_DEFAULT_VALUE}>
-                    {t.aiConfig.selectWorkbenchFallbackProvider}
-                  </SelectItem>
-                  {fallbackProviderOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value} disabled={option.disabled}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </section>
-      </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

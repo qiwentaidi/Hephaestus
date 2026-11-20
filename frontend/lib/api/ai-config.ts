@@ -47,7 +47,10 @@ export interface AIProviderConfig {
 export interface AIRoutingConfig {
   workbench?: string
   workbenchFallbackEnabled?: boolean
+  /** Legacy single backup channel; mirrors workbenchFallbacks[0]. */
   workbenchFallback?: string
+  /** Ordered backup chain: the primary fails over to the first entry, then the next. */
+  workbenchFallbacks?: string[]
   jsscan?: string
   repeaterPolish?: string
   subdomainAssist?: string

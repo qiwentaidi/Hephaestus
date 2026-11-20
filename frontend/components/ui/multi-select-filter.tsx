@@ -18,10 +18,12 @@ function formatCount(template: string, count: number) {
   return template.replace(/\{count\}/g, String(count))
 }
 
-export function MultiSelectFilter<T extends string>({ values, options, allLabel, countLabel, ariaLabel, removeLabel = 'Remove', clearLabel = 'Clear', disabled, onChange, className, contentClassName }: {
+export function MultiSelectFilter<T extends string>({ values, options, allLabel, placeholderLabel, countLabel, ariaLabel, removeLabel = 'Remove', clearLabel = 'Clear', disabled, onChange, className, contentClassName }: {
   values: T[]
   options: { value: T; label: string }[]
   allLabel: string
+  /** Text shown when nothing is selected; defaults to allLabel. */
+  placeholderLabel?: string
   countLabel: string
   ariaLabel: string
   removeLabel?: string
@@ -40,6 +42,7 @@ export function MultiSelectFilter<T extends string>({ values, options, allLabel,
   const selectedOptions = options.filter(option => values.includes(option.value))
   const overflowCount = selectedOptions.length - Math.min(visibleCount, selectedOptions.length)
   const selectionLabel = selectedOptions.map(option => option.label).join(' / ')
+  const emptyLabel = placeholderLabel ?? allLabel
 
   // Measure the rendered tags off-screen so the trigger can keep as many as fit
   // and collapse the rest into a +N chip.
@@ -93,7 +96,7 @@ export function MultiSelectFilter<T extends string>({ values, options, allLabel,
 
   const triggerLabel = values.length
     ? formatCount(countLabel, values.length)
-    : allLabel
+    : emptyLabel
 
   return <DropdownMenu open={disabled ? false : open} onOpenChange={next => { if (!disabled) setOpen(next) }}>
     <DropdownMenuTrigger asChild>
@@ -103,7 +106,7 @@ export function MultiSelectFilter<T extends string>({ values, options, allLabel,
         tabIndex={disabled ? -1 : 0}
         aria-disabled={disabled || undefined}
         aria-label={`${ariaLabel}: ${triggerLabel}`}
-        title={selectedOptions.length ? selectionLabel : allLabel}
+        title={selectedOptions.length ? selectionLabel : emptyLabel}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         className={cn(
@@ -114,7 +117,7 @@ export function MultiSelectFilter<T extends string>({ values, options, allLabel,
       >
         <div ref={contentRef} className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
           {selectedOptions.length === 0 ? (
-            <span className="truncate text-muted-foreground">{allLabel}</span>
+            <span className="truncate text-muted-foreground">{emptyLabel}</span>
           ) : (
             <>
               {selectedOptions.slice(0, Math.min(visibleCount, selectedOptions.length)).map(option => (
