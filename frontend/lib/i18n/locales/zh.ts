@@ -492,6 +492,8 @@ export const zh = {
       "record_vulnerability_retest": {"title": "记录复测结论", "summary": "保存复测结果与真实证据引用。"},
       "generate_target_test_report": {"title": "生成目标测试报告", "summary": "汇总当前会话证据并生成可下载的 Markdown 报告。"},
 
+      "miniprogram_list_programs": {"title": "列出小程序", "summary": "扫描本机微信小程序缓存，列出 AppID、版本和反编译状态。"},
+      "miniprogram_decompile": {"title": "反编译小程序", "summary": "反编译指定小程序版本并提取敏感信息线索。"},
       "http-framework-test": {
         "title": "HTTP 请求测试",
         "summary": "发送 HTTP 请求、重放接口并检查响应。"

@@ -1186,5 +1186,52 @@
     "permission": "read",
     "annotations": { "readOnlyHint": true, "destructiveHint": false, "idempotentHint": false, "openWorldHint": false },
     "inputSchema": { "type": "object", "properties": {} }
+  },
+  {
+    "name": "miniprogram_list_programs",
+    "moduleKey": "desktop",
+    "moduleName": "Desktop Client",
+    "moduleNameI18n": { "en": "Desktop Client", "zh": "桌面客户端" },
+    "title": "List Mini-Programs",
+    "titleI18n": { "en": "List Mini-Programs", "zh": "列出小程序" },
+    "version": "1.0.0",
+    "description": "Scan the local WeChat mini-program cache and list available app IDs, versions, and decompile status. Use this before miniprogram_decompile. Desktop client only.",
+    "descriptionI18n": {
+      "en": "Scan the local WeChat mini-program cache and list available app IDs, versions, and decompile status. Use this before miniprogram_decompile. Desktop client only.",
+      "zh": "扫描本机微信小程序缓存，列出可用的 AppID、版本和反编译状态。调用 miniprogram_decompile 前先用此工具选择目标。仅桌面客户端可用。"
+    },
+    "permission": "read",
+    "annotations": { "readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "applet_path": { "type": "string", "description": "Optional WeChat mini-program cache directory. Defaults to the configured path." }
+      }
+    }
+  },
+  {
+    "name": "miniprogram_decompile",
+    "moduleKey": "desktop",
+    "moduleName": "Desktop Client",
+    "moduleNameI18n": { "en": "Desktop Client", "zh": "桌面客户端" },
+    "title": "Decompile Mini-Program",
+    "titleI18n": { "en": "Decompile Mini-Program", "zh": "反编译小程序" },
+    "version": "1.0.0",
+    "description": "Decompile a selected WeChat mini-program version, export its code, and extract sensitive matches such as cloud credentials, API keys, URLs, and account data. Call miniprogram_list_programs first to obtain app_id and version. Desktop client only.",
+    "descriptionI18n": {
+      "en": "Decompile a selected WeChat mini-program version, export its code, and extract sensitive matches such as cloud credentials, API keys, URLs, and account data. Call miniprogram_list_programs first to obtain app_id and version. Desktop client only.",
+      "zh": "反编译指定微信小程序版本，导出代码并提取云凭证、API Key、URL、账号信息等敏感内容。请先调用 miniprogram_list_programs 获取 app_id 和 version。仅桌面客户端可用。"
+    },
+    "permission": "write",
+    "annotations": { "readOnlyHint": false, "destructiveHint": false, "idempotentHint": false, "openWorldHint": false },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "app_id": { "type": "string", "description": "Target mini-program AppID, for example wx1234567890abcdef." },
+        "version": { "type": "string", "description": "Target version from miniprogram_list_programs; root means the root-directory version." },
+        "applet_path": { "type": "string", "description": "Optional WeChat mini-program cache directory. Defaults to the configured path." }
+      },
+      "required": ["app_id", "version"]
+    }
   }
 ]

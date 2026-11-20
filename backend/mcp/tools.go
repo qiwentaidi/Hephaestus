@@ -7,6 +7,8 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
+
+	"hephaestus-backend/pkg/config"
 )
 
 //go:embed tools.json
@@ -48,6 +50,11 @@ func mcpToolDefinitionsForProfile(profile mcpServerProfile) []mcpToolDefinition 
 		if definition.Tool.Name == desktopScreenshotToolName && !hasDesktopScreenshotProvider() {
 			continue
 		}
+		// Mini-program decompile reads local WeChat caches; only desktop mode
+		// can serve it.
+		if isMiniProgramTool(definition.Tool.Name) && config.GetRuntimeMode() != config.RuntimeModeDesktop {
+			continue
+		}
 		filtered = append(filtered, definition)
 	}
 	return filtered
@@ -72,6 +79,12 @@ func loadMCPToolDefinitions() ([]mcpToolDefinition, error) {
 	handlers := map[string]mcpToolHandler{
 		"desktop_screenshot": func(c *gin.Context, _ json.RawMessage) (mcpToolCallResult, error) {
 			return mcpCallDesktopScreenshot(c.Request.Context())
+		},
+		miniProgramListToolName: func(_ *gin.Context, rawArgs json.RawMessage) (mcpToolCallResult, error) {
+			return mcpCallMiniProgramList(rawArgs)
+		},
+		miniProgramDecompileToolName: func(_ *gin.Context, rawArgs json.RawMessage) (mcpToolCallResult, error) {
+			return mcpCallMiniProgramDecompile(rawArgs)
 		},
 		"space_engine_search": func(c *gin.Context, rawArgs json.RawMessage) (mcpToolCallResult, error) {
 			var args mcpSpaceSearchArgs

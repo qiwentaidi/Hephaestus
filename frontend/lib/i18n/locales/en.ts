@@ -494,6 +494,8 @@ export const en: Locale = {
       "record_vulnerability_retest": {"title": "Record retest result", "summary": "Save a retest conclusion with real evidence references."},
       "generate_target_test_report": {"title": "Generate target test report", "summary": "Compile current-session evidence into a downloadable Markdown report."},
 
+      "miniprogram_list_programs": {"title": "List mini-programs", "summary": "Scan the local WeChat cache and list app IDs, versions and decompile status."},
+      "miniprogram_decompile": {"title": "Decompile mini-program", "summary": "Decompile a mini-program version and extract sensitive findings."},
       "http-framework-test": {
         "title": "HTTP request testing",
         "summary": "Send HTTP requests, replay APIs and inspect responses."
