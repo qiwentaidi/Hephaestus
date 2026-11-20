@@ -111,6 +111,9 @@ func SetupRoutes(r *gin.Engine) {
 			config.POST("/notifications/test", admin.TestNotificationChannelHandler)
 			config.GET("/ai", admin.GetAIConfigHandler)                          // 获取AI配置
 			config.PUT("/ai", admin.UpdateAIConfigHandler)                       // 更新AI配置
+			config.GET("/ai/web-search", ai.GetAIWebSearchSettingsHandler)       // 获取全局网络搜索配置
+			config.PUT("/ai/web-search", ai.UpdateAIWebSearchSettingsHandler)    // 更新全局网络搜索配置
+			config.POST("/ai/web-search/test", ai.TestAIWebSearchHandler)        // 测试网络搜索
 			config.POST("/ai/test", admin.TestAIConfigHandler)                   // 测试AI配置
 			config.POST("/ai/models", admin.ListAIModelsHandler)                 // 获取渠道模型列表
 			config.GET("/migration/export", admin.ExportConfigMigrationHandler)  // 导出配置迁移包

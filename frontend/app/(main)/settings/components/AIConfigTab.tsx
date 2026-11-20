@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   Bot,
   CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Info,
   Loader2,
   MoreVertical,
   Plus,
@@ -15,6 +18,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -47,6 +51,7 @@ import { useI18n } from '@/lib/i18n'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import { AIModelSelect } from './AIModelSelect'
+import { AIWebSearchCard } from './AIWebSearchCard'
 
 const DEFAULT_PROVIDER: AIProviderConfig = {
   requestTimeoutMinutes: 30,
@@ -232,6 +237,7 @@ export function AIConfigTab() {
   const [testingProviderId, setTestingProviderId] = useState<string | null>(null)
   const [draggedProviderId, setDraggedProviderId] = useState<string | null>(null)
   const [dragOverProviderId, setDragOverProviderId] = useState<string | null>(null)
+  const [advancedOpen, setAdvancedOpen] = useState(false)
 
   const providers = useMemo(() => config.providers || [], [config.providers])
   const selectedProvider = providers.find((provider) => provider.id === selectedProviderId) || providers[0]
@@ -681,8 +687,8 @@ export function AIConfigTab() {
                 </div>
                 <div className="flex flex-wrap items-center justify-end gap-2">
                   <div
-                    className="flex items-center gap-1.5 rounded-md border border-border/70 px-2 py-1"
-                    title={t.aiConfig.enableProviderHint}
+                    className="flex items-center justify-center"
+                    title={t.aiConfig.enableProvider}
                   >
                     <Switch
                       id="ai-provider-enabled"
@@ -690,19 +696,17 @@ export function AIConfigTab() {
                       onCheckedChange={(enabled) => updateSelectedProvider({ enabled })}
                       aria-label={t.aiConfig.enableProvider}
                     />
-                    <Label htmlFor="ai-provider-enabled" className="text-xs">
-                      {t.aiConfig.enableProviderShort}
-                    </Label>
                   </div>
                   <Button
                     type="button"
-                    size="sm"
-                    variant={selectedIsDefault ? 'secondary' : 'outline'}
+                    size="icon"
+                    variant="ghost"
                     className={cn(
-                      'h-8',
-                      selectedIsDefault && 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+                      'h-8 w-8',
+                      selectedIsDefault && 'bg-amber-500/10 text-amber-700 hover:bg-amber-500/15 dark:text-amber-300',
                     )}
-                    title={!providerStatus(selectedProvider) ? t.aiConfig.fillProviderFirst : undefined}
+                    title={selectedIsDefault ? t.aiConfig.currentDefault : t.aiConfig.setAsDefault}
+                    aria-label={selectedIsDefault ? t.aiConfig.currentDefault : t.aiConfig.setAsDefault}
                     onClick={() => {
                       if (!selectedIsDefault) {
                         void selectDefaultProvider(selectedProvider.id)
@@ -712,33 +716,36 @@ export function AIConfigTab() {
                   >
                     <Star
                       className={cn(
-                        'mr-1.5 h-3.5 w-3.5',
+                        'h-3.5 w-3.5',
                         selectedIsDefault && 'fill-amber-400 text-amber-500',
                       )}
                     />
-                    {selectedIsDefault ? t.aiConfig.currentDefault : t.aiConfig.setAsDefault}
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-8"
-                    onClick={() => testProvider(selectedProvider)}
-                    disabled={testingProviderId === selectedProvider.id}
-                  >
-                    {testingProviderId === selectedProvider.id ? (
-                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                    ) : null}
-                    {t.aiConfig.testProvider}
                   </Button>
                   <Button
                     type="button"
                     size="icon"
-                    variant="outline"
+                    variant="ghost"
+                    className="h-8 w-8"
+                    title={t.aiConfig.testProvider}
+                    aria-label={t.aiConfig.testProvider}
+                    onClick={() => testProvider(selectedProvider)}
+                    disabled={testingProviderId === selectedProvider.id}
+                  >
+                    {testingProviderId === selectedProvider.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <RadioTower className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
                     className="h-8 w-8"
                     onClick={removeSelectedProvider}
                     disabled={providers.length <= 1}
                     title={t.aiConfig.deleteProvider}
+                    aria-label={t.aiConfig.deleteProvider}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
@@ -804,110 +811,16 @@ export function AIConfigTab() {
                   provider={selectedProvider}
                   onChange={(model) => updateSelectedProvider({ model })}
                 />
-                <div className="space-y-1.5 md:col-span-2">
-                  <Label htmlFor="ai-provider-request-rate" className="text-xs">
-                    {t.aiConfig.requestRate}
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <div className="min-w-0 flex-1 sm:w-[180px] sm:flex-none">
-                      <Input
-                        id="ai-provider-request-rate"
-                        type="number"
-                        min={0}
-                        step={1}
-                        className="h-9"
-                        aria-describedby="ai-provider-request-rate-help"
-                        value={rateValue}
-                        onChange={(event) => {
-                          const count = Math.max(0, Math.trunc(Number(event.target.value)))
-                          if (Number.isSafeInteger(count * 60)) {
-                            updateSelectedProvider({
-                              workbenchRequestsPerMinute: count * (rateUnit === 'second' ? 60 : 1),
-                              workbenchRequestRateUnit: rateUnit,
-                            })
-                          }
-                        }}
-                      />
-                    </div>
-                    <span className="shrink-0 text-sm text-muted-foreground">{t.aiConfig.requestsPer}</span>
-                    <Select
-                      value={rateUnit}
-                      onValueChange={(unit: 'second' | 'minute') => updateSelectedProvider({
-                        workbenchRequestRateUnit: unit,
-                        workbenchRequestsPerMinute: rateValue * (unit === 'second' ? 60 : 1),
-                      })}
-                    >
-                      <SelectTrigger id="ai-provider-request-rate-unit" className="h-9 w-[100px] shrink-0" aria-label={t.aiConfig.requestRateUnit}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="second">{t.aiConfig.perSecond}</SelectItem>
-                        <SelectItem value="minute">{t.aiConfig.perMinute}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <p id="ai-provider-request-rate-help" className="text-xs leading-relaxed text-muted-foreground">
-                    {t.aiConfig.requestRateHelp}
-                  </p>
-                </div>
-                <div className="space-y-1.5 md:col-span-2">
-                  <Label className="text-xs">{t.aiConfig.tokenQuota}</Label>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="ai-provider-max-total-tokens" className="text-xs text-muted-foreground">
-                        {t.aiConfig.maxTotalTokens}
-                      </Label>
-                      <Input
-                        id="ai-provider-max-total-tokens"
-                        type="number"
-                        min={0}
-                        step={1000}
-                        className="h-9"
-                        placeholder="120000"
-                        aria-describedby="ai-provider-max-total-tokens-help"
-                        value={selectedProvider.maxTotalTokens || ''}
-                        onChange={(event) => {
-                          const raw = event.target.value.trim()
-                          const parsed = raw === '' ? 0 : Math.max(0, Math.trunc(Number(raw)))
-                          if (raw === '' || Number.isSafeInteger(parsed)) {
-                            updateSelectedProvider({ maxTotalTokens: parsed })
-                          }
-                        }}
-                      />
-                      <p id="ai-provider-max-total-tokens-help" className="text-xs leading-relaxed text-muted-foreground">
-                        {t.aiConfig.maxTotalTokensHelp}
-                      </p>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="ai-provider-max-output-tokens" className="text-xs text-muted-foreground">
-                        {t.aiConfig.maxOutputTokens}
-                      </Label>
-                      <Input
-                        id="ai-provider-max-output-tokens"
-                        type="number"
-                        min={0}
-                        step={1024}
-                        className="h-9"
-                        placeholder="16384"
-                        aria-describedby="ai-provider-max-output-tokens-help"
-                        value={selectedProvider.maxOutputTokens || ''}
-                        onChange={(event) => {
-                          const raw = event.target.value.trim()
-                          const parsed = raw === '' ? 0 : Math.max(0, Math.trunc(Number(raw)))
-                          if (raw === '' || Number.isSafeInteger(parsed)) {
-                            updateSelectedProvider({ maxOutputTokens: parsed })
-                          }
-                        }}
-                      />
-                      <p id="ai-provider-max-output-tokens-help" className="text-xs leading-relaxed text-muted-foreground">
-                        {t.aiConfig.maxOutputTokensHelp}
-                      </p>
-                    </div>
-                  </div>
-                  <p className="text-xs leading-relaxed text-muted-foreground">{t.aiConfig.tokenQuotaHelp}</p>
-                </div>
-                <details className="rounded-md border p-3 md:col-span-2">
-                  <summary className="flex cursor-pointer items-center gap-2 text-xs font-medium">
+                <details
+                  className="rounded-md border p-3 md:col-span-2"
+                  onToggle={(event) => setAdvancedOpen(event.currentTarget.open)}
+                >
+                  <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-medium [&::-webkit-details-marker]:hidden">
+                    {advancedOpen ? (
+                      <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    ) : (
+                      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    )}
                     <span>{t.aiConfig.advancedSettings}</span>
                     {providerHeaders.length > 0 ? (
                       <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-normal">
@@ -916,6 +829,99 @@ export function AIConfigTab() {
                     ) : null}
                   </summary>
                   <div className="mt-3 space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ai-provider-request-rate" className="text-xs">
+                      {t.aiConfig.requestRate}
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <div className="min-w-0 flex-1 sm:w-[180px] sm:flex-none">
+                        <Input
+                          id="ai-provider-request-rate"
+                          type="number"
+                          min={0}
+                          step={1}
+                          className="h-9"
+                          aria-describedby="ai-provider-request-rate-help"
+                          value={rateValue}
+                          onChange={(event) => {
+                            const count = Math.max(0, Math.trunc(Number(event.target.value)))
+                            if (Number.isSafeInteger(count * 60)) {
+                              updateSelectedProvider({
+                                workbenchRequestsPerMinute: count * (rateUnit === 'second' ? 60 : 1),
+                                workbenchRequestRateUnit: rateUnit,
+                              })
+                            }
+                          }}
+                        />
+                      </div>
+                      <span className="shrink-0 text-sm text-muted-foreground">{t.aiConfig.requestsPer}</span>
+                      <Select
+                        value={rateUnit}
+                        onValueChange={(unit: 'second' | 'minute') => updateSelectedProvider({
+                          workbenchRequestRateUnit: unit,
+                          workbenchRequestsPerMinute: rateValue * (unit === 'second' ? 60 : 1),
+                        })}
+                      >
+                        <SelectTrigger id="ai-provider-request-rate-unit" className="h-9 w-[100px] shrink-0" aria-label={t.aiConfig.requestRateUnit}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="second">{t.aiConfig.perSecond}</SelectItem>
+                          <SelectItem value="minute">{t.aiConfig.perMinute}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <p id="ai-provider-request-rate-help" className="text-xs leading-relaxed text-muted-foreground">
+                      {t.aiConfig.requestRateHelp}
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">{t.aiConfig.tokenQuota}</Label>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="ai-provider-max-total-tokens" className="text-xs text-muted-foreground">
+                          {t.aiConfig.maxTotalTokens}
+                        </Label>
+                        <Input
+                          id="ai-provider-max-total-tokens"
+                          type="number"
+                          min={0}
+                          step={1000}
+                          className="h-9"
+                          placeholder="120000"
+                          value={selectedProvider.maxTotalTokens || ''}
+                          onChange={(event) => {
+                            const raw = event.target.value.trim()
+                            const parsed = raw === '' ? 0 : Math.max(0, Math.trunc(Number(raw)))
+                            if (raw === '' || Number.isSafeInteger(parsed)) {
+                              updateSelectedProvider({ maxTotalTokens: parsed })
+                            }
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="ai-provider-max-output-tokens" className="text-xs text-muted-foreground">
+                          {t.aiConfig.maxOutputTokens}
+                        </Label>
+                        <Input
+                          id="ai-provider-max-output-tokens"
+                          type="number"
+                          min={0}
+                          step={1024}
+                          className="h-9"
+                          placeholder="16384"
+                          value={selectedProvider.maxOutputTokens || ''}
+                          onChange={(event) => {
+                            const raw = event.target.value.trim()
+                            const parsed = raw === '' ? 0 : Math.max(0, Math.trunc(Number(raw)))
+                            if (raw === '' || Number.isSafeInteger(parsed)) {
+                              updateSelectedProvider({ maxOutputTokens: parsed })
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="ai-provider-request-timeout" className="text-xs">
                         {t.aiConfig.requestTimeout}
@@ -1008,14 +1014,13 @@ export function AIConfigTab() {
             </div>
           ) : null}
 
+          <AIWebSearchCard />
+
           <div className="rounded-md border bg-card p-4 shadow-sm">
-            <div className="mb-4 flex items-center justify-between gap-3 border-b pb-3">
+            <div className="mb-3 flex items-center justify-between gap-3 border-b pb-3">
               <div className="flex min-w-0 items-center gap-2">
                 <Settings2 className="h-4 w-4 shrink-0 text-primary/70" />
-                <div className="min-w-0">
-                  <h3 className="text-sm font-semibold">{t.aiConfig.failoverTitle}</h3>
-                  <p className="text-xs text-muted-foreground">{t.aiConfig.failoverDescription}</p>
-                </div>
+                <h3 className="truncate text-sm font-semibold">{t.aiConfig.failoverTitle}</h3>
               </div>
               <Switch
                 id="ai-workbench-fallback-enabled"
@@ -1031,6 +1036,13 @@ export function AIConfigTab() {
                 }
               />
             </div>
+            <Alert className="mb-4 border-border/70 bg-muted/30 py-2.5">
+              <Info className="h-4 w-4 text-primary/70" />
+              <AlertDescription className="text-xs leading-relaxed">
+                <p>{t.aiConfig.failoverDescription}</p>
+                <p>{t.aiConfig.workbenchFallbackProviderHint}</p>
+              </AlertDescription>
+            </Alert>
             <div className="grid gap-1.5">
               <Label className="text-xs">{t.aiConfig.workbenchFallbackProvider}</Label>
               <Select
@@ -1059,9 +1071,6 @@ export function AIConfigTab() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-[11px] text-muted-foreground">
-                {t.aiConfig.workbenchFallbackProviderHint}
-              </p>
             </div>
           </div>
         </section>
