@@ -112,13 +112,21 @@ func validHeaderName(s string) bool {
 	return true
 }
 
-// Alias keeps arbitrary remote names within model function-name limits and
-// prevents collisions with native tools or another external service.
-func Alias(serverID, toolName string) string {
-	sum := sha256.Sum256([]byte(serverID + "\x00" + toolName))
+// AliasLabelLimit is the readable part's byte budget. external_mcp_ + label +
+// _ + 20 hex characters stays well inside the 64-character function-name limit
+// models accept, while leaving room to grow if a provider lowers its limit.
+const AliasLabelLimit = 24
+
+// AliasLabel sanitizes one remote tool name for use inside an alias: every
+// character outside [A-Za-z0-9_-] becomes '_', and the result is truncated to
+// AliasLabelLimit bytes. It is the exact function used by Alias, so callers that
+// accept a human-readable tool name must derive the expected prefix with this
+// function instead of slicing the name themselves — long remote names appear
+// truncated in the alias but still resolve correctly.
+func AliasLabel(toolName string) string {
 	var label strings.Builder
 	for _, c := range toolName {
-		if label.Len() >= 24 {
+		if label.Len() >= AliasLabelLimit {
 			break
 		}
 		if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c == '-' {
@@ -127,7 +135,14 @@ func Alias(serverID, toolName string) string {
 			label.WriteByte('_')
 		}
 	}
-	return fmt.Sprintf("external_mcp_%s_%x", label.String(), sum[:10])
+	return label.String()
+}
+
+// Alias keeps arbitrary remote names within model function-name limits and
+// prevents collisions with native tools or another external service.
+func Alias(serverID, toolName string) string {
+	sum := sha256.Sum256([]byte(serverID + "\x00" + toolName))
+	return fmt.Sprintf("external_mcp_%s_%x", AliasLabel(toolName), sum[:10])
 }
 
 type session struct {

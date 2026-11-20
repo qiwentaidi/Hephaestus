@@ -1,7 +1,12 @@
 package mcphandlers
 
 import (
+	"context"
 	"testing"
+
+	"hephaestus-backend/lib/pentest"
+	"hephaestus-backend/pkg/capabilities"
+	"hephaestus-backend/pkg/mcpclient"
 )
 
 func TestAgentToolVisibilityByRole(t *testing.T) {
@@ -114,4 +119,109 @@ func TestAgentToolCatalogMatchesAICapabilityCatalog(t *testing.T) {
 			t.Fatalf("visibility catalog has an extra tool %q", name)
 		}
 	}
+}
+
+// The per-role binding is the authorization source: a ticked tool is callable as
+// long as it is enabled globally and available, and an unticked one is dropped
+// even if the role had it before (ARTEX parity). There is no separate hard-coded
+// role allowlist any more.
+func TestRoleToolBindingIsTheAuthorizationSource(t *testing.T) {
+	oldAgentRead, oldAgentWrite := agentToolReadSetting, agentToolWriteSetting
+	oldExternalRead, oldExternalWrite := externalMCPReadSetting, externalMCPWriteSetting
+	defer func() {
+		agentToolReadSetting, agentToolWriteSetting = oldAgentRead, oldAgentWrite
+		externalMCPReadSetting, externalMCPWriteSetting = oldExternalRead, oldExternalWrite
+	}()
+	server := mcpclient.Server{
+		ID: "srv-first", Name: "First", Enabled: true,
+		Tools: []mcpclient.Tool{{Name: "miniapp_get_info", Description: "info", InputSchema: map[string]any{"type": "object"}}},
+	}
+	alias := mcpclient.Alias(server.ID, "miniapp_get_info")
+	state := map[string]any{
+		externalMCPSettingKey:  []mcpclient.Server{server},
+		aiToolsSettingKey:      map[string]bool{"nuclei": false},
+		agentToolVisibilityKey: map[string][]string{"planner": {}, "worker": {}, "controller": {}, "pentest": {}},
+	}
+	read := func(key string) (any, error) { return state[key], nil }
+	write := func(key string, value any) error { state[key] = value; return nil }
+	agentToolReadSetting, agentToolWriteSetting = read, write
+	externalMCPReadSetting, externalMCPWriteSetting = read, write
+
+	worker := pentest.AgentLoopConfig{PromptRole: pentest.AgentRoleWorker}
+	if err := RefreshPentestTools(&worker); err != nil {
+		t.Fatal(err)
+	}
+	if !containsName(worker.ToolAllowlist, alias) {
+		t.Fatalf("worker allowlist missing visible MCP tool %q: %v", alias, worker.ToolAllowlist)
+	}
+	if containsName(worker.ToolAllowlist, "nuclei") {
+		t.Fatalf("globally disabled tool must not be granted: %v", worker.ToolAllowlist)
+	}
+	advertised := map[string]bool{}
+	for _, schema := range pentest.BuildAgentToolSchemasForConfig(worker) {
+		advertised[schema.Function.Name] = true
+	}
+	if !advertised[alias] {
+		t.Fatal("worker model was not offered the visible MCP tool")
+	}
+	if advertised["nuclei"] {
+		t.Fatal("globally disabled tool was still advertised")
+	}
+
+	// A planning role can be bound to execution/MCP tools too: the binding, not
+	// the role, decides (ARTEX parity). This is what makes "ticked = usable" true
+	// for every role.
+	planner := pentest.AgentLoopConfig{PromptRole: pentest.AgentRolePlanner}
+	if err := RefreshPentestTools(&planner); err != nil {
+		t.Fatal(err)
+	}
+	if !containsName(planner.ToolAllowlist, alias) || !containsName(planner.ToolAllowlist, "Bash") {
+		t.Fatalf("planner binding was not honored: %v", planner.ToolAllowlist)
+	}
+
+	// Unticking a tool for one role removes it from that role only.
+	state[agentToolVisibilityKey] = map[string][]string{
+		"planner": {alias, "Bash"}, "worker": {}, "controller": {}, "pentest": {},
+	}
+	planner = pentest.AgentLoopConfig{PromptRole: pentest.AgentRolePlanner}
+	if err := RefreshPentestTools(&planner); err != nil {
+		t.Fatal(err)
+	}
+	if containsName(planner.ToolAllowlist, alias) || containsName(planner.ToolAllowlist, "Bash") {
+		t.Fatalf("hidden tools must stay hidden for the planner: %v", planner.ToolAllowlist)
+	}
+	if !containsName(worker.ToolAllowlist, alias) {
+		t.Fatal("hiding a tool for one role changed another role")
+	}
+}
+
+func TestRoleToolAllowlistStaysRestrictiveWhenEverythingIsHidden(t *testing.T) {
+	oldAgentRead, oldAgentWrite := agentToolReadSetting, agentToolWriteSetting
+	oldExternalRead := externalMCPReadSetting
+	defer func() {
+		agentToolReadSetting, agentToolWriteSetting = oldAgentRead, oldAgentWrite
+		externalMCPReadSetting = oldExternalRead
+	}()
+	hidden := append(append([]string{}, pentest.DefaultPentestToolAllowlist()...), "Bash", "nuclei")
+	state := map[string]any{
+		agentToolVisibilityKey: map[string][]string{"planner": hidden, "worker": hidden, "controller": hidden, "pentest": hidden},
+	}
+	read := func(key string) (any, error) { return state[key], nil }
+	write := func(key string, value any) error { state[key] = value; return nil }
+	agentToolReadSetting, agentToolWriteSetting = read, write
+	externalMCPReadSetting = read
+
+	names := capabilities.RoleToolAllowlist(context.Background(), pentest.AgentRoleWorker)
+	if len(names) != 1 || names[0] != capabilities.NoToolsSentinel {
+		t.Fatalf("a fully hidden role must keep only the sentinel: %v", names)
+	}
+}
+
+func containsName(names []string, want string) bool {
+	for _, name := range names {
+		if name == want {
+			return true
+		}
+	}
+	return false
 }

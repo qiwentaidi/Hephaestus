@@ -37,6 +37,19 @@ const (
 // installed by the host MCP layer; nil keeps the default.
 var ToolDisabled func(ctx context.Context, role string) (map[string]bool, bool, error)
 
+// RoleTools, when installed by the host tool registry, returns the tools the
+// visibility matrix grants to one role: global enablement (per-tool switch,
+// external MCP server/tool state, runtime availability) intersected with that
+// role's binding, i.e. the checkboxes on the agent tool visibility sheet. It is
+// the single authorization source for the standalone agent loop; nil keeps the
+// static fallback used by the CLI and package tests.
+var RoleTools func(ctx context.Context, role string) ([]string, error)
+
+// NoToolsSentinel keeps an intentionally empty role binding restrictive: the
+// standalone kernel treats an empty allowlist as "no policy" and would otherwise
+// allow every tool once the operator hides them all.
+const NoToolsSentinel = "__no_enabled_capabilities__"
+
 // NormalizeRole maps engine and standalone role names onto the four agent
 // management roles. An empty role is the standalone dialogue.
 func NormalizeRole(role string) string {
@@ -63,6 +76,57 @@ func DisabledTools(ctx context.Context, role string) map[string]bool {
 		return nil
 	}
 	return disabled
+}
+
+// RoleToolAllowlist returns the tools one role may execute in the standalone
+// agent loop. The role binding is authoritative: whatever the operator ticked
+// for that role, provided the tool is enabled globally and available in this
+// runtime. The result is never empty — NoToolsSentinel keeps the kernel's
+// "empty allowlist means unrestricted" rule from widening a role whose operator
+// hid every tool.
+func RoleToolAllowlist(ctx context.Context, role string) []string {
+	if RoleTools != nil {
+		if names, err := RoleTools(ctx, role); err == nil {
+			out := make([]string, 0, len(names)+1)
+			out = append(out, NoToolsSentinel)
+			return append(out, names...)
+		}
+	}
+	// Host registry not wired (CLI, package tests): keep the historical default
+	// set plus the MCP tools that are visibly enabled.
+	names := append(pentest.DefaultPentestToolAllowlist(), visibleMCPToolNames(ctx, role)...)
+	return append([]string{NoToolsSentinel}, names...)
+}
+
+// visibleMCPToolNames lists the aliases of enabled external MCP tools that the
+// role's visibility policy does not hide. It is the dynamic half of the role
+// tool allowlist.
+func visibleMCPToolNames(ctx context.Context, role string) []string {
+	servers, err := mcptools.LoadServers()
+	if err != nil {
+		return nil
+	}
+	disabled := DisabledTools(ctx, role)
+	seen := make(map[string]bool, len(servers))
+	out := make([]string, 0, len(servers))
+	for _, server := range servers {
+		if !server.Enabled {
+			continue
+		}
+		for _, tool := range server.Tools {
+			if !server.ToolEnabled(tool.Name) {
+				continue
+			}
+			alias := mcpclient.Alias(server.ID, tool.Name)
+			if disabled[alias] || seen[alias] {
+				continue
+			}
+			seen[alias] = true
+			out = append(out, alias)
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 // Host carries the execution context a capability needs. Missing fields are
@@ -125,31 +189,10 @@ var engineNativeTools = map[string]bool{
 	"dns_lookup":                                   true,
 }
 
-// plannerNativeTools are read/discovery capabilities the Planner may use. The
-// Planner must not launch scans itself; that stays with Workers.
-var plannerNativeTools = map[string]bool{
-	"retest_vulnerability":                         true,
-	"subdomain_create_task":                        true,
-	"subdomain_get_task":                           true,
-	"subdomain_list_results":                       true,
-	"space_engine_search":                          true,
-	"waybackurls":                                  true,
-	"attack_surface_get_scan_task":                 true,
-	"attack_surface_list_scan_results":             true,
-	"attack_surface_get_jsscan_overview":           true,
-	"attack_surface_search_jsscan_operations":      true,
-	"attack_surface_search_jsscan_resources":       true,
-	"attack_surface_search_jsscan_vulnerabilities": true,
-	"attack_surface_get_jsscan_evidence":           true,
-	"nuclei_list_templates":                        true,
-	"nuclei_read_template":                         true,
-	"dns_lookup":                                   true,
-}
-
-// Tools returns the capabilities visible to one runtime role. The engine's
-// Planner gets discovery/read tools; Workers and the MainAgent get the full
-// engine set. MCP tools are execution capabilities and are offered to Workers
-// and the MainAgent, not the Planner.
+// Tools returns the capabilities visible to one runtime role: the engine set
+// filtered by the role's visibility binding. Roles differ only through that
+// binding (and their own engine prompts), matching the tool page's per-agent
+// checkboxes.
 func Tools(ctx context.Context, runtime Runtime, agentKey string) []Tool {
 	disabled := DisabledTools(ctx, agentKey)
 	native := nativeTools(agentKey, disabled)
@@ -178,7 +221,6 @@ func OpenTools(ctx context.Context, runtime Runtime, agentKey string) ([]Tool, f
 			_ = client.Close()
 		}
 	}
-	planning := NormalizeRole(agentKey) == "planner" || NormalizeRole(agentKey) == "controller"
 	for _, server := range servers {
 		if !server.Enabled {
 			continue
@@ -194,14 +236,6 @@ func OpenTools(ctx context.Context, runtime Runtime, agentKey string) ([]Tool, f
 			visible = append(visible, remote)
 		}
 		if len(visible) == 0 {
-			continue
-		}
-		if planning {
-			// Planning roles only need the cached names/schemas for deferred
-			// discovery. Do not open a live session they cannot execute through.
-			for _, remote := range visible {
-				out = append(out, mcpTool(server, remote, nil))
-			}
 			continue
 		}
 		client, openErr := mcpclient.Open(ctx, server)
@@ -232,15 +266,12 @@ func mcpTool(server mcpclient.Server, remote mcpclient.Tool, client *mcpclient.C
 }
 
 func nativeTools(agentKey string, disabled map[string]bool) []Tool {
+	_ = agentKey
 	schemas := mcptools.NativeSchemas()
 	out := make([]Tool, 0, len(schemas))
-	role := strings.ToLower(strings.TrimSpace(agentKey))
 	for _, schema := range schemas {
 		name := strings.TrimSpace(schema.Function.Name)
 		if name == "" || !engineNativeTools[name] {
-			continue
-		}
-		if role == "planner" && !plannerNativeTools[name] {
 			continue
 		}
 		if disabled[name] {

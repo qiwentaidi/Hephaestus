@@ -17,6 +17,7 @@ import (
 	"hephaestus-backend/pkg/agentruntime"
 	aipkg "hephaestus-backend/pkg/ai"
 	"hephaestus-backend/pkg/airun"
+	"hephaestus-backend/pkg/capabilities"
 	"hephaestus-backend/pkg/config"
 	"hephaestus-backend/pkg/database"
 	"hephaestus-backend/pkg/logger"
@@ -431,15 +432,12 @@ func executeAIWorkerTurnWithBuilder(parent context.Context, store *pentest.SQLSt
 		cfg.WaitForScan = &pentest.AgentScanWait{}
 		cfg.AsyncScanWait = true
 		switch agentRole.Role {
-		case pentest.AgentRoleController:
-			cfg.PromptRole = pentest.AgentRoleController
-			cfg.ToolAllowlist = pentest.ControllerToolAllowlist()
-		case pentest.AgentRolePlanner:
-			cfg.PromptRole = pentest.AgentRolePlanner
-			cfg.ToolAllowlist = pentest.PlannerToolAllowlist()
-		case pentest.AgentRoleWorker:
-			cfg.PromptRole = pentest.AgentRoleWorker
-			cfg.ToolAllowlist = pentest.WorkerToolAllowlist()
+		case pentest.AgentRoleController, pentest.AgentRolePlanner, pentest.AgentRoleWorker:
+			cfg.PromptRole = agentRole.Role
+			// The role's visibility binding is the authorization source.
+			cfg.ToolAllowlist = capabilities.RoleToolAllowlist(ctx, agentRole.Role)
+		}
+		if agentRole.Role == pentest.AgentRoleWorker {
 			// The controller can inject a correction while this Worker is
 			// running; consume it before the next model request.
 			cfg.PullSteering = func(steerCtx context.Context) []string {

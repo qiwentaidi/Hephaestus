@@ -91,15 +91,14 @@ func TestToolsFiltersNativeByRuntimeAndRole(t *testing.T) {
 		t.Fatal("main agent is missing the reference reader")
 	}
 
+	// Roles differ only through their visibility binding now: with no binding
+	// installed every engine role sees the same engine set, and the tool page
+	// decides what a Planner/Controller may actually hold.
 	planner := toolNames(Tools(context.Background(), RuntimeEngine, "planner"))
-	if !planner["subdomain_create_task"] {
-		t.Fatalf("planner is missing discovery: %v", planner)
-	}
-	if !planner["retest_vulnerability"] {
-		t.Fatal("planner cannot read retest context")
-	}
-	if planner["attack_surface_create_webscan_task"] || planner["nuclei"] || planner["record_vulnerability_retest"] {
-		t.Fatalf("planner must not launch scans: %v", planner)
+	for _, want := range []string{"subdomain_create_task", "attack_surface_create_webscan_task", "nuclei", "retest_vulnerability", "record_vulnerability_retest"} {
+		if !planner[want] {
+			t.Fatalf("planner is missing %s in the unbound engine set: %v", want, planner)
+		}
 	}
 }
 
@@ -253,4 +252,46 @@ func toolNames(tools []Tool) map[string]bool {
 		out[tool.Name] = true
 	}
 	return out
+}
+
+func TestRoleToolAllowlistFallbackBindsVisibleMCPForEveryRole(t *testing.T) {
+	provider := &fakeProvider{servers: []mcpclient.Server{{
+		ID: "srv-first", Name: "First", Enabled: true,
+		Tools: []mcpclient.Tool{
+			{Name: "miniapp_get_info", Description: "info", InputSchema: map[string]any{"type": "object"}},
+			{Name: "hidden_tool", Description: "hidden", InputSchema: map[string]any{"type": "object"}},
+		},
+	}}}
+	mcptools.RegisterServerProvider(provider)
+	previousVisibility := ToolDisabled
+	ToolDisabled = func(_ context.Context, role string) (map[string]bool, bool, error) {
+		return map[string]bool{mcpclient.Alias("srv-first", "hidden_tool"): true}, true, nil
+	}
+	t.Cleanup(func() { ToolDisabled = previousVisibility })
+
+	contains := func(names []string, want string) bool {
+		for _, name := range names {
+			if name == want {
+				return true
+			}
+		}
+		return false
+	}
+	visible := mcpclient.Alias("srv-first", "miniapp_get_info")
+	hidden := mcpclient.Alias("srv-first", "hidden_tool")
+
+	// The fallback (host registry not wired) still honours the per-role binding
+	// and keeps the literal name resolution consistent for every role.
+	for _, role := range []string{pentest.AgentRoleWorker, pentest.AgentRolePlanner, pentest.AgentRoleController, pentest.AgentRolePentest} {
+		names := RoleToolAllowlist(context.Background(), role)
+		if !contains(names, NoToolsSentinel) {
+			t.Fatalf("%s allowlist must stay restrictive without tools", role)
+		}
+		if !contains(names, visible) {
+			t.Fatalf("%s allowlist missing visible MCP tool: %v", role, names)
+		}
+		if contains(names, hidden) {
+			t.Fatalf("%s allowlist kept hidden MCP tool", role)
+		}
+	}
 }

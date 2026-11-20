@@ -16,6 +16,7 @@ import (
 	"hephaestus-backend/lib/pentest"
 	"hephaestus-backend/pkg/agentruntime"
 	aipkg "hephaestus-backend/pkg/ai"
+	"hephaestus-backend/pkg/capabilities"
 	"hephaestus-backend/pkg/database"
 	"hephaestus-backend/pkg/mcptools"
 	"hephaestus-backend/pkg/toolguard"
@@ -197,15 +198,11 @@ func executeWorkerPlatformTool(ctx context.Context, req workerToolRequest) (any,
 	}
 	if role, roleErr := scoped.GetAgentRole(ctx, req.Turn.ConversationID); roleErr == nil {
 		switch role.Role {
-		case pentest.AgentRoleController:
-			cfg.PromptRole = pentest.AgentRoleController
-			cfg.ToolAllowlist = pentest.ControllerToolAllowlist()
-		case pentest.AgentRolePlanner:
-			cfg.PromptRole = pentest.AgentRolePlanner
-			cfg.ToolAllowlist = pentest.PlannerToolAllowlist()
-		case pentest.AgentRoleWorker:
-			cfg.PromptRole = pentest.AgentRoleWorker
-			cfg.ToolAllowlist = pentest.WorkerToolAllowlist()
+		case pentest.AgentRoleController, pentest.AgentRolePlanner, pentest.AgentRoleWorker:
+			cfg.PromptRole = role.Role
+			// Keep the same dynamic MCP binding as the worker turn itself, so a
+			// queued platform tool call is judged by the policy that advertised it.
+			cfg.ToolAllowlist = capabilities.RoleToolAllowlist(ctx, role.Role)
 		}
 	}
 	allowed := false

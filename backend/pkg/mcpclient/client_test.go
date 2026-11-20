@@ -194,3 +194,24 @@ func TestValidate(t *testing.T) {
 		t.Fatal("accepted header injection")
 	}
 }
+
+func TestAliasLabelKeepsLongNamesResolvable(t *testing.T) {
+	long := "miniapp_very_long_tool_name_with_context_data_that_exceeds_the_budget"
+	label := AliasLabel(long)
+	if len(label) != AliasLabelLimit {
+		t.Fatalf("label length = %d, want %d", len(label), AliasLabelLimit)
+	}
+	if !strings.HasPrefix(long, label) {
+		t.Fatalf("label %q is not a prefix of the remote name", label)
+	}
+	alias := Alias("srv-first", long)
+	if len(alias) > 64 || !strings.HasPrefix(alias, "external_mcp_"+label+"_") {
+		t.Fatalf("alias %q (%d chars) is not within the model limit", alias, len(alias))
+	}
+	if AliasLabel("a/b c") != "a_b_c" {
+		t.Fatalf("unsafe characters were not sanitized: %q", AliasLabel("a/b c"))
+	}
+	if len(AliasLabel(long)) != len(label) || AliasLabel(long) != label {
+		t.Fatal("alias label is not deterministic")
+	}
+}

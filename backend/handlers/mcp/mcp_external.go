@@ -3,6 +3,7 @@ package mcphandlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -210,79 +211,36 @@ func SetAIToolsEnabledBulkHandler(c *gin.Context) {
 	c.JSON(200, gin.H{"success": true, "data": gin.H{"updated": len(names)}})
 }
 
+// RefreshPentestTools rebuilds one agent run's tool set from the visibility
+// matrix. The matrix (per-role binding ∩ global enablement ∩ runtime
+// availability) is the single authorization source; there is no separate
+// hard-coded role allowlist any more. See enabledVisibleToolNames.
 func RefreshPentestTools(cfg *pentest.AgentLoopConfig) error {
-	preferences, err := loadAIToolPreferences()
-	if err != nil {
-		return err
-	}
 	servers, err := mcptools.LoadServers()
-	if err != nil {
+	if err != nil && !errors.Is(err, mcptools.ErrNotConfigured) {
 		return err
 	}
-	disabled := capabilities.DisabledTools(context.Background(), cfg.PromptRole)
-	allowed := map[string]bool{}
-	for _, name := range pentest.DefaultPentestToolAllowlist() {
-		allowed[name] = true
-	}
-	for name, enabled := range preferences {
-		allowed[name] = enabled
-	}
-	for name := range disabled {
-		delete(allowed, name)
-	}
-	if !allowed["Bash"] {
-		for _, name := range []string{"Monitor", "shell_open", "shell_send"} {
-			delete(allowed, name)
-		}
-	}
+	allowlist := capabilities.RoleToolAllowlist(context.Background(), cfg.PromptRole)
+	allowed := nameSet(allowlist)
+	cfg.ToolAllowlist = allowlist
 	cfg.NativeTools = mcptools.NativeSchemas()
 	if !mcptools.ConversationHasJSScanAsset(cfg.Conversation.ID) {
 		cfg.NativeTools = mcptools.RemoveJSScanTools(cfg.NativeTools)
 	} else {
 		cfg.NativeTools = mcptools.RemoveJSScanCreateTool(cfg.NativeTools)
 	}
-	if len(disabled) > 0 {
-		filtered := cfg.NativeTools[:0]
-		for _, tool := range cfg.NativeTools {
-			if !disabled[tool.Function.Name] {
-				filtered = append(filtered, tool)
-			}
-		}
-		cfg.NativeTools = filtered
-	}
+	// Only advertise the MCP tools the role actually holds. The allowlist already
+	// covers enabled servers/tools and the per-role binding.
 	for _, tool := range mcptools.ExternalSchemas(servers) {
-		if disabled[tool.Function.Name] {
+		if !allowed[tool.Function.Name] {
 			continue
 		}
 		cfg.NativeTools = append(cfg.NativeTools, tool)
-		allowed[tool.Function.Name] = true
 	}
-	// Empty allowlists mean unrestricted to the standalone kernel.
-	cfg.ToolAllowlist = []string{"__no_enabled_capabilities__"}
-	for name, enabled := range allowed {
-		if enabled {
-			cfg.ToolAllowlist = append(cfg.ToolAllowlist, name)
-		}
-	}
-	// Orchestration roles are intentionally narrower than the default solo
-	// tool set. Refreshing must not widen a planner or worker back to all tools.
-	switch strings.ToLower(strings.TrimSpace(cfg.PromptRole)) {
-	case pentest.AgentRoleController:
-		cfg.ToolAllowlist = pentest.ControllerToolAllowlist()
-	case pentest.AgentRolePlanner:
-		cfg.ToolAllowlist = pentest.PlannerToolAllowlist()
-	case pentest.AgentRoleWorker:
-		cfg.ToolAllowlist = pentest.WorkerToolAllowlist()
-	}
-	if len(disabled) > 0 {
-		filtered := cfg.ToolAllowlist[:0]
-		for _, name := range cfg.ToolAllowlist {
-			if !disabled[name] {
-				filtered = append(filtered, name)
-			}
-		}
-		cfg.ToolAllowlist = filtered
-	}
+	// Native schemas are left unfiltered: BuildAgentToolSchemas applies the
+	// allowlist, and workerNativeToolRunner uses NativeTools only to classify a
+	// name as local/native. Filtering here would silently route a disabled
+	// platform tool to the system runner.
 	return nil
 }
 

@@ -3,6 +3,7 @@ package mcphandlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"sort"
 	"strings"
@@ -37,6 +38,12 @@ func init() {
 	capabilities.ToolDisabled = func(_ context.Context, role string) (map[string]bool, bool, error) {
 		return AgentToolDisabled(role)
 	}
+	// The per-role binding (the checkboxes on the visibility sheet) is the
+	// authorization source for the standalone agent loop: a tool bound to a role
+	// is callable once it is enabled globally and available in this runtime.
+	capabilities.RoleTools = func(ctx context.Context, role string) ([]string, error) {
+		return enabledVisibleToolNames(ctx, role)
+	}
 }
 
 type agentTool struct {
@@ -45,8 +52,13 @@ type agentTool struct {
 	Description string `json:"description"`
 	Source      string `json:"source"`
 	Enabled     bool   `json:"enabled"`
-	ServerID    string `json:"serverId,omitempty"`
-	ServerName  string `json:"serverName,omitempty"`
+	// Available mirrors the runtime feature gate (background tasks / interactive
+	// shell). A tool that is enabled but unavailable in this build cannot be
+	// granted, so the sheet renders it disabled instead of letting the operator
+	// tick a binding that would never take effect.
+	Available  bool   `json:"available"`
+	ServerID   string `json:"serverId,omitempty"`
+	ServerName string `json:"serverName,omitempty"`
 }
 
 func loadAgentToolVisibility() (map[string][]string, error) {
@@ -154,8 +166,83 @@ func nameSet(names []string) map[string]bool {
 	return out
 }
 
+// enabledVisibleToolNames is the single authorization source for the standalone
+// agent loop. A tool is granted to a role when all of the following hold:
+//   - it is enabled globally (AI capability switch for built-ins, server + tool
+//     switches for external MCP);
+//   - it is available in this runtime (background tasks / interactive shell);
+//   - the role's binding does not hide it (the per-role checkboxes).
+//
+// The code-seeded binding (defaultRoleBinding) keeps the historical
+// least-privilege defaults, so an upgrade does not silently widen a role; after
+// that only the operator's binding decides.
+func enabledVisibleToolNames(ctx context.Context, role string) ([]string, error) {
+	disabled, _, err := AgentToolDisabled(role)
+	if err != nil {
+		// A settings read failure must not silently freeze a role's toolset:
+		// keep the global enablement half and treat the binding as open, matching
+		// DisabledTools' own degrade-to-unrestricted behaviour.
+		disabled = map[string]bool{}
+	}
+	preferences, err := loadAIToolPreferences()
+	if err != nil {
+		return nil, err
+	}
+	allowed := nameSet(pentest.DefaultPentestToolAllowlist())
+	for name, enabled := range preferences {
+		if enabled {
+			allowed[name] = true
+			continue
+		}
+		delete(allowed, name)
+	}
+	// The AI capability page keeps the command carriers behind the Bash switch.
+	if !allowed["Bash"] {
+		for _, name := range []string{"Monitor", "shell_open", "shell_send"} {
+			delete(allowed, name)
+		}
+	}
+	for name := range disabled {
+		delete(allowed, name)
+	}
+	for name := range allowed {
+		if !toolruntime.Available(name) {
+			delete(allowed, name)
+		}
+	}
+	// External MCP tools are bound per role exactly like built-ins. Server and
+	// per-tool switches are the global half of the decision.
+	servers, err := mcptools.LoadServers()
+	if err != nil && !errors.Is(err, mcptools.ErrNotConfigured) {
+		return nil, err
+	}
+	for _, server := range servers {
+		if !server.Enabled {
+			continue
+		}
+		for _, tool := range server.Tools {
+			if !server.ToolEnabled(tool.Name) {
+				continue
+			}
+			alias := mcpclient.Alias(server.ID, tool.Name)
+			if disabled[alias] {
+				continue
+			}
+			allowed[alias] = true
+		}
+	}
+	names := make([]string, 0, len(allowed))
+	for name := range allowed {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names, nil
+}
+
 // planningOnlyTools belong to planning, steering, or goal management. Workers
-// should execute assigned intent, not create new directions.
+// should execute assigned intent, not create new directions. The engine's own
+// base tools reuse these names, so treating them as role-boundary defaults keeps
+// the engine's planner/worker sets intact until an operator re-binds them.
 var planningOnlyTools = map[string]bool{
 	"add_intent": true, "update_intent": true, "get_exploration_graph": true,
 	"expand_digest": true, "update_exploration_goal": true, "update_goal_progress": true,
@@ -180,9 +267,13 @@ func isExecutionTool(name string) bool {
 	return strings.HasPrefix(name, "jwt_")
 }
 
-// defaultRoleAllows is the built-in least-privilege policy. It applies until an
-// explicit role policy is saved; the sheet materializes it on first open.
+// defaultRoleAllows is the code-seeded binding a role starts from — the
+// equivalent of ARTEX's built-in tool seeding. It applies only until an operator
+// saves the visibility sheet; afterwards the stored binding is authoritative and
+// can add or drop any tool the runtime can host.
 func defaultRoleAllows(role string, tool agentTool) bool {
+	// External MCP stays opt-in for every role: enabling a server must never
+	// silently widen every agent's toolset.
 	if tool.Source == "mcp" {
 		return false
 	}
@@ -238,6 +329,7 @@ func agentToolCatalog() ([]agentTool, error) {
 			return
 		}
 		seen[tool.Name] = true
+		tool.Available = toolruntime.Available(tool.Name)
 		items = append(items, tool)
 	}
 	// Match the AI capability page: JSScan tools are only exposed to a dialogue
