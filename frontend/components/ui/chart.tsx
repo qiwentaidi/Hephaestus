@@ -102,7 +102,10 @@ function ChartContainer({
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer>
+        {/* Recharts 3 首帧尺寸为 -1，先用正数占位，避免 width(-1) 控制台告警 */}
+        <RechartsPrimitive.ResponsiveContainer
+          initialDimension={{ width: 1, height: 1 }}
+        >
           {children}
         </RechartsPrimitive.ResponsiveContainer>
       </div>

@@ -62,6 +62,12 @@ import {
   Bar,
 } from "recharts";
 
+// 图表容器高度同时用于外层 div 和 ResponsiveContainer。Recharts 3 在首次渲染时
+// 尺寸还是 -1，只给百分比宽高会触发 "width(-1) and height(-1)" 告警。
+const VULN_TREND_CHART_HEIGHT = 220;
+const TOKEN_USAGE_CHART_HEIGHT = 200;
+const SYSTEM_METRIC_SPARKLINE_HEIGHT = 70;
+
 type SystemStatsSnapshot = {
   cpu: number;
   mem: number;
@@ -1829,7 +1835,7 @@ export default function DashboardPage() {
                 dayLabel={t.dashboard.vulnTrend.days}
               />
             </div>
-            <div className="h-[220px]">
+            <div style={{ height: VULN_TREND_CHART_HEIGHT }}>
               {trendLoading ? (
                 <div className="h-full flex items-center justify-center">
                   <div className="flex flex-col items-center gap-3">
@@ -1853,7 +1859,10 @@ export default function DashboardPage() {
                   </div>
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer
+                  width="100%"
+                  height={VULN_TREND_CHART_HEIGHT}
+                >
                   <AreaChart
                     data={trendData}
                     margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
@@ -2161,7 +2170,10 @@ export default function DashboardPage() {
                   ) : null}
                 </div>
               </div>
-              <div className="h-[200px] min-h-0 w-full text-muted-foreground">
+              <div
+                className="min-h-0 w-full text-muted-foreground"
+                style={{ height: TOKEN_USAGE_CHART_HEIGHT }}
+              >
                 {tokenUsageLoading ? (
                   <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
                     {t.dashboard.tokenUsage.loading}
@@ -2171,7 +2183,10 @@ export default function DashboardPage() {
                     {t.dashboard.tokenUsage.noData}
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer
+                    width="100%"
+                    height={TOKEN_USAGE_CHART_HEIGHT}
+                  >
                     <BarChart
                       data={tokenUsageSummary.chartData}
                       margin={{ top: 8, right: 4, left: 0, bottom: 0 }}
@@ -2341,8 +2356,14 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    <div className="h-[70px] overflow-hidden rounded-[18px] bg-muted/40 dark:bg-muted/30">
-                      <ResponsiveContainer width="100%" height="100%">
+                    <div
+                      className="overflow-hidden rounded-[18px] bg-muted/40 dark:bg-muted/30"
+                      style={{ height: SYSTEM_METRIC_SPARKLINE_HEIGHT }}
+                    >
+                      <ResponsiveContainer
+                        width="100%"
+                        height={SYSTEM_METRIC_SPARKLINE_HEIGHT}
+                      >
                         <AreaChart
                           data={metric.history}
                           margin={{ top: 10, right: 0, left: 0, bottom: 2 }}

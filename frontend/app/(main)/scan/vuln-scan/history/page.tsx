@@ -30,6 +30,10 @@ import { ScanType } from '../types'
 import { useI18n } from '@/lib/i18n'
 import { getStatusBadge } from '@/lib/status-badge'
 
+// 图表高度同时用于外层 div 和 ResponsiveContainer：Recharts 3 首帧尺寸为 -1，
+// 只传百分比宽高会触发 "width(-1) and height(-1)" 告警。
+const TREND_CHART_HEIGHT = 200
+
 interface ScanVersion {
   version: number
   status: string
@@ -478,8 +482,8 @@ export default function ScanHistoryClient() {
                 <TrendingUp className="w-5 h-5 text-primary" />
                 <h2 className="text-lg font-semibold">{t.vulnScan.history.trendTitle}</h2>
               </div>
-              <div className="h-[200px]">
-                <ResponsiveContainer width="100%" height="100%">
+              <div style={{ height: TREND_CHART_HEIGHT }}>
+                <ResponsiveContainer width="100%" height={TREND_CHART_HEIGHT}>
                   <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="historyTrendBlue" x1="0" y1="0" x2="0" y2="1">
