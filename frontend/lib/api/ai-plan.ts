@@ -146,10 +146,28 @@ export async function createAIPlanRun(payload: CreateAIPlanRunRequest): Promise<
   return parse<AIPlanRunDetail>(response)
 }
 
-export async function listAIPlanRuns(params: { projectId?: string } = {}): Promise<{ items: AIPlanRunListItem[] }> {
-  const query = params.projectId ? `?projectId=${encodeURIComponent(params.projectId)}` : ''
-  const response = await fetchWithAuth(`/api/v1/ai/plan-runs${query}`, { cache: 'no-store' })
-  return parse<{ items: AIPlanRunListItem[] }>(response)
+export interface AIPlanRunPage {
+  items: AIPlanRunListItem[]
+  total: number
+  page: number
+  pageSize: number
+  hasMore: boolean
+}
+
+export async function listAIPlanRuns(params: { projectId?: string; page?: number; pageSize?: number } = {}): Promise<AIPlanRunPage> {
+  const query = new URLSearchParams()
+  if (params.projectId) query.set('projectId', params.projectId)
+  if (params.page) query.set('page', String(params.page))
+  if (params.pageSize) query.set('pageSize', String(params.pageSize))
+  const suffix = query.toString()
+  const response = await fetchWithAuth(`/api/v1/ai/plan-runs${suffix ? `?${suffix}` : ''}`, { cache: 'no-store' })
+  const data = await parse<Partial<AIPlanRunPage>>(response)
+  const items = Array.isArray(data.items) ? data.items : []
+  // Older servers omit paging metadata; treat the response as one complete page.
+  const pageSize = typeof data.pageSize === 'number' && data.pageSize > 0 ? data.pageSize : items.length || params.pageSize || 1
+  const page = typeof data.page === 'number' && data.page > 0 ? data.page : params.page || 1
+  const total = typeof data.total === 'number' && data.total >= items.length ? data.total : items.length
+  return { items, total, page, pageSize, hasMore: typeof data.hasMore === 'boolean' ? data.hasMore : false }
 }
 
 export async function listAIPlanRunSummaries(search = '', signal?: AbortSignal): Promise<AIPlanRunSummary[]> {

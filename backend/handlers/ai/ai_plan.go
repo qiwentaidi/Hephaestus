@@ -156,12 +156,17 @@ func ListAIPlanRunsHandler(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{"items": items}})
 		return
 	}
-	var runs []pentest.PlanRun
-	if projectID != "" {
-		runs, err = store.ListPlanRunsByProject(ctx, projectID, 100)
-	} else {
-		runs, err = store.ListPlanRuns(ctx, 100)
+	// Runs are newest-first and paged so long-running projects can reach every
+	// run instead of only the newest API window.
+	page := max(queryInt(c, "page", 1), 1)
+	pageSize := min(max(queryInt(c, "pageSize", 20), 1), 100)
+	offset := (page - 1) * pageSize
+	total, err := store.CountPlanRuns(ctx, projectID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
+		return
 	}
+	runs, err := store.ListPlanRunsPage(ctx, projectID, pageSize, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
 		return
@@ -175,7 +180,13 @@ func ListAIPlanRunsHandler(c *gin.Context) {
 		}
 		items = append(items, map[string]any{"run": run, "project": planProjectDTO(project), "items": runItems, "sourceTaskIds": planRunSourceTaskIDs(ctx, run.ID)})
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{"items": items}})
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{
+		"items":    items,
+		"total":    total,
+		"page":     page,
+		"pageSize": pageSize,
+		"hasMore":  offset+len(items) < total,
+	}})
 }
 
 // ListAIPlanItemRowsHandler reads the background projection without requesting

@@ -55,6 +55,19 @@ test('task management unifies batch and orchestration tasks', () => {
   assert.match(detail, /PlanStatusBadge/)
 })
 
+test('orchestration runs page through every run from the server', () => {
+  const project = read('app/(main)/ai/workbench/project/components/PlanWorkspace.tsx')
+  const api = read('lib/api/ai-plan.ts')
+  const page = read('app/(main)/ai/workbench/project/ProjectClient.tsx')
+  assert.match(api, /page\?: number; pageSize\?: number/)
+  assert.match(api, /hasMore/)
+  assert.match(project, /PaginationPro/)
+  assert.match(project, /listAIPlanRuns\(\{ projectId, page: requestedPage, pageSize: requestedPageSize \}\)/)
+  assert.match(project, /pageSizeOptions=\{\[10, 20, 50\]\}/)
+  // The board snapshot warning belongs to the overview/graph tabs only.
+  assert.match(page, /tab === 'overview' \|\| tab === 'graph'/)
+})
+
 test('evidence index pages every fact and finding from the server', () => {
   const evidence = read('app/(main)/ai/workbench/project/components/EvidenceWorkspace.tsx')
   const page = read('app/(main)/ai/workbench/project/ProjectClient.tsx')

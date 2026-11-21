@@ -2,12 +2,13 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowUpRight, GitBranch, ListTodo, RefreshCw, UserRoundCog } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { PlanStatusBadge } from '@/components/plan-status-badge'
 import { Button } from '@/components/ui/button'
+import { PaginationPro } from '@/components/ui/pagination-pro'
 import { Spinner } from '@/components/ui/spinner'
 import {
   cancelAIPlanRun,
@@ -34,16 +35,23 @@ function itemSummary(item: AIPlanItem, empty: string) {
   return <span className="text-muted-foreground">{empty}</span>
 }
 
+const PLAN_PAGE_SIZE = 10
+
 export function PlanWorkspace({ projectId }: { projectId: string }) {
   const { t, language } = useI18n()
   const text = t.aiPlan
   const router = useRouter()
   const locale = language === 'zh' ? 'zh-CN' : 'en-US'
   const [runs, setRuns] = useState<AIPlanRunListItem[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(PLAN_PAGE_SIZE)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [openingControllerId, setOpeningControllerId] = useState('')
   const [error, setError] = useState('')
+  const pageRef = useRef(1), pageSizeRef = useRef(PLAN_PAGE_SIZE)
+  const requestRef = useRef(0), firstLoad = useRef(true)
 
   const openController = useCallback(async (run: AIPlanRunListItem['run']) => {
     setOpeningControllerId(run.id)
@@ -64,28 +72,55 @@ export function PlanWorkspace({ projectId }: { projectId: string }) {
 
   const load = useCallback(async (quiet = false) => {
     if (!projectId) return
+    const generation = ++requestRef.current
+    const requestedPage = pageRef.current, requestedPageSize = pageSizeRef.current
     if (quiet) setRefreshing(true)
     else setLoading(true)
     try {
-      const data = await listAIPlanRuns({ projectId })
-      setRuns(data.items || [])
+      const data = await listAIPlanRuns({ projectId, page: requestedPage, pageSize: requestedPageSize })
+      if (generation !== requestRef.current) return
+      setTotal(data.total)
+      const lastPage = Math.max(1, Math.ceil(data.total / Math.max(1, data.pageSize)))
+      if (requestedPage > lastPage) {
+        // Runs deleted elsewhere can shrink the list under the current page.
+        pageRef.current = lastPage
+        setPage(lastPage)
+        return
+      }
+      pageSizeRef.current = data.pageSize
+      setPageSize(data.pageSize)
+      setRuns(data.items)
       setError('')
     } catch (err) {
-      setError(err instanceof Error ? err.message : text.loadFailed)
+      if (generation === requestRef.current) setError(err instanceof Error ? err.message : text.loadFailed)
     } finally {
-      setLoading(false)
-      setRefreshing(false)
+      if (generation === requestRef.current) {
+        setLoading(false)
+        setRefreshing(false)
+      }
     }
   }, [projectId, text.loadFailed])
 
   useEffect(() => {
-    const initial = window.setTimeout(() => { void load() }, 0)
-    const timer = window.setInterval(() => { void load(true) }, 5000)
-    return () => {
-      window.clearTimeout(initial)
-      window.clearInterval(timer)
-    }
+    pageRef.current = page
+    pageSizeRef.current = pageSize
+    void load(!firstLoad.current)
+    firstLoad.current = false
+  }, [load, page, pageSize])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (!document.hidden) void load(true)
+    }, 5000)
+    return () => window.clearInterval(timer)
   }, [load])
+
+  const changePage = (nextPage: number, nextPageSize: number) => {
+    pageRef.current = nextPage
+    pageSizeRef.current = nextPageSize
+    setPage(nextPage)
+    setPageSize(nextPageSize)
+  }
 
   const active = runs.some((item) => item.run.status === 'planning' || item.run.status === 'waiting')
 
@@ -212,6 +247,19 @@ export function PlanWorkspace({ projectId }: { projectId: string }) {
           })}
         </div>
       )}
+      {total > 0 ? (
+        <div className="mt-4 border-t pt-4">
+          <PaginationPro
+            current={page}
+            total={total}
+            pageSize={pageSize}
+            onChange={changePage}
+            pageSizeOptions={[10, 20, 50]}
+            disabled={refreshing}
+            className="text-muted-foreground"
+          />
+        </div>
+      ) : null}
       {active ? <p className="mt-3 text-xs text-muted-foreground">{text.liveHint}</p> : null}
     </div>
   )
