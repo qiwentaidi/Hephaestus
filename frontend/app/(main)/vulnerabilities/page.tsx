@@ -108,6 +108,7 @@ const statuses: AIWorkbenchFindingStatus[] = [
   'in_progress',
   'fixed',
   'false_positive',
+  'duplicate',
   'ignored',
 ]
 const sources = ['all', 'ai', 'web', 'js'] as const

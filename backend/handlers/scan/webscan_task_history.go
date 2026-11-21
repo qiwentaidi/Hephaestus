@@ -611,7 +611,7 @@ type updateVulnerabilityDisposalStatusRequest struct {
 func normalizeVulnerabilityDisposalStatus(raw string) (string, bool) {
 	status := strings.ToLower(strings.TrimSpace(raw))
 	switch status {
-	case "open", "in_progress", "fixed", "false_positive", "ignored":
+	case "open", "in_progress", "fixed", "false_positive", "duplicate", "ignored":
 		return status, true
 	default:
 		return "", false
@@ -633,7 +633,7 @@ func UpdateVulnerabilityDisposalStatusHandler(c *gin.Context) {
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"error":   "处置状态无效，仅支持: open, in_progress, fixed, false_positive, ignored",
+			"error":   "处置状态无效，仅支持: open, in_progress, fixed, false_positive, duplicate, ignored",
 		})
 		return
 	}

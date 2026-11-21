@@ -5,6 +5,7 @@ const vulnerabilityDisposition = {
   in_progress: "In Progress",
   fixed: "Fixed",
   false_positive: "False Positive",
+  duplicate: "Duplicate",
   ignored: "Ignored",
 }
 
@@ -57,6 +58,7 @@ export const en: Locale = {
     confirmed: vulnerabilityDisposition.in_progress,
     fixed: vulnerabilityDisposition.fixed,
     falsePositive: vulnerabilityDisposition.false_positive,
+    duplicate: vulnerabilityDisposition.duplicate,
     acceptedRisk: vulnerabilityDisposition.ignored,
     allQueues: "All queues",
     unreviewed: "Not reviewed",
@@ -5324,6 +5326,7 @@ export const en: Locale = {
       statusInProgress: vulnerabilityDisposition.in_progress,
       statusFixed: vulnerabilityDisposition.fixed,
       statusFalsePositive: vulnerabilityDisposition.false_positive,
+      statusDuplicate: vulnerabilityDisposition.duplicate,
       statusIgnored: vulnerabilityDisposition.ignored,
       principleDetection: "Principle",
       actualExploit: "Actual",

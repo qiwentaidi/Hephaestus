@@ -27,6 +27,7 @@ const (
 	StatusInProgress    = "in_progress"
 	StatusFixed         = "fixed"
 	StatusFalsePositive = "false_positive"
+	StatusDuplicate     = "duplicate"
 	StatusIgnored       = "ignored"
 	StatusAcceptedRisk  = "accepted_risk"
 
@@ -102,6 +103,8 @@ func NormalizeStatus(value string) string {
 		return StatusFixed
 	case "false_positive", "false-positive", "误报":
 		return StatusFalsePositive
+	case "duplicate", "重复":
+		return StatusDuplicate
 	case "ignored", "已忽略":
 		return StatusIgnored
 	case "accepted_risk", "accepted", "已接受":

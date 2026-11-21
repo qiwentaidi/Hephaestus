@@ -42,7 +42,7 @@ const copy = {
   },
 }
 type Labels = typeof copy.zh
-const dispositionStatuses: AIWorkbenchFindingStatus[] = ['open', 'in_progress', 'fixed', 'false_positive', 'ignored']
+const dispositionStatuses: AIWorkbenchFindingStatus[] = ['open', 'in_progress', 'fixed', 'false_positive', 'duplicate', 'ignored']
 function normalizedStatus(value: string): AIWorkbenchFindingStatus { return (value === 'confirmed' ? 'in_progress' : value === 'accepted_risk' ? 'ignored' : value) as AIWorkbenchFindingStatus }
 function CopyButton({ value, label, l }: { value: string; label?: string; l: Labels }) {
   const [copied, setCopied] = useState(false)

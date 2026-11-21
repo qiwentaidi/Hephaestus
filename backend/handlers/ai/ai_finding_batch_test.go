@@ -70,7 +70,7 @@ func TestBatchDispositionValidation(t *testing.T) {
 			t.Fatalf("invalid input accepted: %+v", input)
 		}
 	}
-	for _, status := range []string{"false_positive", "ignored", "fixed", "in_progress"} {
+	for _, status := range []string{"false_positive", "duplicate", "ignored", "fixed", "in_progress"} {
 		input := findingDispositionRequest{FindingIDs: []string{"id"}, Status: status}
 		if err := validateFindingDisposition(&input); err != nil {
 			t.Fatalf("status %s should be accepted without a note: %v", status, err)

@@ -54,7 +54,7 @@ func UpdateAIPentestFindingStatusHandler(c *gin.Context) {
 		return
 	}
 	switch input.Status {
-	case "open", "in_progress", "confirmed", "fixed", "false_positive", "ignored", "accepted_risk":
+	case "open", "in_progress", "confirmed", "fixed", "false_positive", "duplicate", "ignored", "accepted_risk":
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid finding status"})
 		return

@@ -14,6 +14,7 @@ export function getFindingLabels(l: FindingMessages): {
     status: {
       open: l.open, in_progress: l.confirmed, confirmed: l.confirmed,
       fixed: l.fixed, false_positive: l.falsePositive,
+      duplicate: l.duplicate,
       ignored: l.acceptedRisk, accepted_risk: l.acceptedRisk,
     },
     reviewQueue: {

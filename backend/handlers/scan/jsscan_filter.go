@@ -243,6 +243,8 @@ func normalizeJSVulnDisposalStatus(raw string) string {
 		return "fixed"
 	case "误报":
 		return "false_positive"
+	case "重复":
+		return "duplicate"
 	case "已忽略":
 		return "ignored"
 	default:
@@ -359,7 +361,7 @@ func parseVulnerabilityAndFilterExpression(raw string) (vulnerabilityFilterExpre
 			}
 			normalized := normalizeJSVulnDisposalStatus(valueRaw)
 			if normalized == "" {
-				return result, fmt.Errorf("字段 %s 仅支持 open/in_progress/fixed/false_positive/ignored", field)
+				return result, fmt.Errorf("字段 %s 仅支持 open/in_progress/fixed/false_positive/duplicate/ignored", field)
 			}
 			result.DisposalStatus = normalized
 		case "vuln.method":

@@ -41,7 +41,7 @@ func UpdateAIPentestFindingStatusesHandler(c *gin.Context) {
 
 func validateFindingDisposition(input *findingDispositionRequest) error {
 	switch input.Status {
-	case "open", "in_progress", "fixed", "false_positive", "ignored":
+	case "open", "in_progress", "fixed", "false_positive", "duplicate", "ignored":
 	default:
 		return errors.New("无效的处置状态")
 	}

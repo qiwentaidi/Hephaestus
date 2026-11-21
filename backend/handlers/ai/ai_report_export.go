@@ -642,7 +642,7 @@ func writePentestFindingRiskOverview(b *strings.Builder, findings []pentest.Find
 	b.WriteString("\n**按状态**\n\n")
 	b.WriteString("| 状态 | 数量 |\n| --- | ---: |\n")
 	written := make(map[string]bool)
-	for _, status := range []string{"open", "in_progress", "confirmed", "fixed", "false_positive", "accepted_risk", "ignored", "未记录"} {
+	for _, status := range []string{"open", "in_progress", "confirmed", "fixed", "false_positive", "duplicate", "accepted_risk", "ignored", "未记录"} {
 		if count := statusCounts[status]; count > 0 {
 			b.WriteString(fmt.Sprintf("| %s | %d |\n", reportMarkdownCell(status), count))
 			written[status] = true

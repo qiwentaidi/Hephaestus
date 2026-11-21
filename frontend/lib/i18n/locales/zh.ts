@@ -3,6 +3,7 @@ const vulnerabilityDisposition = {
   in_progress: "跟进中",
   fixed: "已修复",
   false_positive: "误报",
+  duplicate: "重复",
   ignored: "已忽略",
 }
 
@@ -55,6 +56,7 @@ export const zh = {
     confirmed: vulnerabilityDisposition.in_progress,
     fixed: vulnerabilityDisposition.fixed,
     falsePositive: vulnerabilityDisposition.false_positive,
+    duplicate: vulnerabilityDisposition.duplicate,
     acceptedRisk: vulnerabilityDisposition.ignored,
     allQueues: "全部队列",
     unreviewed: "未复核",
@@ -5198,6 +5200,7 @@ export const zh = {
       statusInProgress: vulnerabilityDisposition.in_progress,
       statusFixed: vulnerabilityDisposition.fixed,
       statusFalsePositive: vulnerabilityDisposition.false_positive,
+      statusDuplicate: vulnerabilityDisposition.duplicate,
       statusIgnored: vulnerabilityDisposition.ignored,
       principleDetection: "原理检测",
       actualExploit: "漏洞利用",

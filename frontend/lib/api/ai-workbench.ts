@@ -686,7 +686,7 @@ export interface AIWorkbenchFindingLineage {
   truncated: boolean
 }
 
-export type AIWorkbenchFindingStatus = 'open' | 'in_progress' | 'fixed' | 'false_positive' | 'ignored'
+export type AIWorkbenchFindingStatus = 'open' | 'in_progress' | 'fixed' | 'false_positive' | 'duplicate' | 'ignored'
 
 export interface AIWorkbenchFindingBatchStatusFailure {
   findingId: string

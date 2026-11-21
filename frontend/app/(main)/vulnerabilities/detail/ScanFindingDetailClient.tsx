@@ -53,7 +53,7 @@ const copy = {
     noEvidence: 'No request or response was saved for this record.', high: 'High', medium: 'Medium', low: 'Low',
   },
 }
-const dispositions: AIWorkbenchFindingStatus[] = ['open', 'in_progress', 'fixed', 'false_positive', 'ignored']
+const dispositions: AIWorkbenchFindingStatus[] = ['open', 'in_progress', 'fixed', 'false_positive', 'duplicate', 'ignored']
 type Detail = { source: 'web'; record: VulnerabilityInfo } | { source: 'js'; record: JsScanVulnerability }
 
 export default function ScanFindingDetailClient() {

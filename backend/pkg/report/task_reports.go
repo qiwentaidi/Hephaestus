@@ -131,6 +131,8 @@ func disposalStatusLabel(status string) string {
 		return "已修复"
 	case "false_positive":
 		return "误报"
+	case "duplicate":
+		return "重复"
 	case "ignored":
 		return "已忽略"
 	default:

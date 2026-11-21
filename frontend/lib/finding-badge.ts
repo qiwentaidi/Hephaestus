@@ -23,6 +23,7 @@ export function findingStatusBadgeClassName(status: string): string {
     case 'fixed':
       return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
     case 'false_positive':
+    case 'duplicate':
     case 'ignored':
     case 'accepted_risk':
       return 'border-border bg-muted/70 text-muted-foreground'
