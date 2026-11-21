@@ -20,7 +20,7 @@
 ./scripts/build-desktop-release.sh --target linux --arch amd64        # Linux runner 上的任务
 ```
 
-Linux 包始终在 `Dockerfile.linux-cross` 镜像内构建，保证与本地发版相同的 Debian bookworm glibc 下限。压缩包由 `release_zip.py` 生成，保证所有平台的产物都是单一顶层条目、没有 `__MACOSX` 元数据。
+Linux 包始终在 `Dockerfile.linux-cross`（Ubuntu 24.04）镜像内构建，保证与本地发版一致的 GTK 4.14 / WebKitGTK 6.0 依赖。压缩包由 `release_zip.py` 生成，保证所有平台的产物都是单一顶层条目、没有 `__MACOSX` 元数据。
 
 Web 与 Agent 构建支持 `help`、`current`、`all` 等命令；Agent 发布支持 `--help`、`--check`、`--version`、`--notes-file`。例如：
 

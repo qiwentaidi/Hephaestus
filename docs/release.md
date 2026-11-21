@@ -43,7 +43,7 @@ CI 只负责产出 Release，不再写官网记录。手动补写时 `publish_we
 | --- | --- | --- |
 | `prepare` | ubuntu-24.04 | 校验 tag 格式与版本常量，输出 `version` |
 | `macos` | macos-14 | Web darwin 两个 zip + 桌面端两个 dmg（签名、公证）+ 桌面端 Windows zip（mingw 交叉编译） |
-| `linux` ×2 | ubuntu-24.04 / ubuntu-24.04-arm | 每台产出 Web 与桌面端各一个 zip；桌面端在 `Dockerfile.linux-cross` 内构建，保持 bookworm 的 glibc 下限 |
+| `linux` ×2 | ubuntu-24.04 / ubuntu-24.04-arm | 每台产出 Web 与桌面端各一个 zip；桌面端在 `Dockerfile.linux-cross`（Ubuntu 24.04 镜像）内构建，因为 Wails v3 的 GTK4 后端要求 GTK 4.10+ |
 | `windows` | ubuntu-24.04 | Web Windows zip（`CGO_ENABLED=0` 交叉编译） |
 | `publish` | ubuntu-24.04 | 复用 `publish-release.yml`：取回产物 → 拍平路径 → 校验 10 个文件名 → 写 `SHA256SUMS` → 发布 GitHub Release |
 
@@ -107,6 +107,6 @@ curl -X POST "$WEBSITE_API_BASE/api/releases/<旧版本 id>/set-latest" \
 
 - Gitee 已停止作为下载源（单附件 100MB、每仓库附件总量 1GB 的免费配额本来也放不下 330MB 的版本包），官网与客户端更新记录只保留 GitHub 链接。
 - 官网后端目前不保存 sha256（`POST /api/releases` 会接收但未落库），校验和只在 Release 的 `SHA256SUMS` 里。
-- Web 的 Linux 产物在 `golang:1.26-alpine` 里以 `-linkmode external -extldflags '-static'` 链接，是静态二进制，不依赖发行版 glibc；桌面端 Linux 产物在 bookworm 内动态链接，实测最高只要求 `GLIBC_2.34`（Ubuntu 22.04 及以上可运行）。所以两者都必须继续在 Docker 镜像内构建，改用 runner 原生构建会把下限推到 2.39。
+- Web 的 Linux 产物在 `golang:1.26-alpine` 里以 `-linkmode external -extldflags '-static'` 链接，是静态二进制，不依赖发行版 glibc；桌面端 Linux 产物在 Ubuntu 24.04 镜像（`Dockerfile.linux-cross`）内动态链接，因为 Wails v3 的 GTK4 后端直接调用 GTK 4.10+ 的 `GtkFileDialog`，Debian 12 的 GTK 4.8 编不过。产物动态依赖 `libgtk-4.so.1`、`libwebkitgtk-6.0.so.4`、`libsoup-3.0.so.0`，所以桌面端的最低系统是安装了 GTK 4.10+ 与 WebKitGTK 6.0 的 Ubuntu 24.04 / Debian 13 及以上（Ubuntu 22.04、Debian 12 都不满足；需要旧系统时用 `-tags gtk3` 另出 GTK3 版本）。实测二进制的 glibc 符号上限仍是 `GLIBC_2.34`，桌面端下限由 GTK/WebKitGTK 而不是 glibc 决定。两者都必须继续在 Docker 镜像内构建，不要在 runner 上原生构建。
 - 桌面端 Windows 产物用 mingw 在 macOS runner 上交叉编译，因为 `gopacket/pcap` 需要 CGO + libpcap；Windows runner 上的原生 CGO 构建需要 Npcap SDK，暂未启用。
 - macOS 的 Web 二进制必须链接系统的 `/usr/lib/libpcap.A.dylib`（由 dyld 共享缓存提供）。`scripts/build.sh` 会用 `CGO_LDFLAGS=-L$(xcrun --sdk macosx --show-sdk-path)/usr/lib` 固定链接目标，并在打包前用 `otool -L` 校验；一旦链接到 `/opt/homebrew` 或 `/opt/local`，构建直接失败，避免发出在用户机器上起不来的包。

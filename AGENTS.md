@@ -22,7 +22,7 @@ Web and Desktop ship from one tag and one release; see [docs/release.md](docs/re
 
 - Keep `Version` and `DesktopVersion` in `backend/pkg/version/version.go` identical; the release tag must equal both constants or the `prepare` job fails.
 - Build through `scripts/build.sh` and `scripts/build-desktop-release.sh` only. Do not duplicate build steps in workflow YAML; CI and local releases must stay byte-comparable and produce the same file names.
-- Build Linux artifacts inside the Docker images so the published binaries keep the Debian bookworm glibc floor.
+- Build Linux artifacts inside the Docker images so the published binaries keep reproducible dependencies. The desktop Linux image is Ubuntu 24.04 because Wails v3's GTK4 backend needs GTK 4.10+; the resulting floor is GTK 4.10 + WebKitGTK 6.0 (Ubuntu 24.04 / Debian 13+), while the measured glibc symbol ceiling stays GLIBC_2.34. The Web Linux build stays on golang:1.26-alpine and is static.
 - Publish Web and Desktop assets into the same GitHub Release. Never reintroduce a separate desktop release repository.
 - GitHub Releases are the only artifact origin built by CI. The website no longer advertises Gitee mirror links; `publish_website.py` only emits `*_mirror_url` fields when a mirror prefix is passed explicitly. If a domestic origin is introduced later, teach clients the new host in `trustedUpdateDownloadHosts` one release before any download URL points at it.
 

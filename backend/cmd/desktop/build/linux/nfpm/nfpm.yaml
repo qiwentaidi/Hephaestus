@@ -24,26 +24,26 @@ contents:
   - src: "./build/linux/Hephaestus.desktop"
     dst: "/usr/share/applications/Hephaestus.desktop"
 
-# Default dependencies for Debian 12/Ubuntu 22.04+ with WebKit 4.1
+# Default dependencies for GTK 4.10+ / WebKitGTK 6.0 (Ubuntu 24.04+, Debian 13+)
 depends:
-  - libgtk-3-0
-  - libwebkit2gtk-4.1-0
+  - libgtk-4-1
+  - libwebkitgtk-6.0-4
   - libpcap0.8
 
 # Distribution-specific overrides for different package formats and WebKit versions
 overrides:
-  # RPM packages for RHEL/CentOS/AlmaLinux/Rocky Linux (WebKit 4.0)
+  # RPM packages for RHEL/CentOS/AlmaLinux/Rocky Linux (GTK4 + WebKitGTK 6.0)
   rpm:
     depends:
-      - gtk3
-      - webkit2gtk4.1
+      - gtk4
+      - webkitgtk6.0
       - libpcap
   
-  # Arch Linux packages (WebKit 4.1)  
+  # Arch Linux packages (GTK4 + WebKitGTK 6.0)
   archlinux:
     depends:
-      - gtk3
-      - webkit2gtk-4.1
+      - gtk4
+      - webkitgtk-6.0
       - libpcap
 
 # scripts section to ensure desktop database is updated after install

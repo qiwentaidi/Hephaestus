@@ -1,23 +1,48 @@
-FROM golang:1.26-bookworm
+# Linux 桌面端发布构建镜像。
+#
+# Wails v3 的默认 Linux 后端（GTK4 + WebKitGTK 6.0）需要 GTK 4.10+ 的
+# GtkFileDialog，Debian 12 自带的 GTK 4.8 编不过，所以运行时用 Ubuntu 24.04
+# （GTK 4.14 / WebKitGTK 6.0）。发布产物的系统下限因此是 GTK 4.10+ / WebKitGTK 6.0
+# （Ubuntu 24.04 / Debian 13 及以上；二进制的 glibc 符号上限仍是 GLIBC_2.34）。
+#
+# Go 工具链仍然取自 Debian bookworm 的官方镜像：Go 自身是静态二进制，
+# 复制进来即可，避免在 Ubuntu 里另装一套 Go。
+FROM golang:1.26-bookworm AS go-toolchain
+
+FROM ubuntu:24.04
+
+# ubuntu:24.04 最小镜像不带 CA 证书，apt 走 https 源会直接失败；
+# 这里直接复用工具链镜像里的 cert bundle，避免先装 ca-certificates 的鸡生蛋问题。
+COPY --from=go-toolchain /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 ARG TARGETARCH
-ARG DEBIAN_MIRROR=https://mirrors.ustc.edu.cn/debian
-ARG DEBIAN_SECURITY_MIRROR=https://mirrors.ustc.edu.cn/debian-security
+# amd64 走 archive 镜像，arm64 等架构走 ports 镜像（Ubuntu 的 arm64 包只在 ports 里）。
+ARG UBUNTU_MIRROR=https://mirrors.ustc.edu.cn/ubuntu
+ARG UBUNTU_PORTS_MIRROR=https://mirrors.ustc.edu.cn/ubuntu-ports
 
 RUN set -eux; \
-    rm -f /etc/apt/sources.list.d/debian.sources; \
-    printf 'deb %s bookworm main contrib non-free non-free-firmware\n' "${DEBIAN_MIRROR}" > /etc/apt/sources.list; \
-    printf 'deb %s bookworm-updates main contrib non-free non-free-firmware\n' "${DEBIAN_MIRROR}" >> /etc/apt/sources.list; \
-    printf 'deb %s bookworm-security main contrib non-free non-free-firmware\n' "${DEBIAN_SECURITY_MIRROR}" >> /etc/apt/sources.list; \
+    rm -f /etc/apt/sources.list.d/ubuntu.sources; \
+    case "${TARGETARCH:-amd64}" in \
+      amd64) base="${UBUNTU_MIRROR}" ;; \
+      *) base="${UBUNTU_PORTS_MIRROR}" ;; \
+    esac; \
+    printf 'deb %s noble main restricted universe multiverse\n' "${base}" > /etc/apt/sources.list; \
+    printf 'deb %s noble-updates main restricted universe multiverse\n' "${base}" >> /etc/apt/sources.list; \
+    printf 'deb %s noble-security main restricted universe multiverse\n' "${base}" >> /etc/apt/sources.list; \
     apt_get() { \
       apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 "$@"; \
     }; \
     apt_get update; \
     apt_get install -y --fix-missing --no-install-recommends \
-      pkg-config gcc libc6-dev \
+      ca-certificates pkg-config gcc libc6-dev \
       libpcap-dev \
-      libgtk-3-dev libwebkit2gtk-4.1-dev; \
+      libgtk-4-dev libwebkitgtk-6.0-dev; \
     rm -rf /var/lib/apt/lists/*
+
+COPY --from=go-toolchain /usr/local/go /usr/local/go
+ENV PATH="/usr/local/go/bin:${PATH}"
+# 工具链版本必须满足 go.mod 的 go 指令，禁止在构建时再下载别的 toolchain。
+ENV GOTOOLCHAIN=local
 
 WORKDIR /app
 

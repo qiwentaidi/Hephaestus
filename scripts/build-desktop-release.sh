@@ -17,12 +17,12 @@ DMG_README_SOURCE="${BUILD_DIR}/darwin/dmg-readme.txt"
 DMG_README_NAME="If app is damaged.txt"
 WINDOWS_SYSO_DIR="${DESKTOP_DIR}"
 LINUX_CROSS_IMAGE_REPO="${LINUX_CROSS_IMAGE_REPO:-wails-linux-cross}"
-LINUX_CROSS_IMAGE_VERSION="${LINUX_CROSS_IMAGE_VERSION:-go1.26-pcap-v2}"
+LINUX_CROSS_IMAGE_VERSION="${LINUX_CROSS_IMAGE_VERSION:-go1.26-noble-pcap-v1}"
 LINUX_CROSS_DOCKERFILE="${DESKTOP_DIR}/build/docker/Dockerfile.linux-cross"
 LINUX_CROSS_REBUILD="${LINUX_CROSS_REBUILD:-0}"
 DOCKER_BUILD_CACHE_PRUNE="${DOCKER_BUILD_CACHE_PRUNE:-1}"
-DEBIAN_MIRROR="${DEBIAN_MIRROR:-https://mirrors.ustc.edu.cn/debian}"
-DEBIAN_SECURITY_MIRROR="${DEBIAN_SECURITY_MIRROR:-https://mirrors.ustc.edu.cn/debian-security}"
+UBUNTU_MIRROR="${UBUNTU_MIRROR:-https://mirrors.ustc.edu.cn/ubuntu}"
+UBUNTU_PORTS_MIRROR="${UBUNTU_PORTS_MIRROR:-https://mirrors.ustc.edu.cn/ubuntu-ports}"
 LINUX_GO_BUILD_P="${LINUX_GO_BUILD_P:-1}"
 LINUX_GOMAXPROCS="${LINUX_GOMAXPROCS:-${LINUX_GO_BUILD_P}}"
 
@@ -309,8 +309,8 @@ ensure_linux_cross_image() {
   fi
   docker build \
     --platform "${platform}" \
-    --build-arg "DEBIAN_MIRROR=${DEBIAN_MIRROR}" \
-    --build-arg "DEBIAN_SECURITY_MIRROR=${DEBIAN_SECURITY_MIRROR}" \
+    --build-arg "UBUNTU_MIRROR=${UBUNTU_MIRROR}" \
+    --build-arg "UBUNTU_PORTS_MIRROR=${UBUNTU_PORTS_MIRROR}" \
     -t "${image}" \
     -f "${LINUX_CROSS_DOCKERFILE}" \
     "${DESKTOP_DIR}/build/docker"

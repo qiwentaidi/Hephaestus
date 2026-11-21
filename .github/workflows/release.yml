@@ -229,11 +229,12 @@ jobs:
           VERSION: ${{ needs.prepare.outputs.version }}
         run: ./scripts/build.sh all --platform linux/${{ matrix.arch }}
 
-      # 桌面端 Linux 在 Dockerfile.linux-cross 里构建，保住 bookworm 的 glibc 下限。
+      # 桌面端 Linux 在 Dockerfile.linux-cross（Ubuntu 24.04）里构建：Wails v3 的
+      # GTK4 后端要求 GTK 4.10+，Debian 12 的 GTK 4.8 编不过。
       - name: Build Desktop Linux zip
         env:
-          DEBIAN_MIRROR: https://deb.debian.org/debian
-          DEBIAN_SECURITY_MIRROR: https://deb.debian.org/debian-security
+          UBUNTU_MIRROR: https://archive.ubuntu.com/ubuntu
+          UBUNTU_PORTS_MIRROR: http://ports.ubuntu.com/ubuntu-ports
           LINUX_GO_BUILD_P: '4'
         run: ./scripts/build-desktop-release.sh --target linux --arch ${{ matrix.arch }} --skip-frontend --skip-icons
 
