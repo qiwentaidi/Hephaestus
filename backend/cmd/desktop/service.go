@@ -631,6 +631,7 @@ func (d *DesktopService) ServiceStartup(ctx context.Context, _ application.Servi
 	// Expose the live desktop window to MCP clients. Server-only deployments
 	// never register a provider, so the tool is not advertised there.
 	mcp.RegisterDesktopScreenshotProvider(d)
+	mcp.RegisterDesktopUIActions(d)
 
 	if err := d.coreApp.Bootstrap(); err != nil {
 		return err

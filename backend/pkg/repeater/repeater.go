@@ -25,6 +25,28 @@ type rawRequest struct {
 	Body          []byte
 }
 
+// ParseRawRequestTarget parses a raw HTTP request and returns the method and the
+// absolute URL it would be sent to. It uses the same parser as
+// SendRequestWithRaw so the Repeater tab, MCP callers, and the tool guard all
+// agree on the target before anything leaves the process.
+func ParseRawRequestTarget(raw string, forceHttps bool) (string, string, error) {
+	req, err := parseRawRequest(raw)
+	if err != nil {
+		return "", "", err
+	}
+	if strings.TrimSpace(req.Host) == "" {
+		return "", "", fmt.Errorf("请求缺少 Host 头，无法确定目标地址")
+	}
+	if parsed, err := url.Parse(req.RequestTarget); err == nil && parsed.IsAbs() && parsed.Host != "" {
+		return req.Method, parsed.String(), nil
+	}
+	scheme := "http"
+	if forceHttps {
+		scheme = "https"
+	}
+	return req.Method, scheme + "://" + req.Host + req.RequestTarget, nil
+}
+
 func SendRequestWithRaw(ctx context.Context, raw string, forceHttps, redirect bool, proxyURL string) (*resty.Response, int64, error) {
 	if ctx == nil {
 		ctx = context.Background()

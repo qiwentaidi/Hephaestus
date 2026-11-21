@@ -41,7 +41,7 @@ import { RequestEditor } from "./request-editor"
 import { ResponseViewer } from "./response-viewer"
 import { HexViewer } from "./hex-viewer"
 import toast from '@/lib/toast'
-import { fetchWithAuth } from '@/lib/api'
+import { fetchWithAuth, removeDesktopConfigItems } from '@/lib/api'
 import {
   fetchSystemProxyInfo,
   getProxyUrl,
@@ -480,6 +480,36 @@ export function HttpRequestEditor() {
     }
   }
 
+  // A desktop MCP caller can ask the app to open one stored tab. The request is
+  // one-shot: apply it when the tab list is ready (or when desktop storage is
+  // restored after the first paint), then clear it from both the webview and the
+  // persisted desktop storage so a later launch keeps the operator's own tab.
+  useEffect(() => {
+    if (!isInitialized) return
+    const applyOpenRequest = () => {
+      const raw = localStorage.getItem('mcp:repeater_open')
+      if (!raw) return
+      let tabId = raw.trim()
+      try {
+        const parsed = JSON.parse(raw) as { tabId?: string }
+        if (parsed && typeof parsed.tabId === 'string') tabId = parsed.tabId.trim()
+      } catch {
+        // A plain tab id is also accepted.
+      }
+      if (!tabId) return
+      if (tabs.some((tab) => tab.id === tabId)) {
+        setActiveTab(tabId)
+      }
+      localStorage.removeItem('mcp:repeater_open')
+      void removeDesktopConfigItems(['mcp:repeater_open'])
+    }
+    applyOpenRequest()
+    window.addEventListener('hephaestus:desktop-storage-restored', applyOpenRequest)
+    return () => {
+      window.removeEventListener('hephaestus:desktop-storage-restored', applyOpenRequest)
+    }
+  }, [isInitialized, tabs])
+
   // 当标签页发生变化时，保存到 API（使用防抖）
   useEffect(() => {
     if (!isInitialized) return
@@ -489,7 +519,7 @@ export function HttpRequestEditor() {
       clearTimeout(saveTimeoutRef.current)
     }
 
-    // 保存 activeTab 到 localStorage（用于页面刷新时恢复）
+  // 保存 activeTab 到 localStorage（用于页面刷新时恢复）
     if (activeTab) {
       localStorage.setItem('repeater_active_tab', activeTab)
     }
@@ -759,6 +789,36 @@ export function HttpRequestEditor() {
   }
 
   // 关闭其他标签页
+  // One-shot request from an external MCP caller to remove a tab. Consumed
+  // after the tab list is ready so the editor can drop it and persist the rest.
+  const removeTabRef = useRef(handleRemoveTab)
+  useEffect(() => {
+    removeTabRef.current = handleRemoveTab
+  })
+  useEffect(() => {
+    if (!isInitialized) return
+    const applyDeleteRequest = () => {
+      const raw = localStorage.getItem('mcp:repeater_delete')
+      if (!raw) return
+      let tabId = raw.trim()
+      try {
+        const parsed = JSON.parse(raw) as { tabId?: string }
+        if (parsed && typeof parsed.tabId === 'string') tabId = parsed.tabId.trim()
+      } catch {
+        // A plain tab id is also accepted.
+      }
+      if (!tabId) return
+      localStorage.removeItem('mcp:repeater_delete')
+      void removeDesktopConfigItems(['mcp:repeater_delete'])
+      if (tabs.some((tab) => tab.id === tabId)) removeTabRef.current(tabId)
+    }
+    applyDeleteRequest()
+    window.addEventListener('hephaestus:desktop-storage-restored', applyDeleteRequest)
+    return () => {
+      window.removeEventListener('hephaestus:desktop-storage-restored', applyDeleteRequest)
+    }
+  }, [isInitialized, tabs])
+
   const handleCloseOtherTabs = (id: string) => {
     tabs.forEach((tab) => {
       if (tab.id !== id) {

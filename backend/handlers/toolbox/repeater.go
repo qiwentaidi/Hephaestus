@@ -24,7 +24,6 @@ import (
 	"github.com/logrusorgru/aurora"
 	nuclei "github.com/projectdiscovery/nuclei/v3/lib"
 	"github.com/projectdiscovery/nuclei/v3/pkg/output"
-	httputil "github.com/qiwentaidi/utils/http"
 )
 
 const repeaterTemplateContextLimit = 12000
@@ -134,13 +133,7 @@ func SendRequestHandler(c *gin.Context) {
 		defer resp.RawResponse.Body.Close()
 	}
 
-	var responseBody string
-	responseLength := inferRepeaterResponseLength(resp.RawResponse)
-	if resp.RawResponse != nil && shouldHandleRepeaterResponseAsBinary(resp.RawResponse) {
-		responseBody, err = dumpRepeaterBinaryResponse(resp.RawResponse)
-	} else {
-		responseBody, err = httputil.DumpResponseHeadersAndDecodedBody(resp.RawResponse)
-	}
+	responseBody, responseLength, err := DumpRepeaterResponse(resp.RawResponse)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,

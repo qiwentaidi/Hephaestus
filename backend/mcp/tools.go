@@ -50,6 +50,11 @@ func mcpToolDefinitionsForProfile(profile mcpServerProfile) []mcpToolDefinition 
 		if definition.Tool.Name == desktopScreenshotToolName && !hasDesktopScreenshotProvider() {
 			continue
 		}
+		// Opening a Repeater tab drives the live webview; server-only
+		// deployments advertise the send tool but not the UI navigation.
+		if definition.Tool.Name == repeaterOpenToolName && !hasDesktopUIActions() {
+			continue
+		}
 		// Mini-program decompile reads local WeChat caches; only desktop mode
 		// can serve it.
 		if isMiniProgramTool(definition.Tool.Name) && config.GetRuntimeMode() != config.RuntimeModeDesktop {
@@ -77,6 +82,15 @@ func loadMCPToolDefinitions() ([]mcpToolDefinition, error) {
 	}
 
 	handlers := map[string]mcpToolHandler{
+		repeaterSendToolName: func(c *gin.Context, rawArgs json.RawMessage) (mcpToolCallResult, error) {
+			return mcpCallRepeaterSend(c, rawArgs)
+		},
+		repeaterOpenToolName: func(c *gin.Context, rawArgs json.RawMessage) (mcpToolCallResult, error) {
+			return mcpCallRepeaterOpen(c, rawArgs)
+		},
+		repeaterDeleteToolName: func(c *gin.Context, rawArgs json.RawMessage) (mcpToolCallResult, error) {
+			return mcpCallRepeaterDelete(c, rawArgs)
+		},
 		"desktop_screenshot": func(c *gin.Context, _ json.RawMessage) (mcpToolCallResult, error) {
 			return mcpCallDesktopScreenshot(c.Request.Context())
 		},

@@ -8,9 +8,25 @@ import (
 	"strconv"
 	"strings"
 	"unicode/utf8"
+
+	httputil "github.com/qiwentaidi/utils/http"
 )
 
 const repeaterBinaryPreviewLimit = 4096
+
+// DumpRepeaterResponse reads a Repeater response into the text the UI stores:
+// the raw headers plus a decoded body for text responses, or a bounded preview
+// for binary/attachment responses. Both the HTTP handler and the MCP tool use
+// this function so their stored and returned text stay identical.
+func DumpRepeaterResponse(resp *http.Response) (string, int64, error) {
+	length := inferRepeaterResponseLength(resp)
+	if shouldHandleRepeaterResponseAsBinary(resp) {
+		body, err := dumpRepeaterBinaryResponse(resp)
+		return body, length, err
+	}
+	body, err := httputil.DumpResponseHeadersAndDecodedBody(resp)
+	return body, length, err
+}
 
 func inferRepeaterResponseLength(resp *http.Response) int64 {
 	if resp == nil {

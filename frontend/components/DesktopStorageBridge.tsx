@@ -19,6 +19,8 @@ const DESKTOP_STORAGE_KEYS = [
   ACTIVE_CUSTOM_THEME_ID_KEY,
   'proxyConfig',
   'networkConfig',
+  'mcp:repeater_open',
+  'mcp:repeater_delete',
 ]
 
 const APP_THEMES = new Set([

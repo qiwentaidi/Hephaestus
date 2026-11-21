@@ -1171,6 +1171,70 @@
     }
   },
   {
+    "name": "repeater_send",
+    "moduleKey": "repeater",
+    "moduleName": "Repeater",
+    "moduleNameI18n": { "en": "Repeater", "zh": "请求转发" },
+    "title": "Send RAW HTTP to Repeater",
+    "titleI18n": { "en": "Send RAW HTTP to Repeater", "zh": "发送 RAW HTTP 到请求转发" },
+    "version": "1.0.0",
+    "description": "Send a raw HTTP request through the platform Repeater. The response (status, body, timing) is returned immediately for validation and the request/response is stored as a Repeater tab. This tool never changes the operator's UI; call repeater_open explicitly after the request looks correct, then desktop_screenshot. A failed send does not create a tab.",
+    "descriptionI18n": { "en": "Send a raw HTTP request through the platform Repeater. The response (status, body, timing) is returned immediately for validation and the request/response is stored as a Repeater tab. This tool never changes the operator's UI; call repeater_open explicitly after the request looks correct, then desktop_screenshot. A failed send does not create a tab.", "zh": "通过平台请求转发发送原始 HTTP 请求，立即返回状态码、响应体与耗时，并把请求/响应写入一个请求转发标签页。本工具不会改变操作者界面；确认请求正确后再调用 repeater_open 打开，然后 desktop_screenshot 截图。发送失败不会写入标签页。" },
+    "permission": "write",
+    "annotations": { "readOnlyHint": false, "destructiveHint": false, "idempotentHint": false, "openWorldHint": true },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "rawRequest": { "type": "string", "description": "完整原始 HTTP 请求：请求行 + Host 等头部 + 空行 + 可选 body。" },
+        "name": { "type": "string", "description": "可选标签页名称；默认按时间生成。" },
+        "forceHttps": { "type": "boolean", "default": false, "description": "以 https 方案发送（Host 头不含 scheme 时使用）。" },
+        "redirect": { "type": "boolean", "default": false, "description": "是否跟随 3xx 重定向，默认不跟随。" },
+        "timeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 300, "default": 60, "description": "发送超时（秒）。" }
+      },
+      "required": ["rawRequest"]
+    }
+  },
+  {
+    "name": "repeater_open",
+    "moduleKey": "desktop",
+    "moduleName": "Desktop Client",
+    "moduleNameI18n": { "en": "Desktop Client", "zh": "桌面客户端" },
+    "title": "Open Repeater Tab in Desktop Client",
+    "titleI18n": { "en": "Open Repeater Tab in Desktop Client", "zh": "在桌面端打开请求转发标签页" },
+    "version": "1.0.0",
+    "description": "Open a stored Repeater tab in the running Hephaestus desktop client and wait briefly for the page to load. This switches the operator's current page to /scan/repeater; only available in the desktop app. It never sends a request. Follow with desktop_screenshot to capture the page.",
+    "descriptionI18n": { "en": "Open a stored Repeater tab in the running Hephaestus desktop client and wait briefly for the page to load. This switches the operator's current page to /scan/repeater; only available in the desktop app. It never sends a request. Follow with desktop_screenshot to capture the page.", "zh": "在运行中的 Hephaestus 桌面客户端打开已保存的请求转发标签页并等待页面加载。该工具会把操作者当前页面切到 /scan/repeater，仅在桌面端可用；它不会发送请求。随后调用 desktop_screenshot 截图。" },
+    "permission": "write",
+    "annotations": { "readOnlyHint": false, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "tabId": { "type": "string", "description": "repeater_send 返回的 tabId。" }
+      },
+      "required": ["tabId"]
+    }
+  },
+  {
+    "name": "repeater_delete",
+    "moduleKey": "repeater",
+    "moduleName": "Repeater",
+    "moduleNameI18n": { "en": "Repeater", "zh": "请求转发" },
+    "title": "Delete Repeater Tab",
+    "titleI18n": { "en": "Delete Repeater Tab", "zh": "删除请求转发标签页" },
+    "version": "1.0.0",
+    "description": "Delete a stored Repeater tab by tabId. Idempotent: a missing tab is reported as already deleted, not as a failure. When the desktop client is running the Repeater editor is asked to drop the tab first so its debounced save cannot resurrect it. This tool never sends a request.",
+    "descriptionI18n": { "en": "Delete a stored Repeater tab by tabId. Idempotent: a missing tab is reported as already deleted, not as a failure. When the desktop client is running the Repeater editor is asked to drop the tab first so its debounced save cannot resurrect it. This tool never sends a request.", "zh": "按 tabId 删除请求转发标签页。幂等：标签页不存在时按已删除处理，不报错。桌面端运行时会先让 Repeater 编辑器移除该标签页，避免其防抖保存把记录写回；本工具不会发送请求。" },
+    "permission": "write",
+    "annotations": { "readOnlyHint": false, "destructiveHint": true, "idempotentHint": true, "openWorldHint": false },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "tabId": { "type": "string", "description": "repeater_send 返回的 tabId。" }
+      },
+      "required": ["tabId"]
+    }
+  },
+  {
     "name": "desktop_screenshot",
     "moduleKey": "desktop",
     "moduleName": "Desktop Client",
