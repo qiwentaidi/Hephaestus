@@ -304,6 +304,7 @@ func handleMCPToolCall(c *gin.Context, req *mcpJSONRPCRequest, profile mcpServer
 
 	toolName := strings.TrimSpace(params.Name)
 	markMCPAuditTool(c, toolName)
+	markMCPAuditArguments(c, params.Arguments)
 
 	result, err := callMCPTool(c, toolName, params.Arguments, profile)
 	if err != nil {
@@ -975,6 +976,9 @@ func cleanupExpiredMCPSessionsLocked() {
 }
 
 func writeMCPResult(c *gin.Context, id interface{}, result interface{}) {
+	if toolResult, ok := result.(mcpToolCallResult); ok {
+		markMCPAuditResult(c, toolResult)
+	}
 	if toolResult, ok := result.(mcpToolCallResult); ok && toolResult.Blocked {
 		message := "工具调用已被安全规则拦截"
 		if len(toolResult.Content) > 0 {

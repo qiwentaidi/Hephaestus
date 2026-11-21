@@ -3312,6 +3312,13 @@ export const en: Locale = {
     auditLoading: "Loading real MCP call records...",
     auditEmpty: "No real MCP call records match the current filters. Switch to \"All records\" to view handshakes and protocol events.",
     copyField: "Copy {label}",
+    auditDetails: "Details",
+    auditRequestArgs: "Request arguments",
+    auditResponse: "Response",
+    auditStructured: "Structured result",
+    auditNoPayload: "This record has no stored request/response details (records created before the upgrade only kept the call status).",
+    auditDetailHint: "Common credential fields and auth headers in request arguments are redacted; both request and response are truncated before storage.",
+    auditSession: "Session",
   },
 
   changePasswordDialog: {

@@ -13,6 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { fetchWithAuth, getApiBaseURL } from '@/lib/api'
 import { copyToClipboard } from '@/lib/clipboard'
 import { getDesktopRuntimeMeta, type DesktopRuntimeMeta } from '@/lib/desktop'
@@ -95,6 +102,9 @@ type MCPAuditLog = {
   httpStatus?: number
   errorCode?: number
   errorMessage?: string
+  argumentsJson?: string
+  responseText?: string
+  responseJson?: string
   durationMs?: number
   createdAt: string
 }
@@ -212,6 +222,7 @@ export default function PlatformMcpPageClient() {
   const [auditKind, setAuditKind] = useState<AuditKindFilter>('important')
   const [auditStatuses, setAuditStatuses] = useState<AuditStatus[]>([])
   const [auditKeyword, setAuditKeyword] = useState('')
+  const [selectedAudit, setSelectedAudit] = useState<MCPAuditLog | null>(null)
   const [submittedAuditKeyword, setSubmittedAuditKeyword] = useState('')
   const [selectedTool, setSelectedTool] = useState('space_engine_search')
   const [pageError, setPageError] = useState('')
@@ -1423,7 +1434,17 @@ export default function PlatformMcpPageClient() {
             </div>
           ) : null}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[980px] border-collapse text-left text-sm">
+            <table className="w-full min-w-[1120px] table-fixed border-collapse text-left text-sm">
+              <colgroup>
+                <col className="w-[168px]" />
+                <col className="w-[150px]" />
+                <col className="w-[220px]" />
+                <col className="w-[84px]" />
+                <col className="w-[96px]" />
+                <col className="w-[84px]" />
+                <col className="w-[110px]" />
+                <col />
+              </colgroup>
               <thead>
                 <tr className="border-b border-border/70 text-xs text-muted-foreground">
                   <th className="px-3 py-3 font-medium">{pageCopy.time}</th>
@@ -1433,7 +1454,7 @@ export default function PlatformMcpPageClient() {
                   <th className="px-3 py-3 font-medium">{pageCopy.status}</th>
                   <th className="px-3 py-3 font-medium">{pageCopy.duration}</th>
                   <th className="px-3 py-3 font-medium">{pageCopy.sourceIp}</th>
-                  <th className="px-3 py-3 font-medium">User Agent</th>
+                  <th className="whitespace-nowrap px-3 py-3 font-medium">User Agent</th>
                 </tr>
               </thead>
               <tbody>
@@ -1447,8 +1468,18 @@ export default function PlatformMcpPageClient() {
                   return (
                     <tr
                       key={log.id}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={pageCopy.auditDetails}
+                      onClick={() => setSelectedAudit(log)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          setSelectedAudit(log)
+                        }
+                      }}
                       className={cn(
-                        'border-b border-border/70 text-muted-foreground',
+                        'cursor-pointer border-b border-border/70 text-muted-foreground transition-colors hover:bg-muted/25 focus-visible:bg-muted/25 focus-visible:outline-none',
                         isToolCall && isSuccess && 'bg-primary/5 text-foreground',
                         !isSuccess && 'bg-red-500/10 text-red-700 dark:text-red-100',
                       )}
@@ -1458,7 +1489,7 @@ export default function PlatformMcpPageClient() {
                       <td className="px-3 py-3 font-mono text-xs text-muted-foreground">{getAuditDisplayTarget(log)}</td>
                       <td className="px-3 py-3">
                         <span className={cn(
-                          'rounded-full border px-2 py-1 text-xs',
+                          'inline-block whitespace-nowrap rounded-full border px-2 py-1 text-xs',
                           kind === pageCopy.toolCall && 'border-primary/30 bg-primary/10 text-primary',
                           kind === pageCopy.exception && 'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-100',
                           kind === pageCopy.protocolEvent && 'border-border/70 bg-muted/30 text-muted-foreground',
@@ -1467,7 +1498,7 @@ export default function PlatformMcpPageClient() {
                         </span>
                       </td>
                       <td className="px-3 py-3">
-                        <span className={cn('inline-flex items-center gap-1.5', isSuccess ? 'text-emerald-700 dark:text-emerald-200' : 'text-red-700 dark:text-red-200')}>
+                        <span className={cn('inline-flex items-center gap-1.5 whitespace-nowrap', isSuccess ? 'text-emerald-700 dark:text-emerald-200' : 'text-red-700 dark:text-red-200')}>
                           <span className={cn('h-2 w-2 rounded-full', isSuccess ? 'bg-emerald-500 dark:bg-emerald-300' : 'bg-red-500 dark:bg-red-300')} />
                           {isSuccess ? pageCopy.success : pageCopy.failed}
                         </span>
@@ -1475,7 +1506,7 @@ export default function PlatformMcpPageClient() {
                       <td className="px-3 py-3 font-mono text-xs">{typeof log.durationMs === 'number' ? `${log.durationMs} ms` : '-'}</td>
                       <td className="px-3 py-3 font-mono text-xs">{log.sourceIp || '-'}</td>
                       <td className="px-3 py-3 font-mono text-xs">
-                        <div className="max-w-[280px] truncate" title={log.userAgent || '-'}>
+                        <div className="truncate" title={log.userAgent || '-'}>
                           {log.userAgent || '-'}
                         </div>
                       </td>
@@ -1506,10 +1537,70 @@ export default function PlatformMcpPageClient() {
             />
           </div>
         </SurfacePanel>
+        <Sheet open={selectedAudit !== null} onOpenChange={(open) => { if (!open) setSelectedAudit(null) }}>
+          <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
+            <SheetHeader>
+              <SheetTitle>
+                {pageCopy.auditDetails}
+                {selectedAudit ? ` · ${getAuditDisplayTarget(selectedAudit)}` : ''}
+              </SheetTitle>
+              <SheetDescription>{pageCopy.auditDetailHint}</SheetDescription>
+            </SheetHeader>
+            {selectedAudit ? (
+              <div className="flex min-h-0 flex-1 flex-col gap-4 px-4 pb-6">
+                <dl className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
+                  <div><dt className="text-muted-foreground">{pageCopy.time}</dt><dd className="mt-0.5 font-mono">{formatAuditTime(selectedAudit.createdAt)}</dd></div>
+                  <div><dt className="text-muted-foreground">{pageCopy.client}</dt><dd className="mt-0.5 break-all">{getAuditClientLabel(selectedAudit)}</dd></div>
+                  <div><dt className="text-muted-foreground">{pageCopy.status}</dt><dd className="mt-0.5">{selectedAudit.status === 'success' ? pageCopy.success : pageCopy.failed}</dd></div>
+                  <div><dt className="text-muted-foreground">{pageCopy.duration}</dt><dd className="mt-0.5 font-mono">{typeof selectedAudit.durationMs === 'number' ? `${selectedAudit.durationMs} ms` : '-'}</dd></div>
+                  <div><dt className="text-muted-foreground">{pageCopy.sourceIp}</dt><dd className="mt-0.5 font-mono">{selectedAudit.sourceIp || '-'}</dd></div>
+                  <div><dt className="text-muted-foreground">{pageCopy.auditSession}</dt><dd className="mt-0.5 break-all font-mono">{selectedAudit.sessionId || '-'}</dd></div>
+                </dl>
+                <div className="min-w-0">
+                  <div className="mb-1 text-xs font-medium text-foreground">{pageCopy.auditRequestArgs}</div>
+                  <pre className="max-h-[320px] overflow-auto whitespace-pre-wrap break-all rounded-lg border border-border/70 bg-muted/20 p-3 font-mono text-[11px] leading-5 text-muted-foreground">
+                    {prettyAuditPayload(selectedAudit.argumentsJson) || pageCopy.auditNoPayload}
+                  </pre>
+                </div>
+                <div className="min-w-0">
+                  <div className="mb-1 text-xs font-medium text-foreground">{pageCopy.auditResponse}</div>
+                  {selectedAudit.errorMessage ? (
+                    <p className="mb-2 break-words text-xs text-red-600 dark:text-red-300">{selectedAudit.errorMessage}</p>
+                  ) : null}
+                  <pre className="max-h-[360px] overflow-auto whitespace-pre-wrap break-all rounded-lg border border-border/70 bg-muted/20 p-3 font-mono text-[11px] leading-5 text-muted-foreground">
+                    {prettyAuditText(selectedAudit.responseText) || pageCopy.auditNoPayload}
+                  </pre>
+                  {selectedAudit.responseJson ? (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-xs text-foreground">{pageCopy.auditStructured}</summary>
+                      <pre className="mt-1 max-h-[280px] overflow-auto whitespace-pre-wrap break-all rounded-lg border border-border/70 bg-muted/20 p-3 font-mono text-[11px] leading-5 text-muted-foreground">
+                        {prettyAuditPayload(selectedAudit.responseJson)}
+                      </pre>
+                    </details>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+          </SheetContent>
+        </Sheet>
       </div>
     </div>
   )
 }
+function prettyAuditPayload(raw?: string): string {
+  const value = (raw || '').trim()
+  if (!value) return ''
+  try {
+    return JSON.stringify(JSON.parse(value), null, 2)
+  } catch {
+    return value
+  }
+}
+
+function prettyAuditText(raw?: string): string {
+  return (raw || '').trim()
+}
+
 function SurfacePanel({
   title,
   action,

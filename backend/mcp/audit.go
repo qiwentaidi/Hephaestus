@@ -1,10 +1,14 @@
 package mcp
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"hephaestus-backend/pkg/database"
 	"hephaestus-backend/pkg/httpquery"
@@ -32,6 +36,9 @@ type mcpAuditContext struct {
 	Status        string
 	ErrorCode     int
 	ErrorMessage  string
+	ArgumentsJSON string
+	ResponseText  string
+	ResponseJSON  string
 }
 
 func startMCPAudit(c *gin.Context, server string) *mcpAuditContext {
@@ -91,6 +98,9 @@ func finishMCPAudit(c *gin.Context, audit *mcpAuditContext) {
 		HTTPStatus:    httpStatus,
 		ErrorCode:     audit.ErrorCode,
 		ErrorMessage:  trimAuditValue(audit.ErrorMessage, 2048),
+		ArgumentsJSON: audit.ArgumentsJSON,
+		ResponseText:  audit.ResponseText,
+		ResponseJSON:  audit.ResponseJSON,
 		DurationMS:    time.Since(audit.StartedAt).Milliseconds(),
 		CreatedAt:     time.Now(),
 	}
@@ -101,6 +111,121 @@ func finishMCPAudit(c *gin.Context, audit *mcpAuditContext) {
 	if err := db.Create(&record).Error; err != nil {
 		logger.Error("保存 MCP 调用审计失败: %v", err)
 	}
+}
+
+const (
+	mcpAuditArgumentLimit = 16 << 10
+	mcpAuditResponseLimit = 32 << 10
+)
+
+var auditHeaderSecretPattern = regexp.MustCompile(`(?im)^(\s*(?:authorization|proxy-authorization|cookie|set-cookie|x-api-key|api-key)\s*:\s*).*$`)
+
+var auditSecretKeys = map[string]bool{
+	"authorization": true, "proxyauthorization": true, "cookie": true, "setcookie": true,
+	"token": true, "accesstoken": true, "refreshtoken": true, "password": true, "passwd": true,
+	"secret": true, "clientsecret": true, "apikey": true, "xapikey": true, "privatekey": true,
+}
+
+// markMCPAuditArguments records the tool arguments, with common credential
+// fields and auth headers redacted. The payload is truncated before storage.
+func markMCPAuditArguments(c *gin.Context, raw json.RawMessage) {
+	audit := currentMCPAudit(c)
+	if audit == nil || len(raw) == 0 {
+		return
+	}
+	var value any
+	if err := json.Unmarshal(raw, &value); err == nil {
+		value = redactAuditValue(value)
+		encoded, marshalErr := json.Marshal(value)
+		if marshalErr == nil {
+			audit.ArgumentsJSON = limitAuditText(string(encoded), mcpAuditArgumentLimit)
+			return
+		}
+	}
+	audit.ArgumentsJSON = limitAuditText(redactAuditText(string(raw)), mcpAuditArgumentLimit)
+}
+
+// markMCPAuditResult records the tool result the client actually received.
+// Image contents are summarized (never stored as base64) so screenshots do not
+// bloat the audit table.
+func markMCPAuditResult(c *gin.Context, result mcpToolCallResult) {
+	audit := currentMCPAudit(c)
+	if audit == nil {
+		return
+	}
+	parts := make([]string, 0, len(result.Content))
+	for _, content := range result.Content {
+		switch content.Type {
+		case "text":
+			if text := strings.TrimSpace(content.Text); text != "" {
+				parts = append(parts, text)
+			}
+		case "image":
+			parts = append(parts, fmt.Sprintf("[image %s, %d base64 chars]", firstNonEmptyAudit(content.MimeType, "image/*"), len(content.Data)))
+		default:
+			parts = append(parts, fmt.Sprintf("[%s content]", content.Type))
+		}
+	}
+	audit.ResponseText = limitAuditText(strings.Join(parts, "\n\n"), mcpAuditResponseLimit)
+	if result.StructuredContent != nil {
+		if raw, err := json.Marshal(result.StructuredContent); err == nil {
+			audit.ResponseJSON = limitAuditText(string(raw), mcpAuditResponseLimit)
+		}
+	}
+}
+
+func redactAuditValue(value any) any {
+	switch typed := value.(type) {
+	case map[string]any:
+		for key, item := range typed {
+			if auditSecretKeys[normalizeAuditKey(key)] {
+				typed[key] = "[redacted]"
+				continue
+			}
+			typed[key] = redactAuditValue(item)
+		}
+		return typed
+	case []any:
+		for i, item := range typed {
+			typed[i] = redactAuditValue(item)
+		}
+		return typed
+	case string:
+		return redactAuditText(typed)
+	default:
+		return value
+	}
+}
+
+func redactAuditText(value string) string {
+	return auditHeaderSecretPattern.ReplaceAllString(value, "${1}[redacted]")
+}
+
+func normalizeAuditKey(key string) string {
+	key = strings.ToLower(strings.TrimSpace(key))
+	replacer := strings.NewReplacer("-", "", "_", "", " ", "")
+	return replacer.Replace(key)
+}
+
+func firstNonEmptyAudit(values ...string) string {
+	for _, value := range values {
+		if trimmed := strings.TrimSpace(value); trimmed != "" {
+			return trimmed
+		}
+	}
+	return ""
+}
+
+func limitAuditText(value string, limit int) string {
+	value = strings.TrimSpace(value)
+	if limit <= 0 || len(value) <= limit {
+		return value
+	}
+	cut := limit
+	for cut > 0 && !utf8.RuneStart(value[cut]) {
+		cut--
+	}
+	return value[:cut] + "\n…[truncated]"
 }
 
 func markMCPAuditRequest(c *gin.Context, method string) {

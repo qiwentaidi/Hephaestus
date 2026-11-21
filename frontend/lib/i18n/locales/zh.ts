@@ -3283,6 +3283,13 @@ export const zh = {
     auditLoading: "正在加载真实 MCP 调用记录...",
     auditEmpty: "当前筛选条件下暂无真实 MCP 调用记录。可切换到“全部记录”查看握手和协议事件。",
     copyField: "复制 {label}",
+    auditDetails: "详情",
+    auditRequestArgs: "请求参数",
+    auditResponse: "响应内容",
+    auditStructured: "结构化结果",
+    auditNoPayload: "该记录未保存请求/响应详情（升级前的旧记录仅保留调用状态）。",
+    auditDetailHint: "请求参数中的常见凭据字段与认证头已脱敏；请求与响应均按大小截断保存。",
+    auditSession: "会话",
   },
 
   changePasswordDialog: {

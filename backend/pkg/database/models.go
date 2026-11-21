@@ -65,6 +65,9 @@ type MCPSpaceEngineAuditLog struct {
 	HTTPStatus    int       `gorm:"column:http_status;default:0" json:"httpStatus"`
 	ErrorCode     int       `gorm:"column:error_code;default:0" json:"errorCode"`
 	ErrorMessage  string    `gorm:"column:error_message;type:text" json:"errorMessage"`
+	ArgumentsJSON string    `gorm:"column:arguments_json;type:text" json:"argumentsJson"`
+	ResponseText  string    `gorm:"column:response_text;type:text" json:"responseText"`
+	ResponseJSON  string    `gorm:"column:response_json;type:text" json:"responseJson"`
 	DurationMS    int64     `gorm:"column:duration_ms;default:0" json:"durationMs"`
 	CreatedAt     time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP;index:idx_mcp_space_engine_audit_log_created_at,sort:desc" json:"createdAt"`
 }
