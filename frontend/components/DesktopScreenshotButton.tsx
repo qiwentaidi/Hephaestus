@@ -229,6 +229,8 @@ export function DesktopScreenshotButton({ visible }: { visible: boolean }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           data-screenshot-ignore="true"
+          data-no-titlebar-toggle="true"
+          data-no-titlebar-drag="true"
           className="max-w-[calc(100vw-48px)] gap-0 overflow-hidden p-0 sm:max-w-[920px]"
         >
           <div className="border-b border-border/70 px-5 py-3.5 pr-14">

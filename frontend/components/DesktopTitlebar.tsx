@@ -178,7 +178,16 @@ export function DesktopTitlebar() {
 		await requestDesktopWindow("/api/v1/desktop/launcher/open");
 	};
 
+	// Portaled descendants (screenshot preview, popovers, tooltips) live outside
+	// the titlebar in the DOM but still bubble their events through the React
+	// tree, so handlers must check DOM containment rather than the target alone.
+	const isFromTitlebar = (event: MouseEvent<HTMLDivElement>) =>
+		event.target instanceof Node && event.currentTarget.contains(event.target);
+
 	const handleTitlebarDoubleClick = async (event: MouseEvent<HTMLDivElement>) => {
+		if (!isFromTitlebar(event)) {
+			return;
+		}
 		const target = event.target as HTMLElement | null;
 		if (target?.closest("button, a, input, select, textarea, [data-no-titlebar-toggle='true']")) {
 			return;
@@ -195,7 +204,7 @@ export function DesktopTitlebar() {
 	};
 
 	const handleTitlebarMouseDown = (event: MouseEvent<HTMLDivElement>) => {
-		if (meta.platform !== "windows" || event.button !== 0 || shouldIgnoreTitlebarPointer(event.target)) {
+		if (meta.platform !== "windows" || event.button !== 0 || !isFromTitlebar(event) || shouldIgnoreTitlebarPointer(event.target)) {
 			pendingWindowsDragRef.current = false;
 			return;
 		}

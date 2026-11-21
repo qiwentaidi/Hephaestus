@@ -230,7 +230,16 @@ export function LauncherWindowTitlebar() {
 		}
 	};
 
+	// Portaled descendants (JDK dialog, popovers, tooltips) live outside the
+	// titlebar in the DOM but still bubble their events through the React tree,
+	// so handlers must check DOM containment rather than the target alone.
+	const isFromTitlebar = (event: MouseEvent<HTMLDivElement>) =>
+		event.target instanceof Node && event.currentTarget.contains(event.target);
+
 	const handleTitlebarDoubleClick = async (event: MouseEvent<HTMLDivElement>) => {
+		if (!isFromTitlebar(event)) {
+			return;
+		}
 		const target = event.target as HTMLElement | null;
 		if (target?.closest("button, a, input, select, textarea, [data-no-titlebar-toggle='true']")) {
 			return;
@@ -247,7 +256,7 @@ export function LauncherWindowTitlebar() {
 	};
 
 	const handleTitlebarMouseDown = (event: MouseEvent<HTMLDivElement>) => {
-		if (isMac || event.button !== 0 || shouldIgnoreTitlebarPointer(event.target)) {
+		if (isMac || event.button !== 0 || !isFromTitlebar(event) || shouldIgnoreTitlebarPointer(event.target)) {
 			pendingDragRef.current = false;
 			return;
 		}
