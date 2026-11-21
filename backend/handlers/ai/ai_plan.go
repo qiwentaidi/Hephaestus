@@ -24,6 +24,10 @@ type createPlanRunRequest struct {
 	WorkerModel       string   `json:"workerModel"`
 	MaxWorkers        int      `json:"maxWorkers"`
 	MaxTotalWorkers   int      `json:"maxTotalWorkers"`
+	// SourceTaskIDs are native orchestration task ids whose read-only blackboard
+	// this run inherits (decimal strings; legacy runs have no native task and are
+	// rejected). Bounded by db.MaxTaskSourceCount.
+	SourceTaskIDs []string `json:"sourceTaskIds"`
 }
 
 func CreateAIPlanRunHandler(c *gin.Context) { createARTEXPlan(c) }
@@ -146,6 +150,9 @@ func ListAIPlanRunsHandler(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
 			return
 		}
+		for i := range items {
+			items[i].SourceTaskIDs = planRunSourceTaskIDs(ctx, items[i].Run.ID)
+		}
 		c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{"items": items}})
 		return
 	}
@@ -166,7 +173,7 @@ func ListAIPlanRunsHandler(c *gin.Context) {
 		if controller, ok := planControllerConversation(ctx, store, run); ok {
 			run.ControllerConversationID = controller.ID
 		}
-		items = append(items, map[string]any{"run": run, "project": planProjectDTO(project), "items": runItems})
+		items = append(items, map[string]any{"run": run, "project": planProjectDTO(project), "items": runItems, "sourceTaskIds": planRunSourceTaskIDs(ctx, run.ID)})
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{"items": items}})
 }

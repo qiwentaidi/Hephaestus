@@ -87,12 +87,16 @@ export interface AIPlanRunDetail {
   directives?: AIPlanDirective[]
   project: { id: string; name: string; description?: string; status?: string }
   agentRoles: AIPlanAgentRole[]
+  /** Native task ids whose blackboard this run inherits read-only. */
+  sourceTaskIds?: string[]
 }
 
 export interface AIPlanRunListItem {
   run: AIPlanRun
   project: { id: string; name: string; description?: string; status?: string }
   items?: AIPlanItem[]
+  /** Native task ids whose blackboard this run inherits read-only. */
+  sourceTaskIds?: string[]
 }
 
 export interface AIPlanRunSummary extends AIPlanRunListItem {
@@ -121,6 +125,8 @@ export interface CreateAIPlanRunRequest {
   workerModel?: string
   maxWorkers?: number
   maxTotalWorkers?: number
+  /** Native orchestration task ids to inherit read-only (up to 8). */
+  sourceTaskIds?: string[]
 }
 
 async function parse<T>(response: Response): Promise<T> {

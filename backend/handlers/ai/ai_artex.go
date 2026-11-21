@@ -49,6 +49,47 @@ func orchestrationConversationTitle(role, objective, fallback string) string {
 	return prefix + firstNonEmptyPentest(compactPentestProgressText(objective, 80), fallback)
 }
 
+// parseOrchestrationSourceTaskIDs validates the operator's inherited-task picks:
+// decimal native task ids, unique, bounded by db.MaxTaskSourceCount. Existence is
+// checked by the caller (it needs the plan-run store and the live runtime).
+func parseOrchestrationSourceTaskIDs(raw []string) ([]int64, error) {
+	if len(raw) > artexdb.MaxTaskSourceCount {
+		return nil, fmt.Errorf("关联任务最多选择 %d 个", artexdb.MaxTaskSourceCount)
+	}
+	seen := make(map[int64]bool, len(raw))
+	ids := make([]int64, 0, len(raw))
+	for _, item := range raw {
+		item = strings.TrimSpace(item)
+		if item == "" {
+			continue
+		}
+		id, err := strconv.ParseInt(item, 10, 64)
+		if err != nil || id <= 0 {
+			return nil, fmt.Errorf("关联任务 id 无效: %s", item)
+		}
+		if seen[id] {
+			return nil, fmt.Errorf("关联任务 id 重复: %d", id)
+		}
+		seen[id] = true
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+// planRunSourceTaskIDs exposes the run's read-only inherited tasks for the plan
+// projection. It reads the live task handle, so legacy runs (no native task) and
+// deleted sources simply project as empty.
+func planRunSourceTaskIDs(ctx context.Context, runID string) []string {
+	if !pentest.IsOrchestrationRun(runID) {
+		return []string{}
+	}
+	rt, err := taskengine.Get(ctx)
+	if err != nil {
+		return []string{}
+	}
+	return rt.Engine.HostTaskSourceIDs(nativeTaskID(runID))
+}
+
 func artexProfile(providerID, model string) (artexdb.LLMProfile, error) {
 	cfg, err := config.GetAIConfig()
 	if err != nil {
@@ -175,6 +216,24 @@ func createARTEXPlan(c *gin.Context) {
 		return
 	}
 	ctx := c.Request.Context()
+	// Read-only inherited context: validate the operator's source picks before a
+	// project or task is created, so a rejected pick never leaves partial state.
+	sourceIDs, err := parseOrchestrationSourceTaskIDs(req.SourceTaskIDs)
+	if err != nil {
+		nativeError(c, 400, err)
+		return
+	}
+	for _, sourceID := range sourceIDs {
+		sourceRunID := pentest.OrchestrationRunPrefix + strconv.FormatInt(sourceID, 10)
+		if _, runErr := store.GetPlanRun(ctx, sourceRunID); runErr != nil {
+			nativeError(c, 400, fmt.Errorf("关联任务 #%d 不存在或不是智能编排任务", sourceID))
+			return
+		}
+		if _, _, taskErr := rt.Engine.HostTask(strconv.FormatInt(sourceID, 10)); taskErr != nil {
+			nativeError(c, 400, fmt.Errorf("关联任务 #%d 的运行实例不存在，无法继承", sourceID))
+			return
+		}
+	}
 	scope := normalizePentestNonEmptyStrings(req.Scope)
 	if len(scope) == 0 {
 		scope = targets
@@ -205,7 +264,7 @@ func createARTEXPlan(c *gin.Context) {
 	} else if ok {
 		fallbackProfiles = fallbacks
 	}
-	t, err := rt.Engine.PrepareHostTask(taskengine.HostTaskOptions{Name: project.Name, Description: "目标资产：" + strings.Join(targets, "\n") + "\n授权范围：" + strings.Join(scope, "\n"), Goal: objective, Planner: planner, Worker: worker, Fallbacks: fallbackProfiles, Workers: workers})
+	t, err := rt.Engine.PrepareHostTask(taskengine.HostTaskOptions{Name: project.Name, Description: "目标资产：" + strings.Join(targets, "\n") + "\n授权范围：" + strings.Join(scope, "\n"), Goal: objective, Planner: planner, Worker: worker, Fallbacks: fallbackProfiles, Workers: workers, SourceTaskIDs: sourceIDs})
 	if err != nil {
 		nativeError(c, 500, err)
 		return

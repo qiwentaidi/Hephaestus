@@ -75,6 +75,7 @@ func planRunSnapshot(ctx context.Context, store *pentest.SQLStore, run pentest.P
 	return map[string]any{
 		"run":                    run,
 		"items":                  items,
+		"sourceTaskIds":          planRunSourceTaskIDs(ctx, run.ID),
 		"plannerConversation":    planConversationDTO(planner),
 		"controllerConversation": planConversationDTO(controller),
 		"directives":             directives,

@@ -13,7 +13,7 @@ import { Empty, EmptyDescription } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
 import { PaginationPro } from '@/components/ui/pagination-pro'
 import { Spinner } from '@/components/ui/spinner'
-import { ensureAIPlanRunController, getAIPlanItem, listAIPlanItemRows, type AIPlanItem, type AIPlanItemRow, type AIPlanItemRows, type AIPlanRunSummary } from '@/lib/api/ai-plan'
+import { ensureAIPlanRunController, getAIPlanItem, listAIPlanItemRows, ORCHESTRATION_RUN_PREFIX, type AIPlanItem, type AIPlanItemRow, type AIPlanItemRows, type AIPlanRunSummary } from '@/lib/api/ai-plan'
 import { useI18n } from '@/lib/i18n'
 import toast from 'react-hot-toast'
 import { canPausePlanRun, canResumePlanRun, planItemInstruction, planItemTarget, planItemTitle } from '@/lib/ai-plan-view'
@@ -41,9 +41,11 @@ interface PlanTaskDetailProps {
   onResume: () => void
   busy: boolean
   action?: 'pause' | 'resume'
+  /** Select the run that supplied this run's inherited blackboard. */
+  onOpenSource?: (runId: string) => void
 }
 
-export function PlanTaskDetail({ item, rows, error, refreshing, onRefresh, projectName, onPause, onResume, busy, action }: PlanTaskDetailProps) {
+export function PlanTaskDetail({ item, rows, error, refreshing, onRefresh, projectName, onPause, onResume, busy, action, onOpenSource }: PlanTaskDetailProps) {
   const { t, language } = useI18n()
   const text = t.aiPlan
   const router = useRouter()
@@ -165,6 +167,20 @@ export function PlanTaskDetail({ item, rows, error, refreshing, onRefresh, proje
         </div>
       </div>
       {run.objective && <p className="mt-2 max-h-24 overflow-y-auto whitespace-pre-wrap break-words text-sm text-muted-foreground">{run.objective}</p>}
+      {item.sourceTaskIds?.length ? (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+          <span>{text.sourceTasks}</span>
+          {item.sourceTaskIds.map(sourceId => (
+            <button
+              key={sourceId}
+              type="button"
+              title={`${text.sourceTasks} #${sourceId}`}
+              className="rounded border border-border/70 px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary"
+              onClick={() => onOpenSource?.(`${ORCHESTRATION_RUN_PREFIX}${sourceId}`)}
+            >{`#${sourceId}`}</button>
+          ))}
+        </div>
+      ) : null}
       {rows.summary && <details className="mt-3 rounded-lg border p-2 text-sm text-muted-foreground"><summary className="cursor-pointer">{text.summary}</summary><p className="mt-2 max-h-32 overflow-auto whitespace-pre-wrap break-words">{rows.summary}</p></details>}
       {rows.error && <p role={run.status === 'failed' ? 'alert' : 'status'} className={cn('mt-2 max-h-32 overflow-y-auto whitespace-pre-wrap break-words rounded-lg border p-3 text-sm', run.status === 'failed' ? 'border-destructive/30 text-destructive' : 'border-amber-500/30 text-amber-700 dark:text-amber-300')}>{rows.error}</p>}
       {error && <p role="alert" className="mt-2 text-sm text-destructive">{error}</p>}

@@ -13,6 +13,7 @@ import {
   cancelAIPlanRun,
   ensureAIPlanRunController,
   listAIPlanRuns,
+  ORCHESTRATION_RUN_PREFIX,
   type AIPlanItem,
   type AIPlanRunListItem,
   isOrchestrationRunId,
@@ -109,7 +110,7 @@ export function PlanWorkspace({ projectId }: { projectId: string }) {
         <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">{text.empty}</div>
       ) : (
         <div className="space-y-4">
-          {runs.map(({ run, items = [] }) => {
+          {runs.map(({ run, items = [], sourceTaskIds = [] }) => {
             const counts = {
               total: items.length,
               completed: items.filter((item) => item.status === 'completed').length,
@@ -127,6 +128,19 @@ export function PlanWorkspace({ projectId }: { projectId: string }) {
                       {run.wakePending && !terminal ? <Badge variant="outline" className="border-amber-500/30 text-amber-700 dark:text-amber-300">wake pending</Badge> : null}
                     </div>
                     <p className="mt-2 max-w-3xl break-words text-sm">{run.objective}</p>
+                    {sourceTaskIds.length > 0 ? (
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                        <span>{text.sourceTasks}</span>
+                        {sourceTaskIds.map((sourceId) => (
+                          <Link
+                            key={sourceId}
+                            href={`/ai/tasks?run=${encodeURIComponent(`${ORCHESTRATION_RUN_PREFIX}${sourceId}`)}`}
+                            title={`${text.sourceTasks} #${sourceId}`}
+                            className="rounded border border-border/70 px-1.5 py-0.5 font-mono text-[11px] transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary"
+                          >{`#${sourceId}`}</Link>
+                        ))}
+                      </div>
+                    ) : null}
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                       <span>{text.total.replace('{count}', String(counts.total))}</span>
                       <span>·</span>

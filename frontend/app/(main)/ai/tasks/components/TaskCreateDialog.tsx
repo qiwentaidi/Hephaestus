@@ -13,8 +13,9 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useI18n } from '@/lib/i18n'
 import { createAIBatchQueue, type AIBatchQueue } from '@/lib/api/ai-batch'
-import { createAIPlanRun, type AIPlanRunDetail, type AIPlanRunListItem } from '@/lib/api/ai-plan'
+import { createAIPlanRun, isOrchestrationRunId, listAIPlanRunSummaries, ORCHESTRATION_RUN_PREFIX, type AIPlanRunDetail, type AIPlanRunListItem, type AIPlanRunSummary } from '@/lib/api/ai-plan'
 import { fetchWithAuth } from '@/lib/api'
+import { SelectTag, type SelectTagOption } from '@/components/ui/select-tag'
 import { listAIWorkbenchModelOptions, listAllAIWorkbenchPenTestProjects, type AIWorkbenchModelOption, type AIWorkbenchProject } from '@/lib/api/ai-workbench'
 import { parseBatchInstructions, type InstructionMode } from '@/lib/ai-batch-view'
 import { cn } from '@/lib/utils'
@@ -79,6 +80,16 @@ export function TaskCreateDialog({ projects, source, planSource, onClose, onCrea
   const [planModel, setPlanModel] = useState(sourcePlanModel)
   const [planWorkerModel, setPlanWorkerModel] = useState(sourceWorkerModel)
   const [loadingPlanModels, setLoadingPlanModels] = useState(true)
+  // 只读继承：来源任务的黑板（结论/发现/资产范围/覆盖度）会注入新任务的
+  // 每一轮规划。复制编排任务默认把被复制的任务作为来源；legacy 运行没有
+  // 原生任务，不能作为来源。
+  const copiedPlanTaskId = planSource && isOrchestrationRunId(planSource.run.id) && !planSource.run.readOnly
+    ? planSource.run.id.slice(ORCHESTRATION_RUN_PREFIX.length)
+    : ''
+  const [sourceTaskIds, setSourceTaskIds] = useState<string[]>(copiedPlanTaskId ? [copiedPlanTaskId] : [])
+  const [sourceRuns, setSourceRuns] = useState<AIPlanRunSummary[]>([])
+  const [sourceRunsLoaded, setSourceRunsLoaded] = useState(false)
+  const sourceRunsLoading = taskMode === 'plan' && !sourceRunsLoaded
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   useEffect(() => {
@@ -94,6 +105,21 @@ export function TaskCreateDialog({ projects, source, planSource, onClose, onCrea
       .catch(error => console.warn('Failed to load AI dialogue templates', error))
     return () => { cancelled = true }
   }, [])
+  useEffect(() => {
+    if (taskMode !== 'plan') return
+    let cancelled = false
+    listAIPlanRunSummaries()
+      .then(items => {
+        if (cancelled) return
+        setSourceRuns(items)
+        setSourceRunsLoaded(true)
+      })
+      .catch(error => {
+        console.warn('Failed to load orchestration tasks', error)
+        if (!cancelled) setSourceRunsLoaded(true)
+      })
+    return () => { cancelled = true }
+  }, [taskMode])
   useEffect(() => {
     let cancelled = false
     listAIWorkbenchModelOptions()
@@ -125,6 +151,22 @@ export function TaskCreateDialog({ projects, source, planSource, onClose, onCrea
   const planModelAvailable = planModels.some(option => modelValue(option.providerId, option.model) === effectivePlanModel)
   const workerModelAvailable = planModels.some(option => modelValue(option.providerId, option.model) === effectiveWorkerModel)
   const effectiveBatchModel = batchModel === '__default__' ? '' : batchModel
+  const sourceTaskOptions: SelectTagOption[] = sourceRuns
+    .filter(item => isOrchestrationRunId(item.run.id) && !item.run.readOnly)
+    .sort((a, b) => {
+      const completed = Number(b.run.status === 'completed') - Number(a.run.status === 'completed')
+      return completed || String(b.run.createdAt || '').localeCompare(String(a.run.createdAt || ''))
+    })
+    .map(item => {
+      const taskNumber = item.run.id.slice(ORCHESTRATION_RUN_PREFIX.length)
+      const status = (p.statuses as Record<string, string>)[item.run.status] || item.run.status
+      const objective = (item.run.objective || '').trim()
+      const summary = objective.length > 60 ? `${objective.slice(0, 60)}…` : objective
+      return {
+        value: taskNumber,
+        label: `#${taskNumber} · ${item.project?.name || l.unknownProject} · ${status}${summary ? ` — ${summary}` : ''}`,
+      }
+    })
   const batchGoals = parseBatchInstructions(batchInput, 'batch')
   const renderedBatchRows = batchGoals.map(goal => batchTemplate.trim()
     ? batchTemplate.replaceAll(GOAL_PLACEHOLDER, goal).trim()
@@ -168,6 +210,7 @@ export function TaskCreateDialog({ projects, source, planSource, onClose, onCrea
       if (!planModelAvailable || !workerModelAvailable) { setError(p.modelUnavailable); return }
       if (matchingAIProjects(projects, name).length) { setError(p.existingProjectHint); return }
       if (targets.length > 100) { setError(p.targetsLimit); return }
+      if (sourceTaskIds.length > 8) { setError(p.sourceTasksLimit); return }
       const [providerId, model] = effectivePlanModel.split('::')
       const [workerProviderId, workerModel] = effectiveWorkerModel.split('::')
       if (!providerId || !model) { setError(p.createValidation); return }
@@ -187,6 +230,7 @@ export function TaskCreateDialog({ projects, source, planSource, onClose, onCrea
           maxWorkers: n,
           // Worker total is unlimited; only the Planner's finish_plan ends the run.
           maxTotalWorkers: 0,
+          sourceTaskIds,
         })
         onPlanCreated?.(detail)
       } catch (e) { setError(e instanceof Error ? e.message : p.createValidation) }
@@ -268,6 +312,19 @@ export function TaskCreateDialog({ projects, source, planSource, onClose, onCrea
         </> : <>
         <div className="space-y-2"><Label htmlFor={`${id}-plan-objective`}>{p.objective}</Label><Textarea id={`${id}-plan-objective`} className="min-h-24 resize-y" value={planObjective} onChange={e => setPlanObjective(e.target.value)} placeholder={p.objectivePlaceholder} disabled={busy} required /></div>
         <div className="space-y-2"><Label htmlFor={`${id}-plan-targets`}>{p.targets}</Label><Textarea id={`${id}-plan-targets`} className="min-h-36 resize-y font-mono text-sm" value={planTargets} onChange={e => setPlanTargets(e.target.value)} placeholder={p.targetsPlaceholder} disabled={busy} /><p className="text-xs text-muted-foreground">{p.targetsHint}</p></div>
+        <div className="space-y-2">
+          <Label>{p.sourceTasks}</Label>
+          <SelectTag
+            options={sourceTaskOptions}
+            value={sourceTaskIds}
+            onChange={next => setSourceTaskIds(next.slice(0, 8))}
+            placeholder={sourceRunsLoading ? p.sourceTasksLoading : p.sourceTasksPlaceholder}
+            searchPlaceholder={p.sourceTasksSearch}
+            emptyText={p.sourceTasksEmpty}
+            disabled={busy || sourceRunsLoading}
+          />
+          <p className="text-xs text-muted-foreground">{p.sourceTasksHint}</p>
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2"><Label htmlFor={`${id}-plan-model`}>{separatePlanModels ? p.plannerModel : p.model}</Label><Select value={effectivePlanModel} onValueChange={setPlanModel} disabled={busy || loadingPlanModels || !planModels.length}><SelectTrigger id={`${id}-plan-model`} className="w-full"><SelectValue placeholder={p.model} /></SelectTrigger><SelectContent>{effectivePlanModel && !planModelAvailable && <SelectItem value={effectivePlanModel} disabled>{effectivePlanModel.split('::')[1]} · {p.unavailableModel}</SelectItem>}{planModels.map(option => <SelectItem key={`${option.providerId}::${option.model}`} value={`${option.providerId}::${option.model}`}>{option.providerName} · {option.model}</SelectItem>)}</SelectContent></Select></div>
           {separatePlanModels && <div className="space-y-2"><Label htmlFor={`${id}-worker-model`}>{p.workerModel}</Label><Select value={effectiveWorkerModel} onValueChange={setPlanWorkerModel} disabled={busy || loadingPlanModels || !planModels.length}><SelectTrigger id={`${id}-worker-model`} className="w-full"><SelectValue placeholder={p.workerModel} /></SelectTrigger><SelectContent>{effectiveWorkerModel && !workerModelAvailable && <SelectItem value={effectiveWorkerModel} disabled>{effectiveWorkerModel.split('::')[1]} · {p.unavailableModel}</SelectItem>}{planModels.map(option => <SelectItem key={`${option.providerId}::${option.model}`} value={`${option.providerId}::${option.model}`}>{option.providerName} · {option.model}</SelectItem>)}</SelectContent></Select></div>}
