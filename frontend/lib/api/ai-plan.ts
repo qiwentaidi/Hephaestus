@@ -121,9 +121,6 @@ export interface CreateAIPlanRunRequest {
   workerModel?: string
   maxWorkers?: number
   maxTotalWorkers?: number
-  // Per-task opt-in for the agents' web_search tool. Off by default: queries
-  // carry target information to a third-party search backend.
-  allowWebSearch?: boolean
 }
 
 async function parse<T>(response: Response): Promise<T> {

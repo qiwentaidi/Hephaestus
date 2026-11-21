@@ -205,7 +205,7 @@ func createARTEXPlan(c *gin.Context) {
 	} else if ok {
 		fallbackProfiles = fallbacks
 	}
-	t, err := rt.Engine.PrepareHostTask(taskengine.HostTaskOptions{Name: project.Name, Description: "目标资产：" + strings.Join(targets, "\n") + "\n授权范围：" + strings.Join(scope, "\n"), Goal: objective, Planner: planner, Worker: worker, Fallbacks: fallbackProfiles, AllowWebSearch: req.AllowWebSearch, Workers: workers})
+	t, err := rt.Engine.PrepareHostTask(taskengine.HostTaskOptions{Name: project.Name, Description: "目标资产：" + strings.Join(targets, "\n") + "\n授权范围：" + strings.Join(scope, "\n"), Goal: objective, Planner: planner, Worker: worker, Fallbacks: fallbackProfiles, Workers: workers})
 	if err != nil {
 		nativeError(c, 500, err)
 		return
