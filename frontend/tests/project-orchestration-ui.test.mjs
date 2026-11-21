@@ -55,6 +55,20 @@ test('task management unifies batch and orchestration tasks', () => {
   assert.match(detail, /PlanStatusBadge/)
 })
 
+test('evidence index pages every fact and finding from the server', () => {
+  const evidence = read('app/(main)/ai/workbench/project/components/EvidenceWorkspace.tsx')
+  const page = read('app/(main)/ai/workbench/project/ProjectClient.tsx')
+  const api = read('lib/api/ai-workbench.ts')
+  assert.match(evidence, /listAIWorkbenchProjectEvidence/)
+  assert.match(evidence, /getAIWorkbenchProjectEvidenceEntry/)
+  assert.match(evidence, /<PaginationPro/)
+  assert.match(evidence, /source: source === 'all' \? '' : source/)
+  assert.match(page, /<EvidenceWorkspace key=\{source\} projectId=\{id\}/)
+  assert.match(page, /evidenceCounts/)
+  assert.match(api, /AIWorkbenchProjectEvidencePage/)
+  assert.match(api, /projects\/\$\{encodeURIComponent\(projectId\)\}\/evidence/)
+})
+
 test('orchestration creation links read-only source tasks', () => {
   const dialog = read('app/(main)/ai/tasks/components/TaskCreateDialog.tsx')
   const api = read('lib/api/ai-plan.ts')

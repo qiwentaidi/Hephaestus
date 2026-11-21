@@ -1345,6 +1345,8 @@ export interface AIWorkbenchPenTestSessionBlackboard {
   facts: AIWorkbenchBlackboardFact[]
   edges: AIWorkbenchBlackboardEdge[]
   findings: AIWorkbenchVulnerabilityFinding[]
+  /** Project-wide totals from the paged evidence source; the arrays above are a snapshot. */
+  evidenceCounts?: AIWorkbenchEvidenceCounts
   updatedAt: string
 }
 
@@ -2762,6 +2764,85 @@ export async function getAIWorkbenchPenTestProjectBlackboard(projectId: string):
     cache: 'no-store',
   })
   return parseAPIResponse<AIWorkbenchPenTestSessionBlackboard>(response)
+}
+
+/** Project-wide totals used by the overview; paging does not affect them. */
+export interface AIWorkbenchEvidenceCounts {
+  facts: number
+  blockers: number
+  findings: number
+  confirmedFindings: number
+  candidateFindings: number
+}
+
+/** One conclusion or supporting fact from the project evidence stream. */
+export interface AIWorkbenchProjectEvidenceItem {
+  id: string
+  kind: 'fact' | 'blocker' | 'finding' | string
+  title: string
+  body?: string
+  status?: string
+  conversationId?: string
+  sourceTitle?: string
+  createdAt?: string
+  updatedAt?: string
+  factKey?: string
+  category?: string
+  findingId?: string
+  severity?: string
+  severityLabel?: string
+  url?: string
+  impact?: string
+  reproductionSteps?: string
+  evidence?: string
+  executionId?: string
+}
+
+export interface AIWorkbenchProjectEvidencePage {
+  items: AIWorkbenchProjectEvidenceItem[]
+  total: number
+  page: number
+  pageSize: number
+  hasMore: boolean
+  counts: AIWorkbenchEvidenceCounts
+}
+
+export async function listAIWorkbenchProjectEvidence(
+  projectId: string,
+  params: { page?: number; pageSize?: number; search?: string; source?: string; signal?: AbortSignal } = {},
+): Promise<AIWorkbenchProjectEvidencePage> {
+  const query = new URLSearchParams()
+  if (params.page) query.set('page', String(params.page))
+  if (params.pageSize) query.set('pageSize', String(params.pageSize))
+  if (params.search) query.set('search', params.search)
+  if (params.source) query.set('source', params.source)
+  const suffix = query.toString()
+  const response = await fetchWithAuth(`/api/v1/ai/projects/${encodeURIComponent(projectId)}/evidence${suffix ? `?${suffix}` : ''}`, {
+    cache: 'no-store',
+    signal: params.signal,
+  })
+  const data = await parseAPIResponse<AIWorkbenchProjectEvidencePage>(response)
+  return {
+    items: Array.isArray(data.items) ? data.items : [],
+    total: typeof data.total === 'number' ? data.total : 0,
+    page: typeof data.page === 'number' && data.page > 0 ? data.page : params.page || 1,
+    pageSize: typeof data.pageSize === 'number' && data.pageSize > 0 ? data.pageSize : params.pageSize || 20,
+    hasMore: Boolean(data.hasMore),
+    counts: data.counts || { facts: 0, blockers: 0, findings: 0, confirmedFindings: 0, candidateFindings: 0 },
+  }
+}
+
+export async function getAIWorkbenchProjectEvidenceEntry(
+  projectId: string,
+  nodeId: string,
+  signal?: AbortSignal,
+): Promise<AIWorkbenchProjectEvidenceItem> {
+  const response = await fetchWithAuth(
+    `/api/v1/ai/projects/${encodeURIComponent(projectId)}/evidence/entry?node=${encodeURIComponent(nodeId)}`,
+    { cache: 'no-store', signal },
+  )
+  const data = await parseAPIResponse<{ item: AIWorkbenchProjectEvidenceItem }>(response)
+  return data.item
 }
 
 export interface AIWorkbenchFindingQueryParams {
