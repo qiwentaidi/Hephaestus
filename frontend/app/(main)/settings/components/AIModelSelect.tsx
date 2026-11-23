@@ -79,7 +79,9 @@ export function AIModelSelect({ provider, onChange }: {
           {t.aiConfig.modelsRefresh}
         </button>
       </div>
-      <Popover open={open} onOpenChange={next => { setOpen(next); if (next) setSearch('') }}>
+      {/* modal：渠道详情是 Radix Sheet，非模态 Popover 会 Portal 到 Sheet 之外，
+          被 Dialog 的滚动锁判定为外部区域，导致触控板与鼠标滚轮都滚不动模型列表。 */}
+      <Popover open={open} modal onOpenChange={next => { setOpen(next); if (next) setSearch('') }}>
         <PopoverTrigger asChild>
           <Button id="ai-provider-model" type="button" variant="outline" role="combobox"
             aria-expanded={open} aria-describedby="ai-model-status"
