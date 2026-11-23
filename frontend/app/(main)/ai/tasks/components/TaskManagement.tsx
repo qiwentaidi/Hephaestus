@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Copy, FileText, MessageSquare, MoreHorizontal, Pause, Play, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
@@ -49,6 +49,14 @@ export default function TaskManagement() {
   const [queues, setQueues] = useState<AIBatchQueue[]>([])
   const [plans, setPlans] = useState<AIPlanRunSummary[]>([])
   const [selectedTaskKey, setSelectedTaskKey] = useState(() => params.get('run') ? `plan:${params.get('run')}` : params.get('queue') ? `batch:${params.get('queue')}` : '')
+  // Workbench guard deep link: /ai/tasks?create=plan&source=<native task id>
+  // opens the orchestration form with that run preselected as the read-only
+  // source. null means the dialog was not opened by the deep link.
+  const [deepLinkPlanSource, setDeepLinkPlanSource] = useState<string[] | null>(() => {
+    if (params.get('create') !== 'plan') return null
+    const source = (params.get('source') || '').trim()
+    return source ? [source] : []
+  })
   const [planAction, setPlanAction] = useState<{ id: string; action: 'pause' | 'resume' } | null>(null)
   const planActionLock = useRef(false)
   const [selected, setSelected] = useState<string[]>([])
@@ -80,6 +88,16 @@ export default function TaskManagement() {
   const searchRef = useRef('')
   const [loadedSearch, setLoadedSearch] = useState('')
   const detailScroll = useRef<HTMLDivElement>(null)
+  const router = useRouter()
+  const closeCreateDialog = useCallback(() => {
+    setCreating(false)
+    setCopySource(undefined)
+    setCopyPlanSource(undefined)
+    if (deepLinkPlanSource) {
+      setDeepLinkPlanSource(null)
+      router.replace(pathname)
+    }
+  }, [deepLinkPlanSource, pathname, router])
   useEffect(() => {
     mounted.current = true
     return () => {
@@ -467,7 +485,7 @@ export default function TaskManagement() {
       </section>
     </div>}
     {storageProject && <ProjectStorageDialog key={storageProject.id} project={storageProject} onClose={() => setStorageProject(null)} />}
-    {creating && <TaskCreateDialog projects={projects} projectId={detail?.projectId} source={copySource} planSource={copyPlanSource} onClose={() => setCreating(false)} onCreated={queue => { setCreating(false); setQueues(prev => [queue, ...prev]); setQuery(''); setStatusFilter([]); setKindFilter('all'); chooseQueue(queue); toast.success(l.created); void refresh(true); void refreshProjects() }} onPlanCreated={plan => { setCreating(false); setSelectedTaskKey(`plan:${plan.run.id}`); setQuery(''); setStatusFilter([]); setKindFilter('all'); toast.success(p.createCreated); void refresh(true); void refreshProjects() }} />}
+    {(creating || deepLinkPlanSource !== null) ? <TaskCreateDialog key={deepLinkPlanSource ? 'deep-link' : 'manual'} projects={projects} projectId={detail?.projectId} source={copySource} planSource={copyPlanSource} initialMode={deepLinkPlanSource ? 'plan' : undefined} initialPlanSourceTaskIds={deepLinkPlanSource || undefined} onClose={closeCreateDialog} onCreated={queue => { closeCreateDialog(); setQueues(prev => [queue, ...prev]); setQuery(''); setStatusFilter([]); setKindFilter('all'); chooseQueue(queue); toast.success(l.created); void refresh(true); void refreshProjects() }} onPlanCreated={plan => { closeCreateDialog(); setSelectedTaskKey(`plan:${plan.run.id}`); setQuery(''); setStatusFilter([]); setKindFilter('all'); toast.success(p.createCreated); void refresh(true); void refreshProjects() }} /> : null}
     <AlertDialog open={deleteTargets.length > 0} onOpenChange={open => { if (!open && !busy) setDeleteKeys([]) }}>
       <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{countLabel(l.deleteConfirmMixed, deleteTargets.length)}</AlertDialogTitle><AlertDialogDescription>{l.deleteScopeMixed}</AlertDialogDescription></AlertDialogHeader>
         <ul className="max-h-48 space-y-2 overflow-y-auto rounded-md border p-3 text-sm">{deleteTargets.map(target => <li key={target.key} className="flex items-center justify-between gap-3"><span className="flex min-w-0 items-center gap-2"><Badge variant="outline" className="h-5 shrink-0 rounded px-1 text-[10px]">{target.kind === 'batch' ? l.batchTab : p.tab}</Badge><span className="break-words">{target.name}</span></span>{target.kind === 'batch' ? badge(target.status as BatchStatus) : <PlanStatusBadge status={target.status} />}</li>)}</ul>

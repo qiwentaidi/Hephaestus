@@ -86,7 +86,9 @@ import {
   type AIWorkbenchSideChatMessage,
 } from '@/lib/api/ai-workbench'
 import { listAIBatchQueues } from '@/lib/api/ai-batch'
-import { ensureAIPlanRunController, isOrchestrationRunId, listAIPlanRunSummaries } from '@/lib/api/ai-plan'
+import { ensureAIPlanRunController, isOrchestrationRunId, listAIPlanRunSummaries, ORCHESTRATION_RUN_PREFIX } from '@/lib/api/ai-plan'
+import { activePlanRunForProject, type NewSessionGuardTarget } from './active-run-guard'
+import { NewSessionGuardDialog } from './components/NewSessionGuardDialog'
 import { buildFindingRetestPrompt, findingRetestDestination } from '@/lib/finding-retest'
 import { turnPreviewText, turnResultPreview } from '@/lib/ai-turn-preview'
 import { ConversationRail } from './components/ConversationRail'
@@ -1883,6 +1885,8 @@ function AIWorkbenchContent() {
   const effectiveSelectedModel = (selectedModelIsAvailable ? selectedModel : '') || defaultWorkbenchModelValue(modelOptions) || modelValue(bootstrap?.defaultPreview.selectedModel)
   const [search, setSearch] = useState(() => aiWorkbenchRouteCache?.search || '')
   const [projectSessionRevision, setProjectSessionRevision] = useState(0)
+  const [newSessionGuard, setNewSessionGuard] = useState<NewSessionGuardTarget | null>(null)
+  const [openingGuardController, setOpeningGuardController] = useState(false)
   const { pages: projectSessionPages, load: loadProjectSessions, updateSession: updateProjectSession, removeSession: removeProjectSession } = useProjectSessions(search, openProjects, projectSessionRevision)
   const [sessionTotal, setSessionTotal] = useState(0)
   const [sessionPage, setSessionPage] = useState(1)
@@ -2670,10 +2674,64 @@ function AIWorkbenchContent() {
   const newConversation = useCallback((projectId?: string) => {
     sessionAbortRef.current?.abort(); activeSessionRef.current = null; processMerger.current.reset(''); setActiveSessionId(null); setSession(null); setSessionLoadError(''); setGoalOverride(null); createRequestIdRef.current=''; setSideChatOpen(false); setEditingMessageId(null); setEditedMessageContent('')
     clearSessionRoute()
-    const nextProjectId = projectId ?? projects[0]?.id ?? ''
+    const nextProjectId = projectId ?? (selectedProjectId || projects[0]?.id || '')
     setSelectedProjectId(nextProjectId)
     if (nextProjectId) setOpenProjects((previous) => ({ ...previous, [nextProjectId]: true }))
-  }, [clearSessionRoute, projects])
+  }, [clearSessionRoute, projects, selectedProjectId])
+  // Starting a plain session in a project that is still orchestrating used to
+  // silently create a conversation outside the run. Ask once and route the
+  // intent explicitly: steer the live run, or start a separate assessment.
+  const requestNewConversation = useCallback(async (projectId?: string) => {
+    const targetProjectId = projectId ?? (selectedProjectId || projects[0]?.id || '')
+    if (!targetProjectId) { newConversation(projectId); return }
+    try {
+      const runs = await listAIPlanRunSummaries('', undefined, targetProjectId)
+      const run = activePlanRunForProject(runs, targetProjectId)
+      if (run) {
+        setNewSessionGuard({
+          projectId: targetProjectId,
+          projectName: run.project?.name || projects.find((project) => project.id === targetProjectId)?.name || '',
+          run,
+        })
+        return
+      }
+    } catch {
+      // The guard is advisory; a failed lookup must never block a new session.
+    }
+    newConversation(projectId)
+  }, [newConversation, projects, selectedProjectId])
+  const continueInGuardedRun = useCallback(async () => {
+    if (!newSessionGuard || openingGuardController) return
+    const guard = newSessionGuard
+    setOpeningGuardController(true)
+    try {
+      let controllerId = guard.run.run.controllerConversationId || ''
+      if (!controllerId) {
+        const detail = await ensureAIPlanRunController(guard.run.run.id)
+        controllerId = detail.controllerConversation?.id || detail.run.controllerConversationId || ''
+      }
+      if (!controllerId) throw new Error(l.controllerUnavailable)
+      setNewSessionGuard(null)
+      setMobileSidebarOpen(false)
+      setMobileSearchOpen(false)
+      await loadSession(controllerId)
+      window.requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>('[data-slot="ai-workbench-composer-textarea"]')?.focus())
+    } catch (error) {
+      showWorkbenchError(error, 'newSessionGuardOpenFailed')
+    } finally {
+      setOpeningGuardController(false)
+    }
+  }, [l.controllerUnavailable, loadSession, newSessionGuard, openingGuardController, showWorkbenchError])
+  const openGuardedNewTask = useCallback(() => {
+    if (!newSessionGuard) return
+    const run = newSessionGuard.run.run
+    const params = new URLSearchParams({ create: 'plan' })
+    if (isOrchestrationRunId(run.id) && !run.readOnly) params.set('source', run.id.slice(ORCHESTRATION_RUN_PREFIX.length))
+    setNewSessionGuard(null)
+    setMobileSidebarOpen(false)
+    setMobileSearchOpen(false)
+    router.push(`/ai/tasks?${params.toString()}`)
+  }, [newSessionGuard, router])
   useEffect(() => {
     const handleShortcut = (event: globalThis.KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
@@ -3152,10 +3210,10 @@ function AIWorkbenchContent() {
   }, [router])
   const handleProjectMenuAction = useCallback((action: ProjectMenuAction, project: AIWorkbenchProject) => {
     if (action === 'blackboard') void openProjectBlackboard(project)
-    if (action === 'new-session') newConversation(project.id)
+    if (action === 'new-session') void requestNewConversation(project.id)
     if (action === 'rename') openProjectDialog('rename', project)
     if (action === 'delete') setDeleteTarget({ type: 'project', project })
-  }, [newConversation, openProjectBlackboard, openProjectDialog])
+  }, [openProjectBlackboard, openProjectDialog, requestNewConversation])
   const handleSessionMenuAction = useCallback((action: SessionMenuAction, summary: AIWorkbenchConversationSummary) => {
     if (action === 'blackboard') void openSessionBlackboard(summary)
     if (action === 'rename') { setSessionRenameTarget(summary); setSessionName(summary.task.name || summary.task.target || '') }
@@ -3242,7 +3300,7 @@ function AIWorkbenchContent() {
         <div className="flex gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button type="button" onClick={() => { newConversation(); closeMobileSidebar() }} aria-label={l.newConversation} className="h-11 min-w-0 flex-1 gap-2 rounded-xl text-sm font-semibold"><MessageSquarePlus className="h-4 w-4" />{l.newConversation}</Button>
+              <Button type="button" onClick={() => { void requestNewConversation(); closeMobileSidebar() }} aria-label={l.newConversation} className="h-11 min-w-0 flex-1 gap-2 rounded-xl text-sm font-semibold"><MessageSquarePlus className="h-4 w-4" />{l.newConversation}</Button>
             </TooltipTrigger>
             <TooltipContent>{l.newConversation}</TooltipContent>
           </Tooltip>
@@ -3330,7 +3388,7 @@ function AIWorkbenchContent() {
         <div className="flex shrink-0 items-center gap-1">
           <Button type="button" variant="ghost" size="icon" className="h-11 w-11 shrink-0 rounded-lg text-muted-foreground hover:text-foreground lg:hidden" aria-label={l.showSidebar} aria-expanded={mobileSidebarOpen} onClick={() => setMobileSidebarOpen(true)}><PanelLeftOpen className="h-4 w-4" /></Button>
           <Tooltip><TooltipTrigger asChild><Button type="button" variant="ghost" size="icon" className="hidden h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground lg:inline-flex" aria-label={sidebarCollapsed ? l.showSidebar : l.hideSidebar} aria-expanded={!sidebarCollapsed} onClick={() => { if (!sidebarCollapsed) setSearchOpen(false); setSidebarCollapsed((value) => !value) }}>{sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}</Button></TooltipTrigger><TooltipContent side="bottom">{sidebarCollapsed ? l.showList : l.hideList}</TooltipContent></Tooltip>
-          <Button type="button" variant="ghost" size="sm" className={cn('h-11 md:h-8 gap-1.5 rounded-lg text-muted-foreground hover:text-foreground animate-in fade-in duration-200 motion-reduce:animate-none', !sidebarCollapsed && 'lg:hidden')} onClick={() => newConversation()}><MessageSquarePlus className="h-4 w-4" />{l.newConversation}</Button>
+          <Button type="button" variant="ghost" size="sm" className={cn('h-11 md:h-8 gap-1.5 rounded-lg text-muted-foreground hover:text-foreground animate-in fade-in duration-200 motion-reduce:animate-none', !sidebarCollapsed && 'lg:hidden')} onClick={() => void requestNewConversation()}><MessageSquarePlus className="h-4 w-4" />{l.newConversation}</Button>
         </div>
         <div className="flex min-w-0 items-center gap-2">
           {sessionNodeName ? <span className="hidden md:inline max-w-24 truncate text-xs text-muted-foreground sm:max-w-48 xl:max-w-72" title={sessionNodeName}>{sessionNodeName}</span> : null}
@@ -3386,6 +3444,7 @@ function AIWorkbenchContent() {
         <DialogFooter><Button type="button" variant="outline" onClick={() => { setHistoryTarget(null); setHistoryItems([]) }}>{l.close}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
+    {newSessionGuard ? <NewSessionGuardDialog target={newSessionGuard} busy={openingGuardController} onClose={() => { if (!openingGuardController) setNewSessionGuard(null) }} onContinueInController={() => void continueInGuardedRun()} onCreateTask={openGuardedNewTask} /> : null}
     <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
       <AlertDialogContent>
         <AlertDialogHeader>

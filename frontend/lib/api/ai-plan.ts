@@ -170,9 +170,10 @@ export async function listAIPlanRuns(params: { projectId?: string; page?: number
   return { items, total, page, pageSize, hasMore: typeof data.hasMore === 'boolean' ? data.hasMore : false }
 }
 
-export async function listAIPlanRunSummaries(search = '', signal?: AbortSignal): Promise<AIPlanRunSummary[]> {
+export async function listAIPlanRunSummaries(search = '', signal?: AbortSignal, projectId = ''): Promise<AIPlanRunSummary[]> {
   const params = new URLSearchParams({ view: 'summary' })
   if (search) params.set('search', search)
+  if (projectId) params.set('projectId', projectId)
   const response = await fetchWithAuth(`/api/v1/ai/plan-runs?${params}`, { cache: 'no-store', signal })
   const data = await parse<{ items: (Omit<AIPlanRunSummary, 'project'> & { projectName: string })[] }>(response)
   return data.items.map(({ projectName, ...item }) => ({

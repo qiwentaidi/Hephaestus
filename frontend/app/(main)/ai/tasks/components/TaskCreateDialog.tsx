@@ -27,6 +27,10 @@ interface Props {
   projectId?: string
   source?: AIBatchQueue
   planSource?: AIPlanRunListItem
+  /** Deep link from the workbench guard: open on a tab without copy semantics. */
+  initialMode?: 'batch' | 'plan'
+  /** Read-only inheritance preselected from the workbench guard. */
+  initialPlanSourceTaskIds?: string[]
   onClose: () => void
   onCreated: (queue: AIBatchQueue) => void
   onPlanCreated?: (detail: AIPlanRunDetail) => void
@@ -51,12 +55,12 @@ function copiedPlanTargets(scopeJson?: string): string {
   } catch { return '' }
 }
 
-export function TaskCreateDialog({ projects, source, planSource, onClose, onCreated, onPlanCreated }: Props) {
+export function TaskCreateDialog({ projects, source, planSource, initialMode, initialPlanSourceTaskIds, onClose, onCreated, onPlanCreated }: Props) {
   const { t } = useI18n(); const l = t.aiBatch; const p = t.aiPlan; const id = useId()
   const sourcePlanModel = modelValue(planSource?.run.plannerProviderId, planSource?.run.plannerModel)
   const sourceWorkerModel = planSource?.run.workerModel ? modelValue(planSource.run.workerProviderId, planSource.run.workerModel) : sourcePlanModel
   const separatePlanModels = Boolean(planSource && sourceWorkerModel !== sourcePlanModel)
-  const [taskMode, setTaskMode] = useState<'batch' | 'plan'>(planSource ? 'plan' : 'batch')
+  const [taskMode, setTaskMode] = useState<'batch' | 'plan'>(planSource ? 'plan' : initialMode || 'batch')
   const [name, setName] = useState(planSource ? `${planSource.project?.name || projects.find(project => project.id === planSource.run.projectId)?.name || l.unknownProject} ${l.copySuffix}` : source ? `${source.name} ${l.copySuffix}` : '')
   const [project, setProject] = useState(source?.projectId || '')
   const [mode, setMode] = useState<InstructionMode>(source?.items.length === 1 ? 'single' : 'batch')
@@ -86,7 +90,9 @@ export function TaskCreateDialog({ projects, source, planSource, onClose, onCrea
   const copiedPlanTaskId = planSource && isOrchestrationRunId(planSource.run.id) && !planSource.run.readOnly
     ? planSource.run.id.slice(ORCHESTRATION_RUN_PREFIX.length)
     : ''
-  const [sourceTaskIds, setSourceTaskIds] = useState<string[]>(copiedPlanTaskId ? [copiedPlanTaskId] : [])
+  const [sourceTaskIds, setSourceTaskIds] = useState<string[]>(() => [...new Set(
+    (copiedPlanTaskId ? [copiedPlanTaskId] : (initialPlanSourceTaskIds || [])).map((id) => id.trim()).filter(Boolean),
+  )])
   const [sourceRuns, setSourceRuns] = useState<AIPlanRunSummary[]>([])
   const [sourceRunsLoaded, setSourceRunsLoaded] = useState(false)
   const sourceRunsLoading = taskMode === 'plan' && !sourceRunsLoaded
@@ -251,7 +257,7 @@ export function TaskCreateDialog({ projects, source, planSource, onClose, onCrea
   }
   return <Sheet open onOpenChange={open => { if (!open && !busy) onClose() }}>
     <SheetContent side="right" className="h-dvh w-full gap-0 overflow-hidden p-0 sm:max-w-[680px]">
-      <SheetHeader className="shrink-0 border-b px-6 py-5 pr-12"><SheetTitle>{source || planSource ? l.copyTask : l.newQueue}</SheetTitle></SheetHeader>
+      <SheetHeader className="shrink-0 border-b px-6 py-5 pr-12"><SheetTitle>{source || planSource ? l.copyTask : taskMode === 'plan' ? p.newTask : l.newQueue}</SheetTitle></SheetHeader>
       <form id={id} onSubmit={save} className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
         <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label={l.title}>
           <button type="button" role="radio" aria-checked={taskMode === 'batch'} disabled={busy} className={cn('flex items-start gap-3 rounded-lg border p-4 text-left transition-colors focus-visible:outline-2 focus-visible:outline-primary', taskMode === 'batch' ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'border-border hover:border-primary/40')} onClick={() => { setTaskMode('batch'); setError('') }}>
