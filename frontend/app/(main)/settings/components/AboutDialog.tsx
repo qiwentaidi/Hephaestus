@@ -109,17 +109,9 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
 							/>
 						</div>
 						<div className="min-w-0">
-							<div className="flex flex-wrap items-center gap-2">
-								<DialogTitle className="text-xl font-semibold tracking-tight">
-									{t.about.title}
-								</DialogTitle>
-								{loading && <Skeleton className="h-5 w-14 rounded-full" />}
-								{!loading && !error && aboutInfo && (
-									<span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2 py-1 text-[11px] leading-none font-medium tabular-nums text-primary">
-										{aboutInfo.app.version}
-									</span>
-								)}
-							</div>
+							<DialogTitle className="text-xl font-semibold tracking-tight">
+								{t.about.title}
+							</DialogTitle>
 							<DialogDescription className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
 								{t.about.description}
 							</DialogDescription>
