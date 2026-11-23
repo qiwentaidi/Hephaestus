@@ -1643,6 +1643,7 @@ export const en: Locale = {
     setAsDefault: "Set as Default",
     currentDefault: "Current Default",
     defaultProvider: "Default Provider",
+    defaultProviderAutoSwitched: "Default provider switched to “{name}”",
     deleteProvider: "Delete Provider",
     testProvider: "Test Availability",
     fillProviderFirst: "Enable the provider and complete Base URL, API key, and model first",

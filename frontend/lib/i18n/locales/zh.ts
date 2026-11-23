@@ -1630,6 +1630,7 @@ export const zh = {
     setAsDefault: "设为默认",
     currentDefault: "当前默认",
     defaultProvider: "默认渠道",
+    defaultProviderAutoSwitched: "默认渠道已切换为「{name}」",
     deleteProvider: "删除渠道",
     testProvider: "测试可用性",
     fillProviderFirst: "请先启用渠道并填写完整 Base URL、API Key 和模型",

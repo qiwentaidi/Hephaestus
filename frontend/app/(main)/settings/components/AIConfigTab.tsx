@@ -226,6 +226,18 @@ function providerStatus(provider: AIProviderConfig) {
   return Boolean(provider.enabled && provider.api.trim() && provider.key.trim() && provider.model.trim())
 }
 
+// 默认渠道必须始终指向可用渠道：关闭当前默认渠道时，自动切到下一个「已启用
+// 且配置完整」的渠道。否则 defaultProviderId 会停在已关闭的渠道上，后端解析
+// 请求时把 enabled && provider.enabled 求值为 false，整个 AI 会被判定为不可用。
+function ensureAvailableDefaultProvider(config: AIConfig): AIConfig {
+  const providers = config.providers || []
+  const current = providers.find((provider) => provider.id === config.defaultProviderId)
+  if (!current || current.enabled) return config
+  const next = providers.find((provider) => provider.id !== current.id && providerStatus(provider))
+  if (!next) return config
+  return syncTopLevelConfig({ ...config, defaultProviderId: next.id })
+}
+
 function providerAPIHost(api: string): string {
   try {
     return new URL(api.trim()).hostname.toLowerCase()
@@ -295,7 +307,9 @@ export function AIConfigTab() {
     const updatedProviders = (config.providers || []).map((provider) =>
       provider.id === providerId ? { ...provider, enabled: !provider.enabled } : provider,
     )
-    autoSaveConfig(syncTopLevelConfig({ ...config, providers: updatedProviders }))
+    autoSaveConfig(
+      ensureAvailableDefaultProvider(syncTopLevelConfig({ ...config, providers: updatedProviders })),
+    )
   }
 
   const reorderProviders = (fromId: string, toId: string) => {
@@ -417,12 +431,26 @@ export function AIConfigTab() {
     }
   }
 
-  const persistConfig = async (nextConfig: AIConfig) => {
-    const prepared = prepareHeaders(nextConfig)
+  const persistConfig = async (
+    nextConfig: AIConfig,
+    options: { notifyDefaultSwitch?: boolean } = {},
+  ) => {
+    const prepared = ensureAvailableDefaultProvider(prepareHeaders(nextConfig))
     validateTimeouts(prepared)
     validateHeaders(prepared)
     const normalized = withProviderNameFallbacks(prepared)
     await saveAIConfig(normalized)
+    if (options.notifyDefaultSwitch && normalized.defaultProviderId !== config.defaultProviderId) {
+      const previousDefault = normalized.providers?.find(
+        (provider) => provider.id === config.defaultProviderId,
+      )
+      const nextDefault = normalized.providers?.find(
+        (provider) => provider.id === normalized.defaultProviderId,
+      )
+      if (previousDefault && !previousDefault.enabled && nextDefault) {
+        toast.success(t.aiConfig.defaultProviderAutoSwitched.replace('{name}', nextDefault.name))
+      }
+    }
     setConfig(normalized)
     return normalized
   }
@@ -450,7 +478,7 @@ export function AIConfigTab() {
   const saveConfig = async () => {
     setSaving(true)
     try {
-      await persistConfig(config)
+      await persistConfig(config, { notifyDefaultSwitch: true })
       toast.success(t.common.configSaved)
     } catch (error: any) {
       toast.error(`${t.common.saveFailed}: ${error.message || ''}`)
@@ -465,7 +493,7 @@ export function AIConfigTab() {
     setSaving(true)
     void (async () => {
       try {
-        await persistConfig(next)
+        await persistConfig(next, { notifyDefaultSwitch: true })
       } catch (error: any) {
         toast.error(`${t.common.saveFailed}: ${error.message || ''}`)
       } finally {
