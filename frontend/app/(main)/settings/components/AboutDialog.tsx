@@ -1,17 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
-	DialogHeader,
 	DialogTitle,
 } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Info, Shield, AlertCircle } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
+import { AlertCircle, Container, Info, Tag } from 'lucide-react'
 import { fetchWithAuth } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 
@@ -56,9 +54,11 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
 				if (!cancelled) {
 					setAboutInfo(data)
 				}
-			} catch (err) {
+			} catch {
+				// 网络错误与外层抛出的失败都归一到本地化文案，避免出现英文的
+				// “Failed to fetch” 之类的浏览器原文。
 				if (!cancelled) {
-					setError(err instanceof Error ? err.message : t.about.loadFailed)
+					setError(t.about.loadFailed)
 				}
 			} finally {
 				if (!cancelled) {
@@ -74,61 +74,123 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
 		}
 	}, [open, t.about.loadFailed])
 
+	const deploymentLabel = (() => {
+		const mode = aboutInfo?.app.deployment?.trim().toLowerCase()
+		switch (mode) {
+			case 'docker':
+				return t.about.deploymentDocker
+			case 'desktop':
+				return t.about.deploymentDesktop
+			case 'native':
+				return t.about.deploymentNative
+			default:
+				return aboutInfo?.app.deployment?.trim() ?? ''
+		}
+	})()
+
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[500px]">
-				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2">
-						<Shield className="w-5 h-5" />
-						{t.about.title}
-					</DialogTitle>
-					<DialogDescription>{t.about.description}</DialogDescription>
-				</DialogHeader>
+			<DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-[460px]">
+				{/* 品牌头：图标 + 标题 + 版本胶囊 */}
+				<div className="relative px-6 pt-6 pb-5">
+					<div
+						aria-hidden="true"
+						className="pointer-events-none absolute -top-24 -left-6 h-44 w-80 rounded-full bg-primary/10 blur-3xl"
+					/>
+					<div className="relative flex items-center gap-3.5 pr-8">
+						<div className="flex size-14 shrink-0 items-center justify-center rounded-2xl border border-border/70 bg-gradient-to-br from-muted/60 to-transparent shadow-sm">
+							<Image
+								src="/brand-mark.png"
+								alt="Hephaestus"
+								width={40}
+								height={40}
+								unoptimized
+								className="app-brand-mark-image size-10"
+							/>
+						</div>
+						<div className="min-w-0">
+							<div className="flex flex-wrap items-center gap-2">
+								<DialogTitle className="text-xl font-semibold tracking-tight">
+									{t.about.title}
+								</DialogTitle>
+								{loading && <Skeleton className="h-5 w-14 rounded-full" />}
+								{!loading && !error && aboutInfo && (
+									<span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2 py-1 text-[11px] leading-none font-medium tabular-nums text-primary">
+										{aboutInfo.app.version}
+									</span>
+								)}
+							</div>
+							<DialogDescription className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+								{t.about.description}
+							</DialogDescription>
+						</div>
+					</div>
+				</div>
 
 				{loading && (
-					<div className="space-y-4 py-4">
-						<Skeleton className="h-20 w-full" />
-						<Skeleton className="h-32 w-full" />
-						<Skeleton className="h-24 w-full" />
-					</div>
+					<>
+						<div className="mx-6 overflow-hidden rounded-xl border border-border/60 bg-muted/20">
+							<div className="flex items-center justify-between px-3.5 py-3">
+								<Skeleton className="h-3.5 w-16" />
+								<Skeleton className="h-3.5 w-14" />
+							</div>
+							<div className="flex items-center justify-between border-t border-border/60 px-3.5 py-3">
+								<Skeleton className="h-3.5 w-20" />
+								<Skeleton className="h-3.5 w-16" />
+							</div>
+						</div>
+						<div className="mt-4 border-t border-border/60 bg-muted/20 px-6 py-3.5">
+							<Skeleton className="h-3 w-16" />
+							<Skeleton className="mt-2.5 h-3 w-56" />
+						</div>
+					</>
 				)}
 
 				{error && (
-					<div className="py-4">
-						<div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-							<AlertCircle className="w-4 h-4 text-destructive shrink-0" />
+					<div className="px-6 pb-6">
+						<div className="flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/10 px-3.5 py-3">
+							<AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden="true" />
 							<p className="text-sm text-destructive">{error}</p>
 						</div>
 					</div>
 				)}
 
 				{!loading && !error && aboutInfo && (
-					<div className="space-y-6 py-4">
-						{/* 应用版本信息 */}
-						<div className="space-y-3">
-							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-3">
-									<h3 className="text-xl font-bold">{aboutInfo.app.name}</h3>
-									{aboutInfo.app.deployment === 'docker' && <Badge variant="secondary">Docker</Badge>}
-										<Badge variant="secondary" className="text-sm">
-										{aboutInfo.app.version}
-									</Badge>
-								</div>
+					<>
+						<div className="mx-6 overflow-hidden rounded-xl border border-border/60 bg-muted/25">
+							<div className="flex items-center justify-between gap-3 px-3.5 py-2.5">
+								<span className="flex items-center gap-2 text-xs text-muted-foreground">
+									<Tag className="size-3.5" aria-hidden="true" />
+									{t.about.version}
+								</span>
+								<span className="font-mono text-xs font-medium tabular-nums">
+									{aboutInfo.app.version}
+								</span>
 							</div>
+							{deploymentLabel && (
+								<div className="flex items-center justify-between gap-3 border-t border-border/60 px-3.5 py-2.5">
+									<span className="flex items-center gap-2 text-xs text-muted-foreground">
+										<Container className="size-3.5" aria-hidden="true" />
+										{t.about.deployment}
+									</span>
+									<span className="flex items-center gap-1.5 text-[13px] font-medium">
+										<span className="size-1.5 rounded-full bg-primary/80" aria-hidden="true" />
+										{deploymentLabel}
+									</span>
+								</div>
+							)}
 						</div>
 
-						<Separator />
-
-						{/* 版权信息 */}
-						<div className="space-y-2">
-							<h4 className="text-sm font-semibold flex items-center gap-2">
-								<Info className="w-4 h-4" />
+						<div className="mt-4 border-t border-border/60 bg-muted/20 px-6 py-3.5">
+							<div className="flex items-center gap-1.5 text-[11.5px] font-medium text-muted-foreground">
+								<Info className="size-3.5" aria-hidden="true" />
 								{t.about.copyright.title}
-							</h4>
-							<p className="text-sm text-muted-foreground">{aboutInfo.copyright.text}</p>
+							</div>
+							<p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+								{aboutInfo.copyright.text}
+							</p>
 						</div>
-
-					</div>
+					</>
 				)}
 			</DialogContent>
 		</Dialog>

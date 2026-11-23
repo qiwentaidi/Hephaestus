@@ -7190,6 +7190,10 @@ export const en: Locale = {
     title: "About Hephaestus",
     description: "Version and copyright information",
     version: "Version",
+    deployment: "Deployment",
+    deploymentDocker: "Docker container",
+    deploymentDesktop: "Desktop app",
+    deploymentNative: "Local service",
     copyright: {
       title: "Copyright",
     },

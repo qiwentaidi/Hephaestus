@@ -2522,6 +2522,10 @@ export const zh = {
     title: "关于 Hephaestus",
     description: "版本和版权信息",
     version: "版本",
+    deployment: "运行方式",
+    deploymentDocker: "Docker 容器",
+    deploymentDesktop: "桌面客户端",
+    deploymentNative: "本地服务",
     copyright: {
       title: "版权信息",
     },
