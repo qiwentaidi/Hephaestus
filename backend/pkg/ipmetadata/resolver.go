@@ -4,12 +4,14 @@ package ipmetadata
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"net/http"
 	"net/netip"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,10 +23,20 @@ import (
 )
 
 const (
-	geoLiteASNURL = "https://github.com/P3TERX/GeoLite.mmdb/releases/download/2026.07.16/GeoLite2-ASN.mmdb"
-	qqwryIPDBURL  = "https://cdn.jsdelivr.net/npm/qqwry.ipdb/qqwry.ipdb"
+	// GeoLite release tags are publication dates, so a pinned URL goes stale
+	// once the project publishes the next build. The /releases/latest/download
+	// path always redirects to the current release's asset.
+	geoLiteASNURL = "https://github.com/P3TERX/GeoLite.mmdb/releases/latest/download/GeoLite2-ASN.mmdb"
+	// When the latest-download path cannot be used, ask the Release API for the
+	// current tag and retry with the pinned URL it describes.
+	geoLiteASNReleaseAPI = "https://api.github.com/repos/P3TERX/GeoLite.mmdb/releases/latest"
+	qqwryIPDBURL         = "https://cdn.jsdelivr.net/npm/qqwry.ipdb/qqwry.ipdb"
+
+	geoLiteASNLatestMarker = "/releases/latest/download/"
+	geoLiteASNPinnedPrefix = "/releases/download/"
 
 	databaseDownloadTimeout = 2 * time.Minute
+	releaseAPITimeout       = 30 * time.Second
 
 	StateIdle             = "idle"
 	StateDownloadingQQWry = "downloading_qqwry"
@@ -61,10 +73,11 @@ type Resolver struct {
 	cityDB   *ipdb.City
 	asnDB    *geoip2.Reader
 
-	loading  bool
-	qqwryURL string
-	asnURL   string
-	client   *http.Client
+	loading       bool
+	qqwryURL      string
+	asnURL        string
+	asnReleaseAPI string
+	client        *http.Client
 }
 
 func NewResolver(dataDir string) *Resolver {
@@ -76,9 +89,10 @@ func NewResolver(dataDir string) *Resolver {
 			QQWryURL:      qqwryIPDBURL,
 			GeoLiteASNURL: geoLiteASNURL,
 		},
-		qqwryURL: qqwryIPDBURL,
-		asnURL:   geoLiteASNURL,
-		client:   &http.Client{Timeout: databaseDownloadTimeout},
+		qqwryURL:      qqwryIPDBURL,
+		asnURL:        geoLiteASNURL,
+		asnReleaseAPI: geoLiteASNReleaseAPI,
+		client:        &http.Client{Timeout: databaseDownloadTimeout},
 	}
 }
 
@@ -185,9 +199,9 @@ func (r *Resolver) load() {
 		} else {
 			r.setStatus(StateDownloadingASN)
 		}
-		path, err := r.ensureDatabaseFile(databaseDir, "GeoLite2-ASN.mmdb", r.asnURL)
+		path, err := r.ensureASNDatabaseFile(databaseDir)
 		if err != nil {
-			r.logManualInstall("GeoLite2-ASN.mmdb", r.asnURL, err)
+			r.logManualInstall("GeoLite2-ASN.mmdb", r.Status().GeoLiteASNURL, err)
 		} else {
 			r.setStatus(StateLoading)
 			opened, openErr := geoip2.Open(path)
@@ -279,6 +293,79 @@ func (r *Resolver) ensureDatabaseFile(directory, filename, sourceURL string) (st
 		return "", err
 	}
 	return path, nil
+}
+
+// ensureASNDatabaseFile downloads the ASN database from the latest release,
+// retrying once with a tag-pinned URL resolved through the Release API when the
+// latest-download path fails.
+func (r *Resolver) ensureASNDatabaseFile(directory string) (string, error) {
+	path, err := r.ensureDatabaseFile(directory, "GeoLite2-ASN.mmdb", r.asnURL)
+	if err == nil {
+		return path, nil
+	}
+	pinnedURL, resolveErr := r.latestASNReleaseURL()
+	if resolveErr != nil {
+		log.Printf("[IP元数据] 解析 ASN 库最新 release 失败: %v", resolveErr)
+		return "", err
+	}
+	log.Printf("[IP元数据] ASN 库最新下载地址为 %s，重试下载", pinnedURL)
+	return r.ensureDatabaseFile(directory, "GeoLite2-ASN.mmdb", pinnedURL)
+}
+
+// latestASNReleaseURL asks the Release API for the current GeoLite tag and
+// returns the tag-pinned asset URL next to the configured latest-release URL.
+func (r *Resolver) latestASNReleaseURL() (string, error) {
+	if !strings.Contains(r.asnURL, geoLiteASNLatestMarker) {
+		return "", fmt.Errorf("ASN 下载地址缺少 %s 路径: %s", geoLiteASNLatestMarker, r.asnURL)
+	}
+	tag, err := r.fetchLatestASNReleaseTag()
+	if err != nil {
+		return "", err
+	}
+	pinnedURL := strings.Replace(r.asnURL, geoLiteASNLatestMarker,
+		geoLiteASNPinnedPrefix+url.PathEscape(tag)+"/", 1)
+	if pinnedURL == r.asnURL {
+		return "", fmt.Errorf("无法从 %s 生成固定 release 地址", r.asnURL)
+	}
+	return pinnedURL, nil
+}
+
+func (r *Resolver) fetchLatestASNReleaseTag() (string, error) {
+	apiURL := r.asnReleaseAPI
+	if apiURL == "" {
+		apiURL = geoLiteASNReleaseAPI
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), releaseAPITimeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("User-Agent", "Hephaestus-IP-Metadata/1.0")
+	client := r.client
+	if client == nil {
+		client = &http.Client{Timeout: databaseDownloadTimeout}
+	}
+	response, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("查询最新 release: unexpected HTTP status %s", response.Status)
+	}
+	var payload struct {
+		TagName string `json:"tag_name"`
+	}
+	if err := json.NewDecoder(io.LimitReader(response.Body, 1<<20)).Decode(&payload); err != nil {
+		return "", fmt.Errorf("解析最新 release 响应: %w", err)
+	}
+	tag := strings.TrimSpace(payload.TagName)
+	if tag == "" {
+		return "", fmt.Errorf("最新 release 响应缺少 tag_name")
+	}
+	return tag, nil
 }
 
 func isPublicIP(ip net.IP) bool {

@@ -1,8 +1,12 @@
 package ipmetadata
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"regexp"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -50,6 +54,120 @@ func TestResolverStatusIncludesManualInstallDetails(t *testing.T) {
 	}
 	if status.DatabaseDir == "" || status.QQWryURL == "" || status.GeoLiteASNURL == "" {
 		t.Fatalf("manual-install details are incomplete: %#v", status)
+	}
+}
+
+func TestGeoLiteASNURLTracksLatestRelease(t *testing.T) {
+	t.Parallel()
+
+	if !strings.Contains(geoLiteASNURL, "/releases/latest/download/GeoLite2-ASN.mmdb") {
+		t.Fatalf("ASN database URL does not use the latest release path: %q", geoLiteASNURL)
+	}
+	pinnedTag := regexp.MustCompile(`/releases/download/\d{4}\.\d{2}\.\d{2}/`)
+	if pinnedTag.MatchString(geoLiteASNURL) {
+		t.Fatalf("ASN database URL pins a release tag and will expire: %q", geoLiteASNURL)
+	}
+}
+
+func TestLatestASNReleaseURLPinsCurrentReleaseTag(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Accept") != "application/vnd.github+json" {
+			t.Errorf("Accept header = %q", r.Header.Get("Accept"))
+		}
+		_, _ = io.WriteString(w, `{"tag_name":"2099.01.02"}`)
+	}))
+	defer server.Close()
+
+	resolver := NewResolver(t.TempDir())
+	resolver.asnURL = server.URL + "/releases/latest/download/GeoLite2-ASN.mmdb"
+	resolver.asnReleaseAPI = server.URL
+	resolver.client = server.Client()
+
+	got, err := resolver.latestASNReleaseURL()
+	if err != nil {
+		t.Fatalf("latestASNReleaseURL() error = %v", err)
+	}
+	want := server.URL + "/releases/download/2099.01.02/GeoLite2-ASN.mmdb"
+	if got != want {
+		t.Fatalf("latestASNReleaseURL() = %q, want %q", got, want)
+	}
+}
+
+func TestLatestASNReleaseURLReportsResolutionFailures(t *testing.T) {
+	t.Parallel()
+
+	for name, handler := range map[string]http.HandlerFunc{
+		"http error": func(w http.ResponseWriter, _ *http.Request) {
+			http.Error(w, "rate limited", http.StatusForbidden)
+		},
+		"invalid json": func(w http.ResponseWriter, _ *http.Request) {
+			_, _ = io.WriteString(w, "notjson")
+		},
+		"missing tag": func(w http.ResponseWriter, _ *http.Request) {
+			_, _ = io.WriteString(w, `{"message":"ok"}`)
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			server := httptest.NewServer(handler)
+			defer server.Close()
+
+			resolver := NewResolver(t.TempDir())
+			resolver.asnURL = server.URL + "/releases/latest/download/GeoLite2-ASN.mmdb"
+			resolver.asnReleaseAPI = server.URL
+			resolver.client = server.Client()
+
+			if got, err := resolver.latestASNReleaseURL(); err == nil {
+				t.Fatalf("latestASNReleaseURL() = %q, want an error", got)
+			}
+		})
+	}
+
+	resolver := NewResolver(t.TempDir())
+	resolver.asnURL = "https://example.com/GeoLite2-ASN.mmdb"
+	if got, err := resolver.latestASNReleaseURL(); err == nil {
+		t.Fatalf("latestASNReleaseURL() = %q without a latest-release path, want an error", got)
+	}
+}
+
+func TestEnsureASNDatabaseFileRetriesWithPinnedReleaseURL(t *testing.T) {
+	t.Parallel()
+
+	content := []byte("mmdb-bytes")
+	var pinnedRequests int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/releases/latest/download/GeoLite2-ASN.mmdb":
+			http.Error(w, "latest release asset is gone", http.StatusNotFound)
+		case "/releases/download/2099.01.02/GeoLite2-ASN.mmdb":
+			atomic.AddInt32(&pinnedRequests, 1)
+			_, _ = w.Write(content)
+		default:
+			_, _ = io.WriteString(w, `{"tag_name":"2099.01.02"}`)
+		}
+	}))
+	defer server.Close()
+
+	directory := t.TempDir()
+	resolver := NewResolver(t.TempDir())
+	resolver.asnURL = server.URL + "/releases/latest/download/GeoLite2-ASN.mmdb"
+	resolver.asnReleaseAPI = server.URL
+	resolver.client = server.Client()
+
+	path, err := resolver.ensureASNDatabaseFile(directory)
+	if err != nil {
+		t.Fatalf("ensureASNDatabaseFile() error = %v", err)
+	}
+	if got := atomic.LoadInt32(&pinnedRequests); got != 1 {
+		t.Fatalf("pinned download attempts = %d, want 1", got)
+	}
+	downloaded, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("reading the downloaded database: %v", err)
+	}
+	if string(downloaded) != string(content) {
+		t.Fatalf("downloaded database = %q, want %q", downloaded, content)
 	}
 }
 
