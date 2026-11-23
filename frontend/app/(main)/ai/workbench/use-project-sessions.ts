@@ -15,6 +15,16 @@ export type ProjectSessionPage = {
   retryMore?: boolean
 }
 
+// A role count can be newer than the page it was served with (orchestration
+// creates one conversation per plan item while the sidebar polls). The sidebar
+// stays expandable for that group; this guard lets the fetch actually reconcile
+// instead of being rejected by the pagination total.
+function countsOutstanding(page: ProjectSessionPage) {
+  const counts = page.roleCounts
+  if (!counts) return false
+  return counts.main + counts.planner + counts.workers + counts.other > page.conversations.length
+}
+
 // Project pages are independent of the global search/discovery page. Refresh
 // every loaded page together so a background refresh cannot truncate history.
 export function useProjectSessions(search: string, openProjects: Record<string, boolean>, revision: number) {
@@ -36,7 +46,9 @@ export function useProjectSessions(search: string, openProjects: Record<string, 
     const previous = pagesRef.current[projectId]
     const current = previous?.query === query ? previous : undefined
     if (current?.loading) return false
-    if (more && current?.page && current.conversations.length >= current.total) return false
+    // A count can be newer than the page it came with: keep allowing the
+    // reconciling fetch until the role counts and the loaded rows agree.
+    if (more && current?.page && current.conversations.length >= current.total && !countsOutstanding(current)) return false
     const page = Math.max(1, (current?.page || 0) + (more ? 1 : 0))
     const request = (requests.current[projectId] || 0) + 1
     requests.current[projectId] = request

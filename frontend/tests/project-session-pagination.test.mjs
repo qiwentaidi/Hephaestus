@@ -127,3 +127,48 @@ test('unloaded roles and ordinary sessions can fetch remaining pages', () => {
   assert.equal(sessionGroupPagination(1, 5, true, 1).showControl, false)
   assert.equal(sessionGroupPagination(90, 90, false, 90).complete, true)
 })
+
+// Regression: the header count comes from a project-wide aggregate that can be
+// newer than the page it ships with (orchestration creates one conversation per
+// plan item while the sidebar polls). A count above the loaded rows must keep
+// the group expandable instead of being marked complete.
+test('a group count above the loaded rows stays expandable', () => {
+  const stale = sessionGroupPagination(3, 5, false, 4)
+  assert.equal(stale.total, 4)
+  assert.equal(stale.complete, false)
+  assert.equal(stale.showControl, true)
+  assert.equal(stale.needsFetch, true)
+  // With the counts and rows agreeing there is nothing to fetch.
+  assert.equal(sessionGroupPagination(3, 5, false, 3).showControl, false)
+  assert.equal(sessionGroupPagination(3, 5, false, 3).complete, true)
+})
+
+test('a stale page reconciles when the count is newer than the list', async () => {
+  const base = [summary('other-a', ''), summary('other-b', ''), summary('other-c', '')]
+  let calls = 0
+  const api = async ({ page, pageSize }) => {
+    calls++
+    const data = calls === 1 ? base : [...base, summary('other-d', '')]
+    return {
+      conversations: data.slice((page - 1) * pageSize, page * pageSize),
+      total: calls === 1 ? base.length : data.length,
+      page,
+      pageSize,
+      // The count was computed after the page: it already sees the new row.
+      roleCounts: { main: 0, planner: 0, workers: 0, other: base.length + 1 },
+    }
+  }
+  const hook = mountSessions(api)
+  await hook.settle()
+  assert.equal(hook.current.pages.project.conversations.length, 3)
+  assert.equal(hook.current.pages.project.total, 3)
+  const action = sessionGroupPagination(3, 5, false, hook.current.pages.project.roleCounts.other)
+  assert.equal(action.needsFetch, true)
+  // The page claims completion, so the old guard refused this fetch and left
+  // the counted row unreachable.
+  assert.equal(await hook.current.load('project', true), true)
+  await hook.settle()
+  assert.equal(hook.current.pages.project.conversations.length, 4)
+  assert.equal(hook.current.pages.project.conversations.at(-1).task.id, 'other-d')
+  assert.equal(sessionGroupPagination(4, 5, false, 4).showControl, false)
+})
