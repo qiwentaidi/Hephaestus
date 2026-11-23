@@ -289,15 +289,13 @@ export function AIConfigTab() {
     })
   }
 
-  const updateProvider = (providerId: string, next: Partial<AIProviderConfig>) => {
-    setConfig((current) =>
-      syncTopLevelConfig({
-        ...current,
-        providers: (current.providers || []).map((provider) =>
-          provider.id === providerId ? { ...provider, ...next } : provider,
-        ),
-      }),
+  // 更多操作菜单里的启用/关闭直接落盘，与排序、设默认、删除保持一致；
+  // 详情面板里的字段仍由“保存配置”统一提交。
+  const toggleProviderEnabled = (providerId: string) => {
+    const updatedProviders = (config.providers || []).map((provider) =>
+      provider.id === providerId ? { ...provider, enabled: !provider.enabled } : provider,
     )
+    autoSaveConfig(syncTopLevelConfig({ ...config, providers: updatedProviders }))
   }
 
   const reorderProviders = (fromId: string, toId: string) => {
@@ -660,9 +658,7 @@ export function AIConfigTab() {
                         {starTitle}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onSelect={() => updateProvider(provider.id, { enabled: !provider.enabled })}
-                      >
+                      <DropdownMenuItem onSelect={() => toggleProviderEnabled(provider.id)}>
                         <Power className="h-4 w-4" />
                         {provider.enabled ? t.aiConfig.disableProvider : t.aiConfig.enableProviderShort}
                       </DropdownMenuItem>
