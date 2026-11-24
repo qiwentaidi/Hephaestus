@@ -784,8 +784,9 @@ export interface AIWorkbenchConversationOptionsResponse {
 export async function listAIWorkbenchProjectConversationOptions(
   projectId: string,
   page = 1,
+  pageSize = 20,
 ): Promise<AIWorkbenchConversationOptionsResponse> {
-  const query = new URLSearchParams({ page: String(page), pageSize: '20' })
+  const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
   const response = await fetchWithAuth(`/api/v1/ai/projects/${encodeURIComponent(projectId)}/conversation-options?${query}`, { cache: 'no-store' })
   return parseAPIResponse<AIWorkbenchConversationOptionsResponse>(response)
 }
@@ -2807,15 +2808,48 @@ export interface AIWorkbenchProjectEvidencePage {
   counts: AIWorkbenchEvidenceCounts
 }
 
+/** Bounded overview payload: counts and aggregates, never the full snapshot. */
+export interface AIWorkbenchProjectStats {
+  project: { id: string; name: string; description: string; status: string; scope: string[]; updatedAt?: string }
+  counts: AIWorkbenchEvidenceCounts
+  severity: Record<string, number>
+  assets: { target: string; conversations: number; covered: number; findings: number }[]
+  pending: { kind: 'blocker' | 'finding' | string; id: string; title: string; status: string; sourceTitle?: string; updatedAt?: string }[]
+  updatedAt?: string
+}
+
+export async function getAIWorkbenchProjectStats(
+  projectId: string,
+  params: { source?: string; signal?: AbortSignal } = {},
+): Promise<AIWorkbenchProjectStats> {
+  const query = new URLSearchParams()
+  if (params.source && params.source !== 'all') query.set('source', params.source)
+  const suffix = query.toString()
+  const response = await fetchWithAuth(`/api/v1/ai/projects/${encodeURIComponent(projectId)}/stats${suffix ? `?${suffix}` : ''}`, {
+    cache: 'no-store',
+    signal: params.signal,
+  })
+  const data = await parseAPIResponse<AIWorkbenchProjectStats>(response)
+  return {
+    project: data.project || { id: projectId, name: '', description: '', status: '', scope: [] },
+    counts: data.counts || { facts: 0, blockers: 0, findings: 0, confirmedFindings: 0, candidateFindings: 0 },
+    severity: data.severity || {},
+    assets: Array.isArray(data.assets) ? data.assets : [],
+    pending: Array.isArray(data.pending) ? data.pending : [],
+    updatedAt: data.updatedAt,
+  }
+}
+
 export async function listAIWorkbenchProjectEvidence(
   projectId: string,
-  params: { page?: number; pageSize?: number; search?: string; source?: string; signal?: AbortSignal } = {},
+  params: { page?: number; pageSize?: number; search?: string; source?: string; kind?: string; signal?: AbortSignal } = {},
 ): Promise<AIWorkbenchProjectEvidencePage> {
   const query = new URLSearchParams()
   if (params.page) query.set('page', String(params.page))
   if (params.pageSize) query.set('pageSize', String(params.pageSize))
   if (params.search) query.set('search', params.search)
   if (params.source) query.set('source', params.source)
+  if (params.kind) query.set('kind', params.kind)
   const suffix = query.toString()
   const response = await fetchWithAuth(`/api/v1/ai/projects/${encodeURIComponent(projectId)}/evidence${suffix ? `?${suffix}` : ''}`, {
     cache: 'no-store',

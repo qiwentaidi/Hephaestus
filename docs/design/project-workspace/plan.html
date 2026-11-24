@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>编排 · 设计提案</title>
+<link rel="stylesheet" href="mock.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 19V7l7-4 7 4v12"/><path d="M9 19v-6h6v6"/></svg></span>
+      Hephaestus
+    </div>
+    <nav class="nav">
+      <div class="nav-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>仪表板</div>
+      <div class="nav-item active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 1.8 13.6 4v4.6c0 3-2.3 5-5.6 6.2C4.7 13.6 2.4 11.6 2.4 8.6V4z"/></svg>AI 渗透工作台<svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6l4 4 4-4"/></svg></div>
+      <div class="nav-sub">
+        <a class="on">对话</a>
+        <a>任务管理</a>
+        <a>Agent 管理</a>
+        <a>调用拦截</a>
+      </div>
+      <div class="nav-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c2 2.2 2 9.8 0 12M8 2c-2 2.2-2 9.8 0 12"/></svg>攻击面评估</div>
+      <div class="nav-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 5.4 8 2l6 3.4v5.2L8 14l-6-3.4z"/><path d="M2 5.4 8 8.8l6-3.4M8 8.8V14"/></svg>资产管理<svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 4l4 4-4 4"/></svg></div>
+      <div class="nav-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="4" width="10" height="9" rx="2"/><path d="M5.5 4V2.8M10.5 4V2.8M3 7.5h10"/></svg>漏洞中心</div>
+      <div class="nav-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 5h9l-2.2-2.2M14 11H5l2.2 2.2"/></svg>请求转发</div>
+      <div class="nav-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.4"/><path d="M8 1.6v2M8 12.4v2M1.6 8h2M12.4 8h2"/></svg>空间引擎<svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 4l4 4-4 4"/></svg></div>
+      <div class="nav-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3.5 1.8h6l3 3v9.4h-9z"/><path d="M9.5 1.8v3.2h3"/></svg>报告管理</div>
+      <div class="nav-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="4.5" height="12" rx="1"/><rect x="9.5" y="2" width="4.5" height="5" rx="1"/><rect x="9.5" y="9" width="4.5" height="5" rx="1"/></svg>模板管理<svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 4l4 4-4 4"/></svg></div>
+      <div class="nav-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="3" cy="8" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="13" cy="8" r="1"/></svg>更多功能</div>
+    </nav>
+    <div class="spacer"></div>
+    <div class="nav-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.2"/><path d="M8 2v1.4M8 12.6V14M2 8h1.4M12.6 8H14M3.8 3.8l1 1M11.2 11.2l1 1M3.8 12.2l1-1M11.2 4.8l1-1"/></svg>系统管理</div>
+    <div class="foot"><span class="avatar">AD</span>admin</div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="back">← 返回对话</div>
+      <div class="headline">
+        <div class="title-row"><h1>中转站</h1><span class="pill live"><span class="dot"></span>进行中</span></div>
+        <div class="sub">项目探索 · 结论与证据 · 最近活动 14:27</div>
+      </div>
+      <div class="top-actions">
+        <span class="btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8a5.5 5.5 0 1 1-1.7-4"/><path d="M13.5 2v3.4h-3.4"/></svg>刷新</span>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab">概览</div>
+      <div class="tab">探索链路</div>
+      <div class="tab active">编排<span class="count">2</span></div>
+      <div class="tab">证据<span class="count">144</span></div>
+    </div>
+
+    <div class="content">
+      <section class="card runbar">
+        <div class="r1">
+        <div class="who">
+          <div class="line1"><span class="pill">规划中</span><span class="name">第 3 次运行</span></div>
+          <div class="when">11/23 12:12 起 · 已运行 2h15m</div>
+          <div class="when">Planner baizhi-1 · deepseek-v4-pro</div>
+          <div class="when">Worker baizhi-2 · qwen3.8-flash</div>
+        </div>
+        <div class="top-actions">
+          <span class="btn primary">打开主控</span>
+          <span class="btn">查看 Planner ↗</span>
+          <span class="btn ghost">停止编排</span>
+        </div>
+        </div>
+        <div class="r2">
+          <div class="progress">
+            <div class="progress-top">
+              <strong>150 / 179</strong><span>已完成 84%</span>
+              <span class="right"><span class="np">受阻 11 · 失败 22 · 运行中 0</span></span>
+            </div>
+            <div class="seg">
+              <i class="done" style="width:83.8%"></i>
+              <i class="block" style="width:6.1%"></i>
+              <i class="fail" style="width:10.1%"></i>
+            </div>
+            <div class="legend"><span><span class="dot green"></span>已完成 150</span><span><span class="dot amber"></span>受阻 11</span><span><span class="dot red"></span>失败 22</span></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="toolbar">
+        <div class="chips">
+          <span class="chip on">全部 <b>179</b></span>
+          <span class="chip">进行中 <b>0</b></span>
+          <span class="chip">受阻 <b>11</b></span>
+          <span class="chip">失败 <b>22</b></span>
+          <span class="chip">已完成 <b>150</b></span>
+        </div>
+        <span class="search"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4.4"/><path d="M10.4 10.4 14 14"/></svg>搜索计划项标题或目标</span>
+        <span class="btn sm">按状态分组</span>
+      </div>
+
+      <section class="card list">
+        <div class="group-head"><span class="dot amber"></span>受阻<span class="count">11</span><span class="right">需要处理 · 主要因模型中断与目标不可达</span></div>
+        <div class="rows">
+          <div class="item">
+            <div class="seq">14</div>
+            <div class="main">
+              <div class="ttl"><span class="dot amber"></span><span class="text">针对 tiger-sms.com 的 Laravel 组件版本指纹与已知 NVD 漏洞验证</span><span class="tag amber">受阻</span></div>
+              <div class="target mono">tiger-sms.com · /_ignition/execute-solution · CVE-2021-3129</div>
+              <div class="summary">模型不可用：主备渠道均返回 unexpected EOF，14:27 中断，已保留未完成步骤</div>
+            </div>
+            <div class="acts"><span class="btn sm">打开 Worker ↗</span><span class="btn sm ghost">链路</span></div>
+          </div>
+          <div class="item">
+            <div class="seq">19</div>
+            <div class="main">
+              <div class="ttl"><span class="dot amber"></span><span class="text">短信验证码接口的并发与重放测试</span><span class="tag amber">受阻</span></div>
+              <div class="target mono">tiger-sms.com · POST /api/sms/verify</div>
+              <div class="summary">目标在测试中持续返回 502，暂停后待重试</div>
+            </div>
+            <div class="acts"><span class="btn sm">打开 Worker ↗</span><span class="btn sm ghost">链路</span></div>
+          </div>
+          <div class="item">
+            <div class="seq">22</div>
+            <div class="main">
+              <div class="ttl"><span class="dot amber"></span><span class="text">后台管理入口的弱口令枚举与登录锁定验证</span><span class="tag amber">受阻</span></div>
+              <div class="target mono">supercloudsms.com · /admin/login</div>
+              <div class="summary">字典跑完未命中，需补充社工线索后重派</div>
+            </div>
+            <div class="acts"><span class="btn sm">打开 Worker ↗</span><span class="btn sm ghost">链路</span></div>
+          </div>
+        </div>
+
+        <div class="group-head"><span class="dot red"></span>失败<span class="count">22</span><span class="right">执行错误，可批量重跑</span></div>
+        <div class="rows">
+          <div class="item">
+            <div class="seq">9</div>
+            <div class="main">
+              <div class="ttl"><span class="dot red"></span><span class="text">对 www.smsservice.pro 的目录与备份文件爆破</span><span class="tag red">失败</span></div>
+              <div class="target mono">www.smsservice.pro · 60+ 敏感路径</div>
+              <div class="summary">执行失败：目标连接超时（28s），工具未返回结果</div>
+            </div>
+            <div class="acts"><span class="btn sm">重跑</span><span class="btn sm ghost">链路</span></div>
+          </div>
+          <div class="item">
+            <div class="seq">31</div>
+            <div class="main">
+              <div class="ttl"><span class="dot red"></span><span class="text">API 文档中的隐藏接口与调试端点探测</span><span class="tag red">失败</span></div>
+              <div class="target mono">sms.useaiplus.com · /openapi.json</div>
+              <div class="summary">执行失败：响应非 JSON，无法解析接口清单</div>
+            </div>
+            <div class="acts"><span class="btn sm">重跑</span><span class="btn sm ghost">链路</span></div>
+          </div>
+        </div>
+
+        <div class="group-head"><span class="dot green"></span>已完成<span class="count">150</span><span class="right">默认折叠 · 展开查看结论</span></div>
+        <div class="rows">
+          <div class="item dim">
+            <div class="seq">5</div>
+            <div class="main">
+              <div class="ttl"><span class="dot green"></span><span class="text">短信接收站点的消息与号码查询接口 IDOR / 越权遍历</span><span class="tag green">已完成</span></div>
+              <div class="target mono">tiger-sms.com · bestsms.xyz · smsnator.online …</div>
+              <div class="summary">已确认 1 个发现：未授权读取他人短信（高）</div>
+            </div>
+            <div class="acts"><span class="btn sm">查看结论</span><span class="btn sm ghost">链路</span></div>
+          </div>
+        </div>
+        <div class="more">展开其余 149 项</div>
+      </section>
+    </div>
+  </main>
+</div>
+</body>
+</html>

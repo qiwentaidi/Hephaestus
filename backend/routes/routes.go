@@ -209,6 +209,7 @@ func SetupRoutes(r *gin.Engine) {
 			aiGroup.GET("/projects/:id/token-usage", ai.GetAIPentestProjectTokenUsageHandler)
 			aiGroup.GET("/projects/:id/storage", ai.GetAIPentestProjectStorageHandler)
 			aiGroup.GET("/projects/:id/blackboard", ai.GetAIPentestProjectBlackboardHandler)
+			aiGroup.GET("/projects/:id/stats", ai.GetAIPentestProjectStatsHandler)
 			aiGroup.GET("/projects/:id/evidence", ai.ListAIPentestProjectEvidenceHandler)
 			aiGroup.GET("/projects/:id/evidence/entry", ai.GetAIPentestProjectEvidenceEntryHandler)
 			aiGroup.GET("/projects/:id/conversation-options", ai.ListAIPentestProjectConversationOptionsHandler)

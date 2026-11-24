@@ -1,26 +1,30 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PaginationPro } from '@/components/ui/pagination-pro'
 import { Spinner } from '@/components/ui/spinner'
-import { getAIWorkbenchProjectEvidenceEntry, listAIWorkbenchProjectEvidence, type AIWorkbenchProjectEvidenceItem, type AIWorkbenchPenTestSessionBlackboard as Blackboard } from '@/lib/api/ai-workbench'
+import { getAIWorkbenchProjectEvidenceEntry, listAIWorkbenchProjectEvidence, type AIWorkbenchEvidenceCounts, type AIWorkbenchProjectEvidenceItem, type AIWorkbenchPenTestSessionBlackboard as Blackboard } from '@/lib/api/ai-workbench'
 import { explorationHref, type ExplorationEdge, type ExplorationGraph, type ExplorationKind } from '@/lib/exploration-graph'
 import { findingDetailHref } from '@/lib/finding-detail'
 import { useI18n } from '@/lib/i18n'
-import { kinds, relationNames, stateNames } from '../../exploration/ExplorationClient'
+import { relationNames, stateNames } from '../../exploration/ExplorationClient'
 import { ExecutionEvidence } from '../../components/ExecutionEvidence'
 import { ReportContent } from '../../../../vulnerabilities/detail/ReportContent'
 import styles from '../project.module.css'
+import doc from './evidence.module.css'
 
 const PAGE_SIZE = 20
 
 type Props = {
   projectId: string
   source: string
+  /** Evidence kind filter from the URL: '', finding, fact or blocker. */
+  kind: string
+  onKindChange: (kind: string) => void
   /** Changes whenever the project snapshot refreshes, so evidence follows it. */
   revision: string
   selected: string | null
@@ -31,18 +35,52 @@ type Props = {
   returnHref: string
 }
 
+const KIND_FILTERS = [
+  { key: '', labels: ['全部', 'All'] },
+  { key: 'finding', labels: ['发现', 'Findings'] },
+  { key: 'fact', labels: ['事实', 'Facts'] },
+  { key: 'blocker', labels: ['阻塞', 'Blockers'] },
+] as const
+
+function dayLabel(value: string | undefined, zh: boolean): string {
+  if (!value) return zh ? '未记录时间' : 'Undated'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return zh ? '未记录时间' : 'Undated'
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+  if (date.toDateString() === today.toDateString()) return zh ? '今天' : 'Today'
+  if (date.toDateString() === yesterday.toDateString()) return zh ? '昨天' : 'Yesterday'
+  return date.toLocaleDateString(zh ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })
+}
+
+function clock(value: string | undefined, zh: boolean): string {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleTimeString(zh ? 'zh-CN' : 'en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+}
+
+const kindLabel = (kind: string | undefined, zh: boolean) => {
+  if (kind === 'finding') return zh ? '发现' : 'Finding'
+  if (kind === 'blocker') return zh ? '阻塞' : 'Blocker'
+  if (kind === 'fact') return zh ? '事实' : 'Fact'
+  return zh ? '记录' : 'Record'
+}
+
 /**
  * Paged evidence index. The graph and overview stay bounded snapshots, so the
  * index reads every fact and finding from the server instead of deriving its
  * rows from the loaded blackboard.
  */
-export function EvidenceWorkspace({ projectId, source, revision, selected, onSelect, onLocate, board, graph, returnHref }: Props) {
+export function EvidenceWorkspace({ projectId, source, kind, onKindChange, revision, selected, onSelect, onLocate, board, graph, returnHref }: Props) {
   const { language } = useI18n(), zh = language === 'zh'
   const [query, setQuery] = useState('')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [items, setItems] = useState<AIWorkbenchProjectEvidenceItem[]>([])
   const [total, setTotal] = useState(0)
+  const [counts, setCounts] = useState<AIWorkbenchEvidenceCounts | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [detail, setDetail] = useState<AIWorkbenchProjectEvidenceItem | null>(null)
@@ -58,6 +96,9 @@ export function EvidenceWorkspace({ projectId, source, revision, selected, onSel
     return () => window.clearTimeout(timer)
   }, [query])
 
+  // A new kind filter starts a new result set; page 1 keeps paging consistent.
+  useEffect(() => { setPage(1) }, [kind])
+
   useEffect(() => {
     const controller = new AbortController()
     setLoading(true)
@@ -65,12 +106,14 @@ export function EvidenceWorkspace({ projectId, source, revision, selected, onSel
       page,
       pageSize: PAGE_SIZE,
       search,
+      kind,
       source: source === 'all' ? '' : source,
       signal: controller.signal,
     }).then(data => {
       if (controller.signal.aborted) return
       setItems(data.items)
       setTotal(data.total)
+      setCounts(data.counts)
       setError('')
       // Records removed elsewhere can shrink the list under the current page.
       if (!data.items.length && data.total > 0 && page > 1) setPage(Math.max(1, Math.ceil(data.total / PAGE_SIZE)))
@@ -83,7 +126,7 @@ export function EvidenceWorkspace({ projectId, source, revision, selected, onSel
       if (!controller.signal.aborted) setLoading(false)
     })
     return () => controller.abort()
-  }, [projectId, page, search, source, revision, zh])
+  }, [projectId, page, search, source, kind, revision, zh])
 
   useEffect(() => {
     if (!selected) {
@@ -117,6 +160,26 @@ export function EvidenceWorkspace({ projectId, source, revision, selected, onSel
     : []
   const sourceName = active?.sourceTitle || board.sourceConversations?.find(item => item.id === active?.conversationId)?.title
 
+  const sections = useMemo(() => {
+    const out: { key: string; label: string; rows: AIWorkbenchProjectEvidenceItem[] }[] = []
+    for (const item of items) {
+      const stamp = item.updatedAt || item.createdAt
+      const key = dayLabel(stamp, false)
+      const last = out[out.length - 1]
+      if (last && last.key === key) last.rows.push(item)
+      else out.push({ key, label: dayLabel(stamp, zh), rows: [item] })
+    }
+    return out
+  }, [items, zh])
+
+  const chipCount = (key: string) => {
+    if (!counts) return key === '' ? total : 0
+    if (key === 'finding') return counts.findings
+    if (key === 'blocker') return counts.blockers
+    if (key === 'fact') return Math.max(0, counts.facts - counts.blockers)
+    return counts.facts + counts.findings
+  }
+
   useEffect(() => {
     const index = indexRef.current
     const item = index?.querySelector('[data-selected="true"]')
@@ -136,50 +199,78 @@ export function EvidenceWorkspace({ projectId, source, revision, selected, onSel
   return (
     <div className={styles.evidence}>
       <aside ref={indexRef} className={styles.index} aria-label={zh ? '证据目录' : 'Evidence index'}>
-        <Input
-          aria-label={zh ? '搜索证据' : 'Search evidence'}
-          placeholder={zh ? '搜索结论与证据…' : 'Search evidence…'}
-          value={query}
-          onChange={event => setQuery(event.target.value)}
-          className="mb-4"
-        />
-        {error ? <p role="alert" className="mb-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">{error}</p> : null}
-        {items.map(item => (
-          <button
-            key={item.id}
-            className={styles.row}
-            data-selected={active?.id === item.id}
-            onClick={() => onSelect(item.id)}
-          >
-            <span className="mb-1 block text-xs text-muted-foreground">{kinds[item.kind as ExplorationKind]?.[language] || item.kind}</span>
-            <span className="line-clamp-3 text-sm leading-6">{item.title}</span>
-          </button>
-        ))}
-        {loading && !items.length ? <p className="flex items-center gap-2 py-4 text-sm text-muted-foreground"><Spinner />{zh ? '加载证据记录…' : 'Loading evidence…'}</p> : null}
-        {!loading && !items.length && !error ? <p className={styles.empty}>{search ? (zh ? '没有匹配记录' : 'No matches') : (zh ? '暂无记录' : 'No records')}</p> : null}
-        {total > PAGE_SIZE ? (
-          <PaginationPro
-            current={page}
-            total={total}
-            pageSize={PAGE_SIZE}
-            onChange={nextPage => setPage(nextPage)}
-            showSizeChanger={false}
-            disabled={loading}
+        <div className={doc.filters}>
+          <Input
+            aria-label={zh ? '搜索证据' : 'Search evidence'}
+            placeholder={zh ? '搜索结论与证据…' : 'Search evidence…'}
+            value={query}
+            onChange={event => setQuery(event.target.value)}
           />
+          <div className={doc.chips} role="group" aria-label={zh ? '证据类型' : 'Evidence kind'}>
+            {KIND_FILTERS.map(option => (
+              <button key={option.key || 'all'} type="button" className={doc.chip} data-active={kind === option.key} onClick={() => onKindChange(option.key)}>
+                {option.labels[zh ? 0 : 1]}
+                <span className={doc.chipCount}>{chipCount(option.key)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        {error ? <p role="alert" className="mx-3 mb-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">{error}</p> : null}
+        {sections.map(group => (
+          <div key={group.key}>
+            <div className={doc.dayLabel}>{group.label}</div>
+            {group.rows.map(item => (
+              <button
+                key={item.id}
+                className={`${styles.row} ${doc.row}`}
+                data-selected={active?.id === item.id}
+                onClick={() => onSelect(item.id)}
+              >
+                <span className={doc.rowTitle}>
+                  <span className={doc.dot} data-kind={item.kind} />
+                  <span className={doc.rowText}>{item.title}</span>
+                </span>
+                <span className={doc.rowMeta}>
+                  {kindLabel(item.kind, zh)}
+                  {item.sourceTitle ? ` · ${item.sourceTitle}` : ''}
+                  {` · ${clock(item.updatedAt || item.createdAt, zh) || '—'}`}
+                </span>
+              </button>
+            ))}
+          </div>
+        ))}
+        {loading && !items.length ? <p className="flex items-center gap-2 px-3 py-4 text-sm text-muted-foreground"><Spinner />{zh ? '加载证据记录…' : 'Loading evidence…'}</p> : null}
+        {!loading && !items.length && !error ? <p className={styles.empty}>{search || kind ? (zh ? '没有匹配记录' : 'No matches') : (zh ? '暂无记录' : 'No records')}</p> : null}
+        {total > PAGE_SIZE ? (
+          <div className={doc.pager}>
+            <PaginationPro
+              current={page}
+              total={total}
+              pageSize={PAGE_SIZE}
+              onChange={nextPage => setPage(nextPage)}
+              showSizeChanger={false}
+              disabled={loading}
+            />
+          </div>
         ) : null}
       </aside>
       <div ref={reportRef} className={styles.report}>
         {active ? (
           <article key={active.id}>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline">{kinds[active.kind as ExplorationKind]?.[language] || active.kind}</Badge>
+            <div className={doc.bar}>
+              <Badge variant="outline">{kindLabel(active.kind, zh)}</Badge>
+              {active.severity ? <Badge variant="outline" className={doc.severityBadge}>{active.severityLabel || active.severity}</Badge> : null}
               {active.status ? <Badge variant="outline" className="bg-muted/40 text-muted-foreground">{stateNames[active.status]?.[zh ? 0 : 1] || active.status}</Badge> : null}
-              {activeInGraph ? <Button size="sm" variant="outline" onClick={() => onLocate(active.id)}>{zh ? '图中定位' : 'Locate in graph'}</Button> : null}
-              {active.findingId ? <Button variant="ghost" size="sm" asChild><Link href={findingDetailHref(active.findingId, returnHref)}>{zh ? '完整漏洞报告 ↗' : 'Full report ↗'}</Link></Button> : null}
+              <div className={doc.barActions}>
+                {activeInGraph ? <Button size="sm" variant="ghost" onClick={() => onLocate(active.id)}>{zh ? '图中定位' : 'Locate in graph'}</Button> : null}
+                {active.findingId ? <Button variant="outline" size="sm" asChild><Link href={findingDetailHref(active.findingId, returnHref)}>{zh ? '完整漏洞报告' : 'Full report'} ↗</Link></Button> : null}
+              </div>
             </div>
             <h2>{active.title}</h2>
-            <div className="flex flex-wrap items-center gap-3 border-y py-3 text-xs text-muted-foreground">
-              <span>{zh ? '来源：' : 'Source: '}{sourceName || (zh ? '未记录来源会话' : 'No source conversation')}</span>
+            <div className={doc.meta}>
+              <span>{zh ? '记录于 ' : 'Recorded '}<b>{clock(active.updatedAt || active.createdAt, zh) || '—'}</b></span>
+              <span>{zh ? '来源 ' : 'Source '}<b>{sourceName || (zh ? '未记录来源会话' : 'No source conversation')}</b></span>
+              {active.category ? <span>{zh ? '分类 ' : 'Category '}<b>{active.category}</b></span> : null}
               {active.conversationId ? (
                 <>
                   <Link className="underline underline-offset-4" href={`/ai/workbench?session=${encodeURIComponent(active.conversationId)}`}>{zh ? '打开会话' : 'Conversation'}</Link>

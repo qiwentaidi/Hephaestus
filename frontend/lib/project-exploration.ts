@@ -1,9 +1,12 @@
 import type { AIWorkbenchPenTestSessionBlackboard as Blackboard } from './api/ai-workbench'
 
-export function projectExplorationHref(project: string, tab = 'overview', node?: string, source = 'all') {
+export function projectExplorationHref(project: string, tab = 'overview', node?: string, source = 'all', filter = '') {
   const params = new URLSearchParams({ project, tab })
   if (node) params.set('node', node)
   if (source !== 'all') params.set('source', source)
+  // Evidence kind filter stays on the URL so a drill-down from the overview is
+  // shareable and survives a refresh.
+  if (tab === 'evidence' && filter) params.set('filter', filter)
   return `/ai/workbench/project?${params}`
 }
 

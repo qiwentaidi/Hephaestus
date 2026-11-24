@@ -105,7 +105,15 @@ export interface AIPlanRunSummary extends AIPlanRunListItem {
   planItemMatch: boolean
 }
 
-export type AIPlanItemRow = Pick<AIPlanItem, 'id' | 'seq' | 'title' | 'target' | 'instruction' | 'status' | 'completedAt'>
+/**
+ * Lightweight list projection: the server clips summary/error to a preview and
+ * omits the full instruction, so a 250-item run stays a few hundred bytes a row.
+ */
+export type AIPlanItemRow = Pick<AIPlanItem, 'id' | 'seq' | 'title' | 'target' | 'instruction' | 'status' | 'completedAt'> & {
+  childConversationId?: string
+  summary?: string
+  error?: string
+}
 
 export interface AIPlanItemRows {
   items: AIPlanItemRow[]
