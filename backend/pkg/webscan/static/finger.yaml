@@ -1,3 +1,32 @@
+AI智能渗透测试框架:
+  - id: fp_7a2f355e5c2ce0d83cc81de058c1166d
+    name: ARTEX
+    rule:
+      - icon_hash="-576220750"
+      - title="ARTEX - 自主渗透测试控制台"
+  - id: fp_5041ae29d3bd3f914faa6abf20a1af52
+    name: ANTIFOX
+    rule:
+      - body="AntiFox - 自主渗透测试控制台"
+      - icon_hash="-1356779733"
+  - id: fp_eeec7bdf97a243cff0ed533b5213d777
+    name: CyberStrikeAI
+    rule:
+      - icon_hash="-1349384020"
+      - title="CyberStrikeAI"
+  - id: fp_1acc68a6c7467a76572f82581ff7cab4
+    name: PentAGI
+    rule:
+      - title=="PentAGI"
+      - icon_hash="-1596753120"
+  - id: fp_082c1e464740f1b3c119554975d246ff
+    name: DesRedTeam
+    rule:
+      - body="DesRedTeam"
+  - id: fp_14a000f942f9962f986eb11d63c3c882
+    name: Cairn
+    rule:
+      - icon_hash="762324858"
 CMS建站:
   - id: fp_dc1f2dcd1277b2ff5abfb1ce73625c1f
     name: MkDocs
@@ -5436,6 +5465,38 @@ WordPress:
     name: wp-plugin-ultimate-addons-for-contact-form-7
     rule:
       - body="/wp-content/plugins/ultimate-addons-for-contact-form-7"
+  - id: fp_a693cdbb3e41d18301cca626f4496bb4
+    name: wp-plugin-visual-form-builder
+    rule:
+      - body="/wp-content/plugins/visual-form-builder/"
+  - id: fp_0f0cd87f26707db164d7424a117316a2
+    name: wp-plugin-chatbot
+    rule:
+      - body="/wp-content/plugins/chatbot/"
+  - id: fp_0cb1bee213d5513aba6fd51fe344ff7f
+    name: wp-plugin-gwolle-gb
+    rule:
+      - body="/wp-content/plugins/gwolle-gb/"
+  - id: fp_0eb2613394c89171f78bab8e61d0d0e6
+    name: wp-plugin-drag-and-drop-file-upload-for-elementor-forms
+    rule:
+      - body="/wp-content/plugins/drag-and-drop-file-upload-for-elementor-forms"
+  - id: fp_09ca32bfc196868ee4978b4a6c980612
+    name: wp-plugin-local-sync
+    rule:
+      - body="/wp-content/plugins/local-sync/"
+  - id: fp_7f90cc177c3a997ef2d922d8a411756d
+    name: wp-plugin-age-gate
+    rule:
+      - body="/wp-content/plugins/age-gate/"
+  - id: fp_11ddd57ccc15d5a01f668fd61ce5106b
+    name: wp-plugin-serbian-transliteration
+    rule:
+      - body="/wp-content/plugins/serbian-transliteration/"
+  - id: fp_e072c66ca1283ecd936bc79ba1b1e502
+    name: wp-plugin-gutenkit-blocks-addon
+    rule:
+      - body="/wp-content/plugins/gutenkit-blocks-addon"
 中间件:
   - id: fp_de2b0ed3eae999079dc741ee3311222b
     name: debian
@@ -54384,3 +54445,95 @@ WordPress:
     name: Docker-Proxy hubcmdui
     rule:
       - body="hubcmdui"
+  - id: fp_d4af162b533a97ac12c393629ce249b4
+    name: Perses
+    rule:
+      - body="perses-dark-theme-enabled"
+  - id: fp_4054e8a3c06c4bbd488dbf274c6f7dd2
+    name: Gameyfin
+    rule:
+      - body="Gameyfin"
+  - id: fp_da589938a60a9c03a62529858c914f39
+    name: GW-Security
+    rule:
+      - body="GW Security"
+  - id: fp_f78f9255771df7961cc0bb494f904b15
+    name: AnyLogic
+    rule:
+      - body="AnyLogic Team License Server"
+  - id: fp_794bcf99117894ca43cc4fed9df9571f
+    name: CyberPower-UPS
+    rule:
+      - body="login_pass.cgi" && body="CyberPower"
+  - id: fp_eb3ce3571a443b5aa26eaead9f515cd4
+    name: GravCMS
+    rule:
+      - body="GravCMS"
+  - id: fp_7579a6438933fc933f3dcdf0894e9db7
+    name: Knowns
+    rule:
+      - title="Knowns"
+  - id: fp_7ddc64832bf9292665fd7695c61e2cec
+    name: Admidio
+    rule:
+      - body="The Admidio Team"
+  - id: fp_460ed3ddd65e1d2fecb87e53afcbb512
+    name: AnsibleForms
+    rule:
+      - title="AnsibleForms"
+  - id: fp_f103499f2073df0489f32f708ba50bac
+    name: AP Page Builder
+    rule:
+      - body="modules/appagebuilder"
+  - id: fp_ca38f383776d1ebbae14e7c77d9ee754
+    name: Dinky
+    rule:
+      - title="Dinky"
+  - id: fp_4ccb4b4d191a5b696424a0317b7a40ec
+    name: Mercury
+    rule:
+      - body="--mercury-text-color"
+  - id: fp_80bb0a758a1bdc82942902a4ad967a2b
+    name: GPUStack
+    rule:
+      - body="umi." && body="/static/favicon.png"
+  - id: fp_b03f59f2effb3485f6a38dfffd6e04e2
+    name: OpenObserve
+    rule:
+      - title="OpenObserve"
+  - id: fp_16ec39df82a4c32397bc861a0d77c019
+    name: Gotify
+    rule:
+      - title="Gotify"
+  - id: fp_f9dcf3db8acaaa5d5a2540514c0a4a45
+    name: Rclone
+    rule:
+      - title="List of all rclone remotes."
+  - id: fp_0d906632d621058a0cb4d53dd61b9c61
+    name: Semantic-MediaWiki
+    rule:
+      - body="Powered by Semantic MediaWiki"
+  - id: fp_60189a4a7377d0ed4eeca6136483bc8e
+    name: Obot
+    rule:
+      - body="nanobotdark"
+  - id: fp_64853f0c1e4bc626ae658c3a5979a3eb
+    name: Dialoqbase
+    rule:
+      - body="Dialoqbase"
+  - id: fp_38579fef168959221eef19bf1be87db0
+    name: Pulse-Connect-Secure
+    rule:
+      - title="Pulse Connect Secure"
+  - id: fp_8c59a2b5b942fd5150e8f39b24e23dec
+    name: MONAILabel
+    rule:
+      - body="MONAILabel"
+  - id: fp_dd59301f638b3a681b257e483cb543d3
+    name: Homer
+    rule:
+      - title="Homer v11"
+  - id: fp_267ff52ef2a039da4c03883f7106c755
+    name: OpenFGA
+    rule:
+      - header="openfga"
